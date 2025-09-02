@@ -8273,8 +8273,8 @@ Generate the complete prompt now:`;
       const { id } = req.params;
       
       // Find and remove the scenario
-      for (const [agentId, scenarios] of testScenarios.entries()) {
-        const index = scenarios.findIndex(s => s.id === id);
+      for (const [agentId, scenarios] of Array.from(testScenarios.entries())) {
+        const index = scenarios.findIndex((s: any) => s.id === id);
         if (index !== -1) {
           scenarios.splice(index, 1);
           testScenarios.set(agentId, scenarios);
