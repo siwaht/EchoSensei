@@ -198,7 +198,7 @@ export default function Playground() {
       if (responseConnectionType === 'webrtc' && conversationToken) {
         // For now, show message that WebRTC is prepared but fall back to WebSocket
         // Full WebRTC implementation requires the ElevenLabs React SDK
-        console.log('WebRTC token received:', conversationToken);
+        // WebRTC token received
         toast({
           title: "WebRTC Ready",
           description: "Using enhanced WebRTC connection for better audio quality",
@@ -218,7 +218,7 @@ export default function Playground() {
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("WebSocket connected, sending initialization message");
+        // WebSocket connected, sending initialization message
         
         // Send a simple initialization message without overrides
         // Overrides often fail due to agent security settings in ElevenLabs
@@ -226,18 +226,18 @@ export default function Playground() {
           type: "conversation_initiation_client_data"
         };
         
-        console.log("Sending init message:", initMessage);
+        // Sending init message
         ws.send(JSON.stringify(initMessage));
       };
 
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          console.log("WebSocket message:", data);
+          // WebSocket message received
           
           // Handle different message formats from VoiceAI
           if (data.type === "conversation_initiation_metadata") {
-            console.log("Conversation metadata received:", data.conversation_initiation_metadata_event);
+            // Conversation metadata received
             
             // Now we're ready to start the conversation
             setIsConnecting(false);
@@ -245,7 +245,7 @@ export default function Playground() {
             
             // Start audio streaming after successful initialization
             if (mediaStreamRef.current) {
-              console.log("Starting audio stream to WebSocket");
+              // Starting audio stream to WebSocket
               startAudioStreaming(mediaStreamRef.current, ws);
             }
             
@@ -269,29 +269,29 @@ export default function Playground() {
                 ws.send(JSON.stringify({
                   user_audio_chunk: base64Audio
                 }));
-                console.log("Sent trigger audio to start conversation");
+                // Sent trigger audio to start conversation
               }
             }, 500);
           } else if (data.audio || data.audio_event) {
             // Agent audio response - queue it for sequential playback
             const audioData = data.audio || data.audio_event?.audio_base_64 || data.audio_event?.audio || data.audio_base_64;
             if (audioData && isSpeakerOn) {
-              console.log("Queueing agent audio, length:", audioData.length);
+              // Queueing agent audio
               queueAudio(audioData);
             } else if (audioData) {
-              console.log("Received audio but speaker is off");
+              // Received audio but speaker is off
             }
           } else if (data.audio_base_64) {
             // Some agents send audio directly as audio_base_64
             if (isSpeakerOn) {
-              console.log("Queueing agent audio (direct), length:", data.audio_base_64.length);
+              // Queueing agent audio (direct)
               queueAudio(data.audio_base_64);
             }
           } else if (data.user_transcription_event) {
             // Handle user transcript - ElevenLabs sends user_transcript field
             const userTranscript = data.user_transcription_event.user_transcript;
             if (userTranscript) {
-              console.log("User said:", userTranscript);
+              // User transcript received
               setTranscript(prev => [...prev, {
                 role: "user",
                 message: userTranscript,
@@ -302,7 +302,7 @@ export default function Playground() {
             // Handle agent response - ElevenLabs sends agent_response field
             const agentResponse = data.agent_response_event.agent_response;
             if (agentResponse) {
-              console.log("Agent response:", agentResponse);
+              // Agent response received
               setTranscript(prev => [...prev, {
                 role: "assistant",
                 message: agentResponse,
@@ -311,7 +311,7 @@ export default function Playground() {
             }
           } else if (data.message) {
             // Simple text message from agent
-            console.log("Agent message:", data.message);
+            // Agent message received
             setTranscript(prev => [...prev, {
               role: "assistant",
               message: data.message,
@@ -324,7 +324,7 @@ export default function Playground() {
               event_id: data.ping_event.event_id
             };
             ws.send(JSON.stringify(pongMessage));
-            console.log("Sent pong response");
+            // Sent pong response
           } else if (data.error || data.error_event) {
             const errorInfo = data.error || data.error_event;
             console.error('ElevenLabs error:', errorInfo);
@@ -335,11 +335,11 @@ export default function Playground() {
             });
             endCall();
           } else if (data.interruption_event) {
-            console.log('User interrupted agent');
+            // User interrupted agent
           } else if (data.agent_response_correction_event) {
-            console.log('Agent response correction:', data.agent_response_correction_event);
+            // Agent response correction
           } else {
-            console.log('Unhandled message type:', data.type || 'unknown', data);
+            // Unhandled message type
           }
         } catch (error) {
           console.error("Error handling WebSocket message:", error, "Raw data:", event.data);
@@ -357,7 +357,7 @@ export default function Playground() {
       };
 
       ws.onclose = (event) => {
-        console.log('WebSocket closed:', { code: event.code, reason: event.reason, wasClean: event.wasClean });
+        // WebSocket closed
         
         // Only show error if not a normal closure (1000 or 1001 are normal closures)
         if (!event.wasClean && event.code !== 1000 && event.code !== 1001) {
@@ -392,7 +392,7 @@ export default function Playground() {
   };
 
   const endCall = () => {
-    console.log('Ending call immediately...');
+    // Ending call immediately
     
     // Save duration before resetting
     const finalDuration = callDuration;
@@ -474,7 +474,7 @@ export default function Playground() {
       description: `Duration: ${formatDuration(finalDuration)}`,
     });
     
-    console.log('Call ended successfully');
+    // Call ended successfully
   };
 
   const toggleMute = () => {
@@ -510,7 +510,7 @@ export default function Playground() {
   };
 
   const startAudioStreaming = (stream: MediaStream, ws: WebSocket) => {
-    console.log("Starting audio streaming to WebSocket");
+    // Starting audio streaming to WebSocket
     
     // Create audio context at 16kHz as required by ElevenLabs
     const audioContext = new AudioContext({ sampleRate: 16000 });
@@ -559,7 +559,7 @@ export default function Playground() {
           
           // Log every 10th chunk to avoid spam
           if (chunkCount % 10 === 0) {
-            console.log(`Sent ${chunkCount} audio chunks (250ms intervals)`);
+            // Sent audio chunks (250ms intervals)
           }
         }
       }
@@ -572,7 +572,7 @@ export default function Playground() {
     (ws as any).audioProcessor = processor;
     (ws as any).audioContext = audioContext;
     
-    console.log("Audio streaming setup complete with 250ms chunking");
+    // Audio streaming setup complete with 250ms chunking
   };
 
   // Queue audio chunks and play them sequentially

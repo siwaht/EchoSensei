@@ -115,23 +115,7 @@ function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
 }
 
 // Agent Performance Table Component
-function AgentPerformanceTable({ selectedAgentId }: { selectedAgentId: string }) {
-  const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
-  
-  const { data: callLogs } = useQuery({
-    queryKey: ["/api/call-logs", selectedAgentId],
-    queryFn: async () => {
-      const response = await fetch(`/api/call-logs${queryParams}`, {
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Failed to fetch call logs");
-      return response.json();
-    },
-  });
-
-  const { data: agents } = useQuery({
-    queryKey: ["/api/agents"],
-  });
+function AgentPerformanceTable({ selectedAgentId, callLogs, agents }: { selectedAgentId: string; callLogs: any; agents: any }) {
 
   // Calculate agent statistics
   const calculateAgentStats = () => {
@@ -1133,7 +1117,7 @@ export default function Dashboard() {
                   See all {Array.isArray(agents) ? agents.length : 0} agents
                 </button>
               </div>
-              <AgentPerformanceTable selectedAgentId={selectedAgentId} />
+              <AgentPerformanceTable selectedAgentId={selectedAgentId} callLogs={callLogs} agents={agents} />
             </div>
             
             <div>
