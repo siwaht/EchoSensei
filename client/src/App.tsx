@@ -40,7 +40,7 @@ function Router() {
     <AppShell>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/agents" component={Agents} />
+        <Route path="/agents" component={Agents} /> {/* Voice agents */}
         <Route path="/agent-settings" component={AgentSettings} />
         <Route path="/agent-testing" component={AgentTesting} />
         <Route path="/voices" component={Voices} />
