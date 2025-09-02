@@ -1320,6 +1320,206 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // ==========================================
+  // Multi-tier Agent Management Routes
+  // ==========================================
+  
+  // Get agent invitations for the current organization
+  app.get('/api/agent/invitations', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only platform owners and agents can view invitations
+      if (org.organizationType !== 'platform_owner' && org.organizationType !== 'agent') {
+        return res.status(403).json({ message: "Only platform owners and agents can view invitations" });
+      }
+      
+      const invitations = await storage.getAgentInvitations(user.organizationId);
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error fetching agent invitations:", error);
+      res.status(500).json({ message: "Failed to fetch agent invitations" });
+    }
+  });
+
+  // Create a new agent invitation
+  app.post('/api/agent/invitations', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only platform owners and agents can create invitations
+      if (org.organizationType !== 'platform_owner' && org.organizationType !== 'agent') {
+        return res.status(403).json({ message: "Only platform owners and agents can create invitations" });
+      }
+      
+      const { email, name, company, commissionRate, initialCredits, customMessage } = req.body;
+      
+      const invitation = await storage.createAgentInvitation({
+        inviterOrganizationId: user.organizationId,
+        inviteeEmail: email,
+        inviteeName: name,
+        inviteeCompany: company,
+        commissionRate: commissionRate || '30',
+        initialCredits: initialCredits || '0',
+        customMessage,
+        status: 'pending',
+      });
+      
+      // TODO: Send invitation email with the invitation code
+      
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error creating agent invitation:", error);
+      res.status(500).json({ message: "Failed to create agent invitation" });
+    }
+  });
+
+  // Accept an agent invitation
+  app.post('/api/agent/invitations/accept', isAuthenticated, async (req: any, res) => {
+    try {
+      const { invitationCode } = req.body;
+      
+      if (!invitationCode) {
+        return res.status(400).json({ message: "Invitation code is required" });
+      }
+      
+      const agentOrg = await storage.acceptAgentInvitation(invitationCode, req.user.id);
+      res.json({ 
+        message: "Invitation accepted successfully", 
+        organization: agentOrg 
+      });
+    } catch (error: any) {
+      console.error("Error accepting agent invitation:", error);
+      res.status(400).json({ message: error.message || "Failed to accept invitation" });
+    }
+  });
+
+  // Get child organizations (agents or customers)
+  app.get('/api/agent/child-organizations', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only platform owners and agents can view child organizations
+      if (org.organizationType === 'end_customer') {
+        return res.status(403).json({ message: "End customers cannot have child organizations" });
+      }
+      
+      const childOrgs = await storage.getChildOrganizations(user.organizationId);
+      res.json(childOrgs);
+    } catch (error) {
+      console.error("Error fetching child organizations:", error);
+      res.status(500).json({ message: "Failed to fetch child organizations" });
+    }
+  });
+
+  // Get agent commissions
+  app.get('/api/agent/commissions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agents can view their commissions
+      if (org.organizationType !== 'agent') {
+        return res.status(403).json({ message: "Only agents can view commissions" });
+      }
+      
+      const commissions = await storage.getAgentCommissions(user.organizationId);
+      res.json(commissions);
+    } catch (error) {
+      console.error("Error fetching agent commissions:", error);
+      res.status(500).json({ message: "Failed to fetch agent commissions" });
+    }
+  });
+
+  // Get credit transactions
+  app.get('/api/agent/credit-transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const transactions = await storage.getCreditTransactions(user.organizationId);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching credit transactions:", error);
+      res.status(500).json({ message: "Failed to fetch credit transactions" });
+    }
+  });
+
+  // Purchase credits (for agents)
+  app.post('/api/agent/purchase-credits', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agents can purchase credits
+      if (org.organizationType !== 'agent') {
+        return res.status(403).json({ message: "Only agents can purchase credits" });
+      }
+      
+      const { amount, paymentMethodId } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid credit amount" });
+      }
+      
+      // TODO: Process payment with Stripe/PayPal
+      // For now, just create the transaction
+      
+      const transaction = await storage.createCreditTransaction({
+        organizationId: user.organizationId,
+        type: 'purchase',
+        amount: String(amount),
+        creditAmount: Math.round(amount * 1000), // Convert dollars to credits
+        description: `Purchased ${amount} credits`,
+      });
+      
+      res.json(transaction);
+    } catch (error) {
+      console.error("Error purchasing credits:", error);
+      res.status(500).json({ message: "Failed to purchase credits" });
+    }
+  });
+
   // Quick Action Buttons routes - Users (for their own buttons)
   app.get('/api/quick-action-buttons', isAuthenticated, async (req: any, res) => {
     try {

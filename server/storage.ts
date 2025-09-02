@@ -14,6 +14,9 @@ import {
   adminTasks,
   ragConfigurations,
   approvalWebhooks,
+  agentCommissions,
+  creditTransactions,
+  agentInvitations,
   type User,
   type UpsertUser,
   type Organization,
@@ -43,6 +46,12 @@ import {
   type InsertApprovalWebhook,
   type RagConfiguration,
   type InsertRagConfiguration,
+  type AgentCommission,
+  type InsertAgentCommission,
+  type CreditTransaction,
+  type InsertCreditTransaction,
+  type AgentInvitation,
+  type InsertAgentInvitation,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sum, avg, max, or } from "drizzle-orm";
@@ -172,6 +181,21 @@ export interface IStorage {
   createApprovalWebhook(webhook: InsertApprovalWebhook): Promise<ApprovalWebhook>;
   updateApprovalWebhook(id: string, updates: Partial<InsertApprovalWebhook>): Promise<ApprovalWebhook>;
   deleteApprovalWebhook(id: string): Promise<void>;
+
+  // Multi-tier operations
+  getChildOrganizations(parentId: string): Promise<Organization[]>;
+  getAgentCommissions(agentOrganizationId: string): Promise<AgentCommission[]>;
+  createAgentCommission(commission: InsertAgentCommission): Promise<AgentCommission>;
+  updateAgentCommission(id: string, updates: Partial<AgentCommission>): Promise<AgentCommission>;
+  
+  getCreditTransactions(organizationId: string): Promise<CreditTransaction[]>;
+  createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction>;
+  
+  getAgentInvitations(organizationId: string): Promise<AgentInvitation[]>;
+  getAgentInvitationByCode(code: string): Promise<AgentInvitation | undefined>;
+  createAgentInvitation(invitation: InsertAgentInvitation): Promise<AgentInvitation>;
+  updateAgentInvitation(id: string, updates: Partial<AgentInvitation>): Promise<AgentInvitation>;
+  acceptAgentInvitation(code: string, userId: string): Promise<Organization>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -935,6 +959,188 @@ export class DatabaseStorage implements IStorage {
     await db()
       .delete(approvalWebhooks)
       .where(eq(approvalWebhooks.id, id));
+  }
+
+  // Multi-tier operations
+  async getChildOrganizations(parentId: string): Promise<Organization[]> {
+    return await db()
+      .select()
+      .from(organizations)
+      .where(eq(organizations.parentOrganizationId, parentId))
+      .orderBy(desc(organizations.createdAt));
+  }
+
+  async getAgentCommissions(agentOrganizationId: string): Promise<AgentCommission[]> {
+    return await db()
+      .select()
+      .from(agentCommissions)
+      .where(eq(agentCommissions.agentOrganizationId, agentOrganizationId))
+      .orderBy(desc(agentCommissions.createdAt));
+  }
+
+  async createAgentCommission(commission: InsertAgentCommission): Promise<AgentCommission> {
+    const [result] = await db()
+      .insert(agentCommissions)
+      .values(commission)
+      .returning();
+    return result;
+  }
+
+  async updateAgentCommission(id: string, updates: Partial<AgentCommission>): Promise<AgentCommission> {
+    const [result] = await db()
+      .update(agentCommissions)
+      .set(updates)
+      .where(eq(agentCommissions.id, id))
+      .returning();
+    if (!result) {
+      throw new Error("Agent commission not found");
+    }
+    return result;
+  }
+
+  async getCreditTransactions(organizationId: string): Promise<CreditTransaction[]> {
+    return await db()
+      .select()
+      .from(creditTransactions)
+      .where(eq(creditTransactions.organizationId, organizationId))
+      .orderBy(desc(creditTransactions.createdAt));
+  }
+
+  async createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction> {
+    // Get current balance
+    const [org] = await db()
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, transaction.organizationId));
+    
+    const currentBalance = Number(org?.creditBalance || 0);
+    const transactionAmount = Number(transaction.amount);
+    const newBalance = currentBalance + transactionAmount;
+
+    // Create transaction with balance tracking
+    const [result] = await db()
+      .insert(creditTransactions)
+      .values({
+        ...transaction,
+        balanceBefore: String(currentBalance),
+        balanceAfter: String(newBalance),
+      })
+      .returning();
+
+    // Update organization credit balance
+    await db()
+      .update(organizations)
+      .set({ creditBalance: String(newBalance), updatedAt: new Date() })
+      .where(eq(organizations.id, transaction.organizationId));
+
+    return result;
+  }
+
+  async getAgentInvitations(organizationId: string): Promise<AgentInvitation[]> {
+    return await db()
+      .select()
+      .from(agentInvitations)
+      .where(eq(agentInvitations.inviterOrganizationId, organizationId))
+      .orderBy(desc(agentInvitations.createdAt));
+  }
+
+  async getAgentInvitationByCode(code: string): Promise<AgentInvitation | undefined> {
+    const [invitation] = await db()
+      .select()
+      .from(agentInvitations)
+      .where(eq(agentInvitations.invitationCode, code));
+    return invitation;
+  }
+
+  async createAgentInvitation(invitation: InsertAgentInvitation): Promise<AgentInvitation> {
+    // Generate unique invitation code
+    const invitationCode = `INV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
+    
+    const [result] = await db()
+      .insert(agentInvitations)
+      .values({
+        ...invitation,
+        invitationCode,
+        expiresAt: invitation.expiresAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days default
+      })
+      .returning();
+    return result;
+  }
+
+  async updateAgentInvitation(id: string, updates: Partial<AgentInvitation>): Promise<AgentInvitation> {
+    const [result] = await db()
+      .update(agentInvitations)
+      .set(updates)
+      .where(eq(agentInvitations.id, id))
+      .returning();
+    if (!result) {
+      throw new Error("Agent invitation not found");
+    }
+    return result;
+  }
+
+  async acceptAgentInvitation(code: string, userId: string): Promise<Organization> {
+    // Get invitation
+    const invitation = await this.getAgentInvitationByCode(code);
+    if (!invitation) {
+      throw new Error("Invalid invitation code");
+    }
+    if (invitation.status !== "pending") {
+      throw new Error("Invitation has already been used");
+    }
+    if (invitation.expiresAt && invitation.expiresAt < new Date()) {
+      throw new Error("Invitation has expired");
+    }
+
+    // Get user
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Create agent organization
+    const [agentOrg] = await db()
+      .insert(organizations)
+      .values({
+        name: invitation.inviteeCompany || `${user.firstName || user.email}'s Agency`,
+        parentOrganizationId: invitation.inviterOrganizationId,
+        organizationType: "agent",
+        commissionRate: invitation.commissionRate,
+        creditBalance: invitation.initialCredits,
+        billingPackage: "professional", // Default package for agents
+        maxAgents: 10,
+        maxUsers: 50,
+      })
+      .returning();
+
+    // Update user to belong to new organization
+    await db()
+      .update(users)
+      .set({ organizationId: agentOrg.id, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+
+    // Update invitation status
+    await db()
+      .update(agentInvitations)
+      .set({
+        status: "accepted",
+        acceptedAt: new Date(),
+        createdOrganizationId: agentOrg.id,
+      })
+      .where(eq(agentInvitations.id, invitation.id));
+
+    // If initial credits provided, create transaction
+    if (invitation.initialCredits && Number(invitation.initialCredits) > 0) {
+      await this.createCreditTransaction({
+        organizationId: agentOrg.id,
+        type: "transfer",
+        amount: invitation.initialCredits,
+        creditAmount: Math.round(Number(invitation.initialCredits) * 1000), // Convert to credits
+        description: "Initial bonus credits from invitation",
+      });
+    }
+
+    return agentOrg;
   }
 }
 
