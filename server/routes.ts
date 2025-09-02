@@ -1130,7 +1130,7 @@ export function registerRoutes(app: Express): Server {
       
       // Filter tasks created by or related to the current user
       const userTasks = allTasks.filter(task => 
-        task.createdBy === req.user.id || 
+        task.requestedBy === req.user.id || 
         task.metadata?.userId === req.user.id ||
         task.metadata?.requestedBy === req.user.id
       );
@@ -1302,13 +1302,13 @@ export function registerRoutes(app: Express): Server {
           res.json({ message: "Test webhook sent successfully", status: response.status });
         } else {
           await storage.updateApprovalWebhook(req.params.webhookId, {
-            failureCount: webhook.failureCount + 1
+            failureCount: (webhook.failureCount || 0) + 1
           });
           res.status(500).json({ message: "Webhook test failed", status: response.status });
         }
       } catch (fetchError) {
         await storage.updateApprovalWebhook(req.params.webhookId, {
-          failureCount: webhook.failureCount + 1
+          failureCount: (webhook.failureCount || 0) + 1
         });
         console.error("Error sending test webhook:", fetchError);
         res.status(500).json({ message: "Failed to send test webhook" });
@@ -2061,8 +2061,7 @@ Generate the complete prompt now:`;
                 },
                 transferToAgent: {
                   enabled: true,
-                  description: "Transfer to another AI agent",
-                  targetAgentId: ""
+                  description: "Transfer to another AI agent"
                 },
                 transferToNumber: {
                   enabled: true,
@@ -2197,8 +2196,7 @@ Generate the complete prompt now:`;
                 },
                 transferToAgent: {
                   enabled: true,
-                  description: "Transfer to another AI agent",
-                  targetAgentId: ""
+                  description: "Transfer to another AI agent"
                 },
                 transferToNumber: {
                   enabled: true,
@@ -5477,6 +5475,7 @@ Generate the complete prompt now:`;
           // Store call log
           await storage.createCallLog({
             organizationId: agent.organizationId,
+            conversationId: conversation_id,
             agentId: agent.id,
             elevenLabsCallId: conversation_id,
             duration: duration_seconds || 0,
@@ -5535,6 +5534,7 @@ Generate the complete prompt now:`;
           // Store call log
           await storage.createCallLog({
             organizationId: agent.organizationId,
+            conversationId: conversation_id,
             agentId: agent.id,
             elevenLabsCallId: conversation_id,
             duration: duration_seconds || 0,
