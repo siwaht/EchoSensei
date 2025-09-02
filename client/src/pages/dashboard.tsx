@@ -840,7 +840,7 @@ export default function Dashboard() {
             <AlertCircle className="h-4 w-4 text-purple-400" />
             <span className="text-sm text-muted-foreground">
               {selectedAgentId !== "all" 
-                ? `Showing data for: ${agents?.find((a: any) => a.id === selectedAgentId)?.name || 'Agent'}`
+                ? `Showing data for: ${Array.isArray(agents) ? agents.find((a: any) => a.id === selectedAgentId)?.name : 'Agent'} `
                 : lastSyncTime || (stats as any)?.lastSync 
                   ? `Last synced: ${(lastSyncTime || new Date((stats as any)?.lastSync)).toLocaleString()}` 
                   : 'Click sync to update data from ElevenLabs'}
@@ -1048,22 +1048,6 @@ export default function Dashboard() {
             </div>
             <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.activeAgents || 0}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Connected voice agents</p>
-          </div>
-        </Card>
-
-        {/* Total spend */}
-        <Card className="p-4 bg-gradient-to-br from-pink-500/10 to-pink-600/10 dark:from-pink-500/20 dark:to-pink-600/20 border-pink-500/20 dark:border-pink-400/30 backdrop-blur hover:from-pink-500/15 hover:to-pink-600/15 transition-all card-hover group">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-pink-500/20 dark:bg-pink-400/20 group-hover:scale-110 transition-transform">
-                <BarChart3 className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-              </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Total Spend</p>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">${((stats as any)?.estimatedCost || 0).toFixed(2)}</p>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Total cost of all calls</p>
           </div>
         </Card>
 
