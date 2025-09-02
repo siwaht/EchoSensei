@@ -26,7 +26,7 @@ interface AdminTask {
   description: string;
   status: "pending" | "in_progress" | "completed" | "rejected";
   priority: "low" | "medium" | "high" | "urgent";
-  relatedEntityType: "integration" | "webhook" | "agent" | "organization" | "rag_configuration";
+  relatedEntityType: "integration" | "webhook" | "agent" | "organization" | "mcp" | "platform_webhook";
   relatedEntityId: string;
   createdBy: string;
   approvedBy?: string;
@@ -182,8 +182,10 @@ export default function ApprovalTasks() {
         return <MessageSquare className="w-4 h-4" />;
       case "organization":
         return <Building2 className="w-4 h-4" />;
-      case "rag_configuration":
-        return <FileText className="w-4 h-4" />;
+      case "mcp":
+        return <Settings className="w-4 h-4" />;
+      case "platform_webhook":
+        return <Webhook className="w-4 h-4" />;
       default:
         return null;
     }
@@ -211,7 +213,7 @@ export default function ApprovalTasks() {
           <div className="text-center">
             <h3 className="text-lg font-semibold mb-2">No Approval Tasks</h3>
             <p className="text-sm text-muted-foreground max-w-md">
-              When users configure RAG systems, tools, webhooks, or MCP services that require approval, they will appear here for your review.
+              When users configure MCP services, webhooks, platform integrations, or other tools that require approval, they will appear here for your review.
             </p>
           </div>
         </div>
@@ -225,7 +227,7 @@ export default function ApprovalTasks() {
         <div>
           <h2 className="text-xl font-semibold">Approval Tasks</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Review and approve RAG configurations, tools, webhooks, and MCP requests
+            Review and approve MCP services, webhooks, platform integrations, and other tools configurations
           </p>
         </div>
         <Badge variant="outline" className="text-lg px-4 py-2">
@@ -254,7 +256,8 @@ export default function ApprovalTasks() {
           {pendingTasks.length === 0 ? (
             <Card className="p-8">
               <div className="text-center text-muted-foreground">
-                No pending approval tasks
+                <p>No pending approval tasks</p>
+                <p className="text-sm mt-2">When users configure MCP services, webhooks, or platform integrations that require approval, they will appear here.</p>
               </div>
             </Card>
           ) : (
