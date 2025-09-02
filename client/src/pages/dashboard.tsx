@@ -1,4 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { memo } from "react";
 import { StatsCard } from "@/components/ui/stats-card";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +15,7 @@ import { useLocation } from "wouter";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Success Rate Chart Component
-function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
+const SuccessRateChart = memo(function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
   const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
   
   const { data: callLogs } = useQuery({
@@ -112,10 +113,10 @@ function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
       )}
     </div>
   );
-}
+});
 
 // Agent Performance Table Component
-function AgentPerformanceTable({ selectedAgentId, callLogs, agents }: { selectedAgentId: string; callLogs: any; agents: any }) {
+const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgentId, callLogs, agents }: { selectedAgentId: string; callLogs: any; agents: any }) {
 
   // Calculate agent statistics
   const calculateAgentStats = () => {
@@ -209,7 +210,7 @@ function AgentPerformanceTable({ selectedAgentId, callLogs, agents }: { selected
       )}
     </div>
   );
-}
+});
 
 // Language Stats Component
 function LanguageStats() {
@@ -218,19 +219,11 @@ function LanguageStats() {
   ];
 
   return (
-    <div className="space-y-3">
-      {languages.map((lang, index) => (
-        <div key={index}>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm">{lang.name}</span>
-            <span className="text-sm font-semibold">{lang.percentage}%</span>
-          </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-            <div 
-              className="bg-black dark:bg-white h-2 rounded-full" 
-              style={{ width: `${lang.percentage}%` }}
-            />
-          </div>
+    <div className="space-y-2">
+      {languages.map((lang) => (
+        <div key={lang.name} className="flex items-center justify-between text-sm">
+          <span className="text-gray-600 dark:text-gray-400">{lang.name}</span>
+          <span className="font-medium">{lang.percentage}%</span>
         </div>
       ))}
     </div>
@@ -735,7 +728,7 @@ export default function Dashboard() {
     },
   });
   
-  const { data: callLogs, refetch: refetchCallLogs } = useQuery({
+  const { data: callLogsResponse, refetch: refetchCallLogs } = useQuery({
     queryKey: ["/api/call-logs", selectedAgentId],
     queryFn: async () => {
       const response = await fetch(`/api/call-logs${queryParams}`, {
@@ -744,7 +737,12 @@ export default function Dashboard() {
       if (!response.ok) throw new Error("Failed to fetch call logs");
       return response.json();
     },
+    staleTime: 60000, // Consider data fresh for 1 minute
+    gcTime: 5 * 60 * 1000 // Keep in cache for 5 minutes
   });
+  
+  // Extract data from paginated response
+  const callLogs = callLogsResponse?.data || callLogsResponse || [];
 
   // Fetch pending approvals for current user
   const { data: pendingApprovals = [] } = useQuery<any[]>({

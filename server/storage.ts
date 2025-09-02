@@ -86,7 +86,7 @@ export interface IStorage {
   deleteAgent(id: string, organizationId: string): Promise<void>;
 
   // Call log operations
-  getCallLogs(organizationId: string, limit?: number, offset?: number, agentId?: string): Promise<CallLog[]>;
+  getCallLogs(organizationId: string, limit?: number, offset?: number, agentId?: string): Promise<{ data: CallLog[]; total: number }>;
   getCallLog(id: string, organizationId: string): Promise<CallLog | undefined>;
   getCallLogByElevenLabsId(elevenLabsCallId: string, organizationId: string): Promise<CallLog | undefined>;
   createCallLog(callLog: InsertCallLog & { createdAt?: Date }): Promise<CallLog>;
@@ -363,7 +363,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Call log operations
-  async getCallLogs(organizationId: string, limit = 50, offset = 0, agentId?: string): Promise<CallLog[]> {
+  async getCallLogs(organizationId: string, limit = 20, offset = 0, agentId?: string): Promise<{ data: CallLog[]; total: number }> {
     let query = db()
       .select()
       .from(callLogs)
@@ -382,7 +382,24 @@ export class DatabaseStorage implements IStorage {
         .offset(offset);
     }
 
-    return query;
+    // Get total count for pagination
+    const countQuery = agentId
+      ? db()
+          .select({ count: count() })
+          .from(callLogs)
+          .where(and(eq(callLogs.organizationId, organizationId), eq(callLogs.agentId, agentId)))
+      : db()
+          .select({ count: count() })
+          .from(callLogs)
+          .where(eq(callLogs.organizationId, organizationId));
+
+    const [countResult] = await countQuery;
+    const data = await query;
+
+    return {
+      data,
+      total: countResult?.count || 0
+    };
   }
 
   async getCallLog(id: string, organizationId: string): Promise<CallLog | undefined> {

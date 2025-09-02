@@ -4599,15 +4599,32 @@ Generate the complete prompt now:`;
         return res.status(404).json({ message: "User not found" });
       }
 
-      const { limit = 50, offset = 0, agentId } = req.query;
-      const callLogs = await storage.getCallLogs(
+      const { limit = 20, offset = 0, agentId, page = 1 } = req.query;
+      const pageNumber = parseInt(page as string);
+      const pageSize = parseInt(limit as string);
+      const skip = pageNumber > 0 ? (pageNumber - 1) * pageSize : parseInt(offset as string);
+      
+      const result = await storage.getCallLogs(
         user.organizationId,
-        parseInt(limit as string),
-        parseInt(offset as string),
+        pageSize,
+        skip,
         agentId as string
       );
 
-      res.json(callLogs);
+      // Set cache headers for better performance
+      res.set({
+        'Cache-Control': 'private, max-age=60, stale-while-revalidate=120',
+        'ETag': `W/"${result.total}-${skip}"`
+      });
+
+      // Return paginated response
+      res.json({
+        data: result.data,
+        total: result.total,
+        page: pageNumber,
+        pageSize: pageSize,
+        totalPages: Math.ceil(result.total / pageSize)
+      });
     } catch (error) {
       console.error("Error fetching call logs:", error);
       res.status(500).json({ message: "Failed to fetch call logs" });

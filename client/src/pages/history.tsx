@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, memo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,9 +21,14 @@ export default function History() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: callLogs, isLoading } = useQuery<CallLog[]>({
+  const { data: callLogsResponse, isLoading } = useQuery({
     queryKey: ["/api/call-logs"],
+    staleTime: 30000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
+  
+  // Extract data from paginated response
+  const callLogs = callLogsResponse?.data || callLogsResponse || [];
 
   const { data: agents } = useQuery<Agent[]>({
     queryKey: ["/api/agents"],
