@@ -1941,41 +1941,6 @@ Generate the complete prompt now:`;
         isActive: true,
         // Save default tools configuration
         tools: {
-          systemTools: {
-            endCall: {
-              enabled: true,
-              description: "Allows agent to end the call"
-            },
-            detectLanguage: {
-              enabled: true,
-              description: "Automatically detect and switch languages",
-              supportedLanguages: []
-            },
-            skipTurn: {
-              enabled: true,
-              description: "Skip agent turn when user needs a moment"
-            },
-            transferToAgent: {
-              enabled: true,
-              description: "Transfer to another AI agent",
-              targetAgentId: ""
-            },
-            transferToNumber: {
-              enabled: true,
-              description: "Transfer to human operator",
-              phoneNumbers: []
-            },
-            playKeypadTone: {
-              enabled: true,
-              description: "Play keypad touch tones"
-            },
-            voicemailDetection: {
-              enabled: true,
-              description: "Detect voicemail systems",
-              leaveMessage: false,
-              messageContent: ""
-            }
-          },
           webhooks: [],
           integrations: [],
           customTools: [
@@ -2090,42 +2055,8 @@ Generate the complete prompt now:`;
             }
             
             
-            // Always set up default tools with all system tools enabled
+            // Set up default tools configuration
             agentData.tools = {
-              systemTools: {
-                endCall: {
-                  enabled: true,
-                  description: "Allows agent to end the call"
-                },
-                detectLanguage: {
-                  enabled: true,
-                  description: "Automatically detect and switch languages",
-                  supportedLanguages: []
-                },
-                skipTurn: {
-                  enabled: true,
-                  description: "Skip agent turn when user needs a moment"
-                },
-                transferToAgent: {
-                  enabled: true,
-                  description: "Transfer to another AI agent"
-                },
-                transferToNumber: {
-                  enabled: true,
-                  description: "Transfer to human operator",
-                  phoneNumbers: []
-                },
-                playKeypadTone: {
-                  enabled: true,
-                  description: "Play keypad touch tones"
-                },
-                voicemailDetection: {
-                  enabled: true,
-                  description: "Detect voicemail systems",
-                  leaveMessage: false,
-                  messageContent: ""
-                }
-              },
               webhooks: [],
               integrations: [],
               customTools: [
@@ -2225,42 +2156,8 @@ Generate the complete prompt now:`;
             const ttsConfig = conversationConfig.tts || {};
             const llmConfig = conversationConfig.llm || {};
             
-            // Initialize with all system tools enabled by default
+            // Initialize tools configuration
             const tools: any = {
-              systemTools: {
-                endCall: {
-                  enabled: true,
-                  description: "Allows agent to end the call"
-                },
-                detectLanguage: {
-                  enabled: true,
-                  description: "Automatically detect and switch languages",
-                  supportedLanguages: []
-                },
-                skipTurn: {
-                  enabled: true,
-                  description: "Skip agent turn when user needs a moment"
-                },
-                transferToAgent: {
-                  enabled: true,
-                  description: "Transfer to another AI agent"
-                },
-                transferToNumber: {
-                  enabled: true,
-                  description: "Transfer to human operator",
-                  phoneNumbers: []
-                },
-                playKeypadTone: {
-                  enabled: true,
-                  description: "Play keypad touch tones"
-                },
-                voicemailDetection: {
-                  enabled: true,
-                  description: "Detect voicemail systems",
-                  leaveMessage: false,
-                  messageContent: ""
-                }
-              },
               webhooks: [],
               integrations: [],
               customTools: [
@@ -2291,56 +2188,8 @@ Generate the complete prompt now:`;
             if (agentConfig.tools && Array.isArray(agentConfig.tools)) {
               for (const tool of agentConfig.tools) {
                 if (tool.type === 'system') {
-                  // Map ElevenLabs system tools to our format
-                  switch (tool.name) {
-                    case 'end_call':
-                      tools.systemTools.endCall = {
-                        enabled: true,
-                        description: tool.description || "Allows agent to end the call"
-                      };
-                      break;
-                    case 'language_detection':
-                      tools.systemTools.detectLanguage = {
-                        enabled: true,
-                        description: tool.description || "Automatically detect and switch languages",
-                        supportedLanguages: tool.config?.supported_languages || []
-                      };
-                      break;
-                    case 'skip_turn':
-                      tools.systemTools.skipTurn = {
-                        enabled: true,
-                        description: tool.description || "Skip agent turn when user needs a moment"
-                      };
-                      break;
-                    case 'transfer_to_agent':
-                      tools.systemTools.transferToAgent = {
-                        enabled: true,
-                        description: tool.description || "Transfer to another AI agent",
-                        targetAgentId: tool.config?.target_agent_id || ""
-                      };
-                      break;
-                    case 'transfer_to_number':
-                      tools.systemTools.transferToNumber = {
-                        enabled: true,
-                        description: tool.description || "Transfer to human operator",
-                        phoneNumbers: tool.config?.phone_numbers || []
-                      };
-                      break;
-                    case 'play_dtmf':
-                      tools.systemTools.playKeypadTone = {
-                        enabled: true,
-                        description: tool.description || "Play keypad touch tones"
-                      };
-                      break;
-                    case 'voicemail_detection':
-                      tools.systemTools.voicemailDetection = {
-                        enabled: true,
-                        description: tool.description || "Detect voicemail systems",
-                        leaveMessage: tool.config?.leave_message || false,
-                        messageContent: tool.config?.message_content || ""
-                      };
-                      break;
-                  }
+                  // Skip system tools - not syncing with ElevenLabs anymore
+                  continue;
                 } else if (tool.type === 'custom') {
                   tools.customTools.push({
                     id: tool.tool_id,
@@ -4215,84 +4064,7 @@ Generate the complete prompt now:`;
               const tools = updates.tools || agent.tools;
               const toolConfigs: any[] = [];
               
-              // Handle system tools
-              if (tools.systemTools) {
-                // End call tool
-                if (tools.systemTools.endCall?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'end_call',
-                    description: tools.systemTools.endCall.description || 'Allows agent to end the call'
-                  });
-                }
-                
-                // Detect language tool
-                if (tools.systemTools.detectLanguage?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'language_detection',
-                    description: tools.systemTools.detectLanguage.description || 'Detect and switch languages',
-                    config: {
-                      supported_languages: tools.systemTools.detectLanguage.supportedLanguages || []
-                    }
-                  });
-                }
-                
-                // Skip turn tool
-                if (tools.systemTools.skipTurn?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'skip_turn',
-                    description: tools.systemTools.skipTurn.description || 'Skip agent turn when user needs a moment'
-                  });
-                }
-                
-                // Transfer to agent tool
-                if (tools.systemTools.transferToAgent?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'transfer_to_agent',
-                    description: tools.systemTools.transferToAgent.description || 'Transfer to another AI agent',
-                    config: {
-                      target_agent_id: tools.systemTools.transferToAgent.targetAgentId
-                    }
-                  });
-                }
-                
-                // Transfer to number tool
-                if (tools.systemTools.transferToNumber?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'transfer_to_number',
-                    description: tools.systemTools.transferToNumber.description || 'Transfer to human operator',
-                    config: {
-                      phone_numbers: tools.systemTools.transferToNumber.phoneNumbers || []
-                    }
-                  });
-                }
-                
-                // Play keypad tone tool (DTMF)
-                if (tools.systemTools.playKeypadTone?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'play_dtmf',
-                    description: tools.systemTools.playKeypadTone.description || 'Play keypad touch tones'
-                  });
-                }
-                
-                // Voicemail detection tool
-                if (tools.systemTools.voicemailDetection?.enabled) {
-                  toolConfigs.push({
-                    type: 'system',
-                    name: 'voicemail_detection',
-                    description: tools.systemTools.voicemailDetection.description || 'Detect voicemail systems',
-                    config: {
-                      leave_message: tools.systemTools.voicemailDetection.leaveMessage || false,
-                      message_content: tools.systemTools.voicemailDetection.messageContent
-                    }
-                  });
-                }
-              }
+              // System tools removed - not syncing with ElevenLabs anymore
               
               // Handle custom tools (webhooks, integrations)
               if (tools.customTools && tools.customTools.length > 0) {

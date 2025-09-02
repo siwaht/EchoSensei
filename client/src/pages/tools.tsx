@@ -24,7 +24,6 @@ import {
   Info, RefreshCw, File, PlayCircle, Loader2
 } from "lucide-react";
 import type { Agent, CustomTool } from "@shared/schema";
-import { SystemToolConfigModal } from "@/components/tools/system-tool-config-modal";
 import { MCPServerDialog } from "@/components/mcp-server-dialog";
 import { WebhookToolDialog } from "@/components/webhook-tool-dialog";
 
@@ -101,11 +100,6 @@ export default function Tools() {
     integrations: false,
     custom: false,
   });
-  const [systemToolModal, setSystemToolModal] = useState<{
-    isOpen: boolean;
-    toolType: string;
-    toolName: string;
-  }>({ isOpen: false, toolType: "", toolName: "" });
   const [mcpServerDialog, setMcpServerDialog] = useState<{
     isOpen: boolean;
     server?: CustomTool;
@@ -127,15 +121,6 @@ export default function Tools() {
 
   // Tool configurations state
   const [toolsConfig, setToolsConfig] = useState({
-    systemTools: {
-      endCall: { enabled: true, description: 'Allows agent to end the call' },
-      detectLanguage: { enabled: true, description: 'Automatically detect and switch languages', supportedLanguages: [] },
-      skipTurn: { enabled: true, description: 'Skip agent turn when user needs a moment' },
-      transferToAgent: { enabled: false, description: 'Transfer to another AI agent', targetAgentId: '' },
-      transferToNumber: { enabled: false, description: 'Transfer to human operator', phoneNumbers: [] },
-      playKeypadTone: { enabled: false, description: 'Play keypad touch tones' },
-      voicemailDetection: { enabled: false, description: 'Detect voicemail systems', leaveMessage: false, messageContent: '' },
-    },
     conversationInitiationWebhook: {
       enabled: false,
       url: '',
@@ -156,21 +141,9 @@ export default function Tools() {
   useEffect(() => {
     if (selectedAgent) {
       const tools = selectedAgent.tools as any || {};
-            const mcpServers = tools.customTools?.filter((t: any) => t.type === 'mcp') || [];
-      
-      // Ensure each system tool has proper defaults
-      const systemTools = tools.systemTools || {};
+      const mcpServers = tools.customTools?.filter((t: any) => t.type === 'mcp') || [];
       
       setToolsConfig({
-        systemTools: {
-          endCall: systemTools.endCall || { enabled: true, description: 'Allows agent to end the call' },
-          detectLanguage: systemTools.detectLanguage || { enabled: true, description: 'Automatically detect and switch languages', supportedLanguages: [] },
-          skipTurn: systemTools.skipTurn || { enabled: true, description: 'Skip agent turn when user needs a moment' },
-          transferToAgent: systemTools.transferToAgent || { enabled: false, description: 'Transfer to another AI agent', targetAgentId: '' },
-          transferToNumber: systemTools.transferToNumber || { enabled: false, description: 'Transfer to human operator', phoneNumbers: [] },
-          playKeypadTone: systemTools.playKeypadTone || { enabled: false, description: 'Play keypad touch tones' },
-          voicemailDetection: systemTools.voicemailDetection || { enabled: false, description: 'Detect voicemail systems', leaveMessage: false, messageContent: '' },
-        },
         conversationInitiationWebhook: tools.conversationInitiationWebhook || {
           enabled: false,
           url: '',
@@ -236,7 +209,6 @@ export default function Tools() {
 
     updateAgentMutation.mutate({
       tools: {
-        systemTools: toolsConfig.systemTools,
         conversationInitiationWebhook: toolsConfig.conversationInitiationWebhook,
         postCallWebhook: toolsConfig.postCallWebhook,
         webhooks: toolsConfig.webhooks,
@@ -476,283 +448,6 @@ export default function Tools() {
 
           {/* System Tools Tab */}
           <TabsContent value="system" className="space-y-4">
-            <Card className="p-4 sm:p-6">
-              <div className="mb-4">
-                <h3 className="text-base sm:text-lg font-semibold">ElevenLabs System Tools</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-                  Configure built-in conversational AI tools that control agent behavior
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                {/* End Call Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-lg">
-                      <Phone className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">End call</p>
-                      <p className="text-sm text-muted-foreground">
-                        Gives agent the ability to end the call with the user
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "endCall", toolName: "End call" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.endCall?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            endCall: { ...(toolsConfig.systemTools?.endCall || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-end-call"
-                    />
-                  </div>
-                </div>
-
-                {/* Detect Language Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-500/10 rounded-lg">
-                      <Languages className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Detect language</p>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically detects and switches to the user's language
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "detectLanguage", toolName: "Detect language" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.detectLanguage?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            detectLanguage: { ...(toolsConfig.systemTools?.detectLanguage || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-detect-language"
-                    />
-                  </div>
-                </div>
-
-                {/* Skip Turn Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-500/10 rounded-lg">
-                      <SkipForward className="w-5 h-5 text-green-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Skip turn</p>
-                      <p className="text-sm text-muted-foreground">
-                        Agent will skip its turn if user explicitly indicates they need a moment
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "skipTurn", toolName: "Skip turn" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.skipTurn?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            skipTurn: { ...(toolsConfig.systemTools?.skipTurn || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-skip-turn"
-                    />
-                  </div>
-                </div>
-
-                {/* Transfer to Agent Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-purple-500/10 rounded-lg">
-                      <UserPlus className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Transfer to agent</p>
-                      <p className="text-sm text-muted-foreground">
-                        Gives agent the ability to transfer the call to another AI agent
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "transferToAgent", toolName: "Transfer to agent" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.transferToAgent?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            transferToAgent: { ...(toolsConfig.systemTools?.transferToAgent || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-transfer-agent"
-                    />
-                  </div>
-                </div>
-
-                {/* Transfer to Number Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-orange-500/10 rounded-lg">
-                      <Phone className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Transfer to number</p>
-                      <p className="text-sm text-muted-foreground">
-                        Gives agent the ability to transfer the call to a human
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "transferToNumber", toolName: "Transfer to number" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.transferToNumber?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            transferToNumber: { ...(toolsConfig.systemTools?.transferToNumber || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-transfer-number"
-                    />
-                  </div>
-                </div>
-
-                {/* Play Keypad Touch Tone Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-indigo-500/10 rounded-lg">
-                      <Hash className="w-5 h-5 text-indigo-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Play keypad touch tone</p>
-                      <p className="text-sm text-muted-foreground">
-                        Gives agent the ability to play keypad touch tones during a phone call
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "playKeypadTone", toolName: "Play keypad touch tone" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.playKeypadTone?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            playKeypadTone: { ...(toolsConfig.systemTools?.playKeypadTone || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-keypad-tone"
-                    />
-                  </div>
-                </div>
-
-                {/* Voicemail Detection Tool */}
-                <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-red-500/10 rounded-lg">
-                      <Voicemail className="w-5 h-5 text-red-500" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-medium">Voicemail detection</p>
-                      <p className="text-sm text-muted-foreground">
-                        Allows agent to detect voicemail systems and optionally leave a message
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSystemToolModal({ isOpen: true, toolType: "voicemailDetection", toolName: "Voicemail detection" })}
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Switch
-                      checked={toolsConfig.systemTools?.voicemailDetection?.enabled || false}
-                      onCheckedChange={(checked) => {
-                        setToolsConfig({
-                          ...toolsConfig,
-                          systemTools: {
-                            ...toolsConfig.systemTools,
-                            voicemailDetection: { ...(toolsConfig.systemTools?.voicemailDetection || {}), enabled: checked },
-                          },
-                        });
-                        setHasUnsavedChanges(true);
-                      }}
-                      data-testid="switch-tool-voicemail"
-                    />
-                  </div>
-                </div>
-              </div>
-            </Card>
-
             {/* Platform Webhooks Section */}
             <Card className="p-4 sm:p-6">
               <div className="mb-4">
@@ -1236,28 +931,6 @@ export default function Tools() {
         </Tabs>
       )}
 
-      {/* System Tool Configuration Modal */}
-      {systemToolModal.isOpen && (
-        <SystemToolConfigModal
-          isOpen={systemToolModal.isOpen}
-          onClose={() => setSystemToolModal({ isOpen: false, toolType: "", toolName: "" })}
-          toolType={systemToolModal.toolType}
-          toolName={systemToolModal.toolName}
-          config={toolsConfig.systemTools?.[systemToolModal.toolType as keyof typeof toolsConfig.systemTools] || { enabled: false }}
-          onSave={(config) => {
-            setToolsConfig({
-              ...toolsConfig,
-              systemTools: {
-                ...toolsConfig.systemTools,
-                [systemToolModal.toolType]: config,
-              },
-            });
-            setHasUnsavedChanges(true);
-            setSystemToolModal({ isOpen: false, toolType: "", toolName: "" });
-          }}
-          availableAgents={agents}
-        />
-      )}
 
       {/* MCP Server Dialog */}
       {mcpServerDialog.isOpen && (
