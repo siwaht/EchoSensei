@@ -87,7 +87,7 @@ interface ToolConfig {
   id: string;
   name: string;
   type: string;
-  configuration: Record<string, any>;
+  configuration?: Record<string, any>;
   enabled: boolean;
 }
 
@@ -228,7 +228,10 @@ export default function Tools() {
     
     // Add MCP servers to custom tools
     if (toolsConfig.mcpServers && toolsConfig.mcpServers.length > 0) {
-      customTools.push(...toolsConfig.mcpServers);
+      customTools.push(...toolsConfig.mcpServers.map(server => ({
+        ...server,
+        configuration: server.configuration || {}
+      })));
     }
 
     updateAgentMutation.mutate({
@@ -1289,11 +1292,23 @@ export default function Tools() {
               // Edit existing server
               const index = updatedServers.findIndex(s => s.id === mcpServerDialog.server?.id);
               if (index !== -1) {
-                updatedServers[index] = server;
+                updatedServers[index] = {
+                  ...server,
+                  id: server.id || '',
+                  name: server.name || '',
+                  type: server.type || 'mcp',
+                  enabled: server.enabled !== undefined ? server.enabled : true
+                } as CustomTool;
               }
             } else {
               // Add new server
-              updatedServers.push(server);
+              updatedServers.push({
+                ...server,
+                id: server.id || '',
+                name: server.name || '',
+                type: server.type || 'mcp',
+                enabled: server.enabled !== undefined ? server.enabled : true
+              } as CustomTool);
             }
             setToolsConfig({
               ...toolsConfig,
@@ -1317,11 +1332,11 @@ export default function Tools() {
               // Edit existing webhook
               const index = updatedWebhooks.findIndex(w => w.id === webhookDialog.webhook?.id);
               if (index !== -1) {
-                updatedWebhooks[index] = webhook;
+                updatedWebhooks[index] = webhook as any;
               }
             } else {
               // Add new webhook
-              updatedWebhooks.push(webhook);
+              updatedWebhooks.push(webhook as any);
             }
             setToolsConfig({
               ...toolsConfig,
