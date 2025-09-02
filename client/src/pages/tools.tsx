@@ -21,7 +21,7 @@ import {
   Brain, FileText, Upload, Search, Phone, Languages,
   SkipForward, UserPlus, Voicemail, Hash, Server,
   Mic, AudioLines, Bot, Key, Shield, ShieldAlert, ShieldOff, Sparkles, Settings,
-  Info, RefreshCw, File, PlayCircle, Loader2
+  Info, RefreshCw, File, PlayCircle, Loader2, UserCheck, Clock, SendHorizontal
 } from "lucide-react";
 import type { Agent, CustomTool } from "@shared/schema";
 import { MCPServerDialog } from "@/components/mcp-server-dialog";
@@ -131,6 +131,16 @@ export default function Tools() {
       url: '',
       description: 'Override the post-call webhook configured in settings for this agent',
     },
+    transferToAgent: {
+      enabled: false,
+      phoneNumber: '',
+      message: '',
+      department: '',
+      workingHours: '',
+      description: 'Transfer call to a human agent when requested',
+      requiresApproval: true,
+      approvalStatus: 'none' as 'none' | 'pending' | 'approved' | 'rejected',
+    },
     webhooks: [] as WebhookConfig[],
     integrations: [] as ToolConfig[],
     customTools: [] as ToolConfig[],
@@ -153,6 +163,16 @@ export default function Tools() {
           enabled: false,
           url: '',
           description: 'Override the post-call webhook configured in settings for this agent',
+        },
+        transferToAgent: tools.transferToAgent || {
+          enabled: false,
+          phoneNumber: '',
+          message: '',
+          department: '',
+          workingHours: '',
+          description: 'Transfer call to a human agent when requested',
+          requiresApproval: true,
+          approvalStatus: 'none',
         },
         webhooks: tools.webhooks || [],
         integrations: tools.integrations || [],
@@ -211,6 +231,7 @@ export default function Tools() {
       tools: {
         conversationInitiationWebhook: toolsConfig.conversationInitiationWebhook,
         postCallWebhook: toolsConfig.postCallWebhook,
+        transferToAgent: toolsConfig.transferToAgent,
         webhooks: toolsConfig.webhooks,
         integrations: integrations as any,
         customTools: customTools as any,
@@ -240,6 +261,54 @@ export default function Tools() {
       webhooks: toolsConfig.webhooks.filter((_, i) => i !== index),
     });
     setHasUnsavedChanges(true);
+  };
+
+  // Submit tool for approval
+  const submitForApproval = async (toolType: 'transfer' | 'webhook' | 'mcp', toolData: any) => {
+    try {
+      const response = await apiRequest("POST", "/api/admin/tasks", {
+        type: "approval",
+        title: `${toolType === 'transfer' ? 'Transfer to Agent' : toolType === 'webhook' ? 'Webhook' : 'MCP'} Configuration Request`,
+        description: `Request to ${toolData.enabled ? 'enable' : 'modify'} ${toolType} for agent: ${selectedAgent?.name}`,
+        status: "pending",
+        priority: "medium",
+        relatedEntityType: toolType === 'mcp' ? 'mcp' : toolType === 'webhook' ? 'webhook' : 'agent',
+        relatedEntityId: selectedAgentId,
+        metadata: {
+          agentId: selectedAgentId,
+          agentName: selectedAgent?.name,
+          toolType,
+          toolConfig: toolData,
+          userEmail: 'user@example.com', // This should come from user context
+          organizationId: selectedAgent?.organizationId,
+        },
+      });
+
+      toast({
+        title: "Submitted for Approval",
+        description: `Your ${toolType} configuration has been submitted for admin approval.`,
+      });
+
+      // Update local state to show pending status
+      if (toolType === 'transfer') {
+        setToolsConfig(prev => ({
+          ...prev,
+          transferToAgent: {
+            ...prev.transferToAgent,
+            approvalStatus: 'pending',
+          }
+        }));
+      }
+
+      return response;
+    } catch (error) {
+      toast({
+        title: "Submission Failed",
+        description: "Failed to submit configuration for approval.",
+        variant: "destructive",
+      });
+      throw error;
+    }
   };
 
   const testWebhook = async (webhook: any) => {
@@ -540,6 +609,161 @@ export default function Tools() {
                   )}
                 </div>
 
+                {/* Transfer to Agent */}
+                <div className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">Transfer to Agent</p>
+                        {toolsConfig.transferToAgent?.approvalStatus === 'pending' && (
+                          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                            <Clock className="w-3 h-3 mr-1" />
+                            Pending Approval
+                          </Badge>
+                        )}
+                        {toolsConfig.transferToAgent?.approvalStatus === 'approved' && (
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Approved
+                          </Badge>
+                        )}
+                        {toolsConfig.transferToAgent?.approvalStatus === 'rejected' && (
+                          <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                            <XCircle className="w-3 h-3 mr-1" />
+                            Rejected
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Enable human agent transfer when customers request to speak with a representative
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {toolsConfig.transferToAgent?.enabled && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => submitForApproval('transfer', toolsConfig.transferToAgent)}
+                          disabled={toolsConfig.transferToAgent?.approvalStatus === 'pending'}
+                          title="Submit for admin approval"
+                          data-testid="button-submit-transfer-approval"
+                        >
+                          <SendHorizontal className="w-4 h-4 mr-1" />
+                          Submit for Approval
+                        </Button>
+                      )}
+                      <Switch
+                        checked={toolsConfig.transferToAgent?.enabled || false}
+                        onCheckedChange={(checked) => {
+                          setToolsConfig({
+                            ...toolsConfig,
+                            transferToAgent: {
+                              ...toolsConfig.transferToAgent,
+                              enabled: checked,
+                            },
+                          });
+                          setHasUnsavedChanges(true);
+                        }}
+                        disabled={toolsConfig.transferToAgent?.approvalStatus === 'pending'}
+                        data-testid="switch-transfer-to-agent"
+                      />
+                    </div>
+                  </div>
+                  {toolsConfig.transferToAgent?.enabled && (
+                    <div className="space-y-3 pl-4">
+                      <div>
+                        <Label className="text-sm">Transfer Phone Number</Label>
+                        <Input
+                          placeholder="+1 (555) 123-4567"
+                          value={toolsConfig.transferToAgent?.phoneNumber || ''}
+                          onChange={(e) => {
+                            setToolsConfig({
+                              ...toolsConfig,
+                              transferToAgent: {
+                                ...toolsConfig.transferToAgent,
+                                phoneNumber: e.target.value,
+                              },
+                            });
+                            setHasUnsavedChanges(true);
+                          }}
+                          disabled={toolsConfig.transferToAgent?.approvalStatus === 'pending'}
+                          className="text-sm mt-1"
+                          data-testid="input-transfer-phone"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Department/Team</Label>
+                        <Input
+                          placeholder="e.g., Customer Support, Sales, Technical Support"
+                          value={toolsConfig.transferToAgent?.department || ''}
+                          onChange={(e) => {
+                            setToolsConfig({
+                              ...toolsConfig,
+                              transferToAgent: {
+                                ...toolsConfig.transferToAgent,
+                                department: e.target.value,
+                              },
+                            });
+                            setHasUnsavedChanges(true);
+                          }}
+                          disabled={toolsConfig.transferToAgent?.approvalStatus === 'pending'}
+                          className="text-sm mt-1"
+                          data-testid="input-transfer-department"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Working Hours</Label>
+                        <Input
+                          placeholder="e.g., Mon-Fri 9AM-5PM EST"
+                          value={toolsConfig.transferToAgent?.workingHours || ''}
+                          onChange={(e) => {
+                            setToolsConfig({
+                              ...toolsConfig,
+                              transferToAgent: {
+                                ...toolsConfig.transferToAgent,
+                                workingHours: e.target.value,
+                              },
+                            });
+                            setHasUnsavedChanges(true);
+                          }}
+                          disabled={toolsConfig.transferToAgent?.approvalStatus === 'pending'}
+                          className="text-sm mt-1"
+                          data-testid="input-transfer-hours"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Transfer Message</Label>
+                        <Textarea
+                          placeholder="Message to play before transferring (e.g., 'I'll transfer you to a human agent who can assist you better.')"
+                          value={toolsConfig.transferToAgent?.message || ''}
+                          onChange={(e) => {
+                            setToolsConfig({
+                              ...toolsConfig,
+                              transferToAgent: {
+                                ...toolsConfig.transferToAgent,
+                                message: e.target.value,
+                              },
+                            });
+                            setHasUnsavedChanges(true);
+                          }}
+                          disabled={toolsConfig.transferToAgent?.approvalStatus === 'pending'}
+                          className="text-sm mt-1"
+                          rows={3}
+                          data-testid="textarea-transfer-message"
+                        />
+                      </div>
+                      {toolsConfig.transferToAgent?.requiresApproval && (
+                        <Alert className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+                          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          <AlertDescription className="text-blue-800 dark:text-blue-200">
+                            Transfer to Agent configuration requires admin approval before it becomes active.
+                          </AlertDescription>
+                        </Alert>
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {/* Post-Call Webhook */}
                 <div className="p-4 border rounded-lg space-y-3">
                   <div className="flex items-center justify-between">
@@ -661,6 +885,15 @@ export default function Tools() {
                 </Button>
               </div>
 
+              {/* Approval Information Alert */}
+              <Alert className="mb-4 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Approval Required:</strong> All webhook configurations must be submitted for admin approval before they become active. 
+                  Click the "Submit for Approval" button next to each webhook after configuration.
+                </AlertDescription>
+              </Alert>
+              
               {/* Sync Information Alert */}
               {toolsConfig.webhooks.length > 0 && hasUnsavedChanges && (
                 <Alert className="mb-4 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
@@ -708,6 +941,15 @@ export default function Tools() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => submitForApproval('webhook', webhook)}
+                            title="Submit for admin approval"
+                            data-testid={`button-submit-webhook-approval-${index}`}
+                          >
+                            <SendHorizontal className="w-4 h-4" />
+                          </Button>
                           <Switch
                             checked={webhook.enabled !== false}
                             onCheckedChange={(checked) => {
@@ -806,6 +1048,15 @@ export default function Tools() {
                   <strong>Model Context Protocol (MCP)</strong> servers enable your agents to connect with external services like Zapier, HubSpot, Gmail, and custom APIs. MCP is an open standard that allows AI models to interact with diverse data sources and tools.
                 </AlertDescription>
               </Alert>
+              
+              {/* Approval Information Alert */}
+              <Alert className="mb-4 border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/20">
+                <ShieldAlert className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <AlertDescription className="text-sm text-blue-800 dark:text-blue-200">
+                  <strong>Admin Approval Required:</strong> MCP server configurations must be reviewed and approved by an administrator before activation. 
+                  Submit each configuration for approval using the "Submit for Approval" button.
+                </AlertDescription>
+              </Alert>
 
               {toolsConfig.mcpServers && toolsConfig.mcpServers.length === 0 ? (
                 <Card className="p-8 border-dashed">
@@ -879,6 +1130,16 @@ export default function Tools() {
                           </div>
                         </div>
                         <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => submitForApproval('mcp', server)}
+                            title="Submit for admin approval"
+                            data-testid={`button-submit-mcp-approval-${server.id}`}
+                          >
+                            <SendHorizontal className="w-4 h-4 mr-1" />
+                            Submit for Approval
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
