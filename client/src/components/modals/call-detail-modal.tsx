@@ -63,8 +63,8 @@ export function CallDetailModal({ callLog, open, onOpenChange }: CallDetailModal
             </div>
             <div>
               <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Status:</span>
-              <Badge className={getStatusColor(callLog.status)} data-testid="badge-call-status">
-                {callLog.status}
+              <Badge className={getStatusColor(callLog.status || 'unknown')} data-testid="badge-call-status">
+                {callLog.status || 'unknown'}
               </Badge>
             </div>
           </div>
@@ -164,53 +164,34 @@ export function CallDetailModal({ callLog, open, onOpenChange }: CallDetailModal
                 {(() => {
                   try {
                     let transcript = callLog.transcript;
-                    const conversationTurns = [];
+                    let conversationTurns = [];
                     
-                    if (typeof transcript === 'string') {
-                      // Extract escaped JSON objects from the malformed transcript structure
-                      const escapedJsonPattern = /\{\\?"role\\?":\\?"[^\\}]*\\?"[^}]*\}/g;
-                      const matches = transcript.match(escapedJsonPattern);
-                      
-                      if (matches) {
-                        // Process each matched conversation turn
-                        for (const match of matches) {
-                          try {
-                            // Clean and unescape the JSON string
-                            const cleanMatch = match.replace(/\\"/g, '"');
-                            const turnData = JSON.parse(cleanMatch);
-                            
-                            if (turnData && turnData.message && turnData.message.trim()) {
-                              conversationTurns.push(turnData);
-                            }
-                          } catch (parseError) {
-                            // Skip invalid turns
-                            continue;
-                          }
+                    // Check if transcript is already an array
+                    if (Array.isArray(transcript)) {
+                      conversationTurns = transcript;
+                    } else if (typeof transcript === 'string') {
+                      // Try to parse as JSON
+                      try {
+                        const parsed = JSON.parse(transcript);
+                        if (Array.isArray(parsed)) {
+                          conversationTurns = parsed;
                         }
+                      } catch (e) {
+                        // If parsing fails, treat as a single message
+                        conversationTurns = [{ role: 'system', message: transcript }];
                       }
-                      
-                      // Fallback: Split by numbered keys if pattern matching failed
-                      if (conversationTurns.length === 0) {
-                        const parts = transcript.split(/"\d+":/);
-                        for (let i = 1; i < parts.length; i++) {
-                          try {
-                            let part = parts[i].trim()
-                              .replace(/^"|"[,}]*$/g, '')  // Remove quotes
-                              .replace(/\\"/g, '"');       // Unescape
-                            
-                            const turnData = JSON.parse(part);
-                            if (turnData && turnData.message && turnData.message.trim()) {
-                              conversationTurns.push(turnData);
-                            }
-                          } catch (e) {
-                            continue;
-                          }
-                        }
-                      }
+                    } else if (typeof transcript === 'object' && transcript !== null) {
+                      // If it's an object, try to extract conversation turns
+                      conversationTurns = Object.values(transcript);
                     }
                     
+                    // Filter out empty messages and ensure proper structure
+                    conversationTurns = conversationTurns.filter((turn: any) => 
+                      turn && turn.message && turn.message.trim()
+                    );
+                    
                     // Sort by timestamp to maintain conversation order
-                    conversationTurns.sort((a, b) => (a.time_in_call_secs || 0) - (b.time_in_call_secs || 0));
+                    conversationTurns.sort((a: any, b: any) => (a.time_in_call_secs || 0) - (b.time_in_call_secs || 0));
                     
                     // Render professional ElevenLabs-style conversation
                     if (conversationTurns.length > 0) {
