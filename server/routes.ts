@@ -643,7 +643,7 @@ export function registerRoutes(app: Express): Server {
   // Admin routes - Create new user
   app.post('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const { email, firstName, lastName, password, companyName, isAdmin } = req.body;
+      const { email, firstName, lastName, password, companyName, isAdmin, organizationType, commissionRate } = req.body;
       
       // Check if user exists
       const existingUser = await storage.getUserByEmail(email);
@@ -663,8 +663,12 @@ export function registerRoutes(app: Express): Server {
         if (existingOrg) {
           organizationId = existingOrg.id;
         } else {
-          // Create new organization
-          const newOrg = await storage.createOrganization({ name: companyName });
+          // Create new organization with type
+          const newOrg = await storage.createOrganization({ 
+            name: companyName,
+            organizationType: organizationType || 'end_customer',
+            commissionRate: organizationType === 'agency' ? (commissionRate || 30) : undefined
+          });
           organizationId = newOrg.id;
         }
       }

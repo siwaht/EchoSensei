@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Agents", href: "/agents", icon: Bot },
-  { name: "Agency Network", href: "/agency-management", icon: Users },
   { name: "Voices", href: "/voices", icon: Mic },
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone },
   { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing },
@@ -66,9 +65,6 @@ export default function AppShell({ children }: AppShellProps) {
     
     // Check for checkout route
     if (location === "/checkout") return "Checkout";
-    
-    // Check for agency management route
-    if (location === "/agency-management") return "Agency Network";
     
     // Check for voices route
     if (location === "/voices") return "Voices";

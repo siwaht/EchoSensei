@@ -90,6 +90,8 @@ export default function AdminDashboard() {
     password: "",
     companyName: "",
     isAdmin: false,
+    userType: "regular" as "regular" | "agency",
+    commissionRate: "30",
   });
 
   // Queries
@@ -117,7 +119,11 @@ export default function AdminDashboard() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof newUser) => {
-      return await apiRequest("POST", "/api/admin/users", userData);
+      return await apiRequest("POST", "/api/admin/users", {
+        ...userData,
+        organizationType: userData.userType === "agency" ? "agency" : "end_customer",
+        commissionRate: userData.userType === "agency" ? parseFloat(userData.commissionRate) : undefined,
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -132,6 +138,8 @@ export default function AdminDashboard() {
         password: "",
         companyName: "",
         isAdmin: false,
+        userType: "regular",
+        commissionRate: "30",
       });
     },
     onError: (error: any) => {
@@ -432,6 +440,7 @@ export default function AdminDashboard() {
                     <th className="text-left py-3 px-2 text-sm font-medium">User</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Email</th>
                     <th className="text-left py-3 px-2 text-sm font-medium hidden md:table-cell">Company</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium">Type</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Role</th>
                     <th className="text-left py-3 px-2 text-sm font-medium hidden lg:table-cell">Created</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Actions</th>
@@ -461,6 +470,19 @@ export default function AdminDashboard() {
                         <span className="block truncate text-sm max-w-[150px]">
                           {organizations.find(org => org.id === user.organizationId)?.name || "N/A"}
                         </span>
+                      </td>
+                      <td className="py-3 px-2">
+                        {(() => {
+                          const org = organizations.find(o => o.id === user.organizationId);
+                          const orgType = org?.organizationType;
+                          return orgType === 'agency' ? (
+                            <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">Agency</Badge>
+                          ) : orgType === 'platform_owner' ? (
+                            <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs">Platform</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs">Regular</Badge>
+                          );
+                        })()}
                       </td>
                       <td className="py-3 px-2">
                         {user.isAdmin ? (
@@ -697,12 +719,12 @@ export default function AdminDashboard() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-2 text-sm font-medium">Organization</th>
+                    <th className="text-left py-3 px-2 text-sm font-medium">Type</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Users</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Agents</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Calls</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Package</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Revenue</th>
-                    <th className="text-left py-3 px-2 text-sm font-medium">Status</th>
                     <th className="text-left py-3 px-2 text-sm font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -719,6 +741,20 @@ export default function AdminDashboard() {
                             <p className="text-xs text-muted-foreground">
                               Created: {org.createdAt ? new Date(org.createdAt).toLocaleDateString() : 'N/A'}
                             </p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-2">
+                          <div className="flex flex-col gap-1">
+                            {org.organizationType === 'agency' ? (
+                              <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs w-fit">Agency</Badge>
+                            ) : org.organizationType === 'platform_owner' ? (
+                              <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 text-xs w-fit">Platform</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs w-fit">Regular</Badge>
+                            )}
+                            {org.organizationType === 'agency' && org.commissionRate && (
+                              <span className="text-xs text-muted-foreground">{org.commissionRate}% commission</span>
+                            )}
                           </div>
                         </td>
                         <td className="py-3 px-2">
@@ -745,11 +781,6 @@ export default function AdminDashboard() {
                           <span className="text-sm font-medium text-green-600">
                             ${orgBilling?.estimatedCost?.toFixed(2) || '0.00'}
                           </span>
-                        </td>
-                        <td className="py-3 px-2">
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 text-xs">
-                            Active
-                          </Badge>
                         </td>
                         <td className="py-3 px-2">
                           <div className="flex gap-1">
@@ -1109,9 +1140,29 @@ export default function AdminDashboard() {
         <DialogContent className="w-[95vw] max-w-lg">
           <DialogHeader>
             <DialogTitle>Create New User</DialogTitle>
-            <DialogDescription>Add a new user to the platform</DialogDescription>
+            <DialogDescription>Add a new user or agency to the platform</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div>
+              <Label>User Type</Label>
+              <Select
+                value={newUser.userType}
+                onValueChange={(value: "regular" | "agency") => setNewUser({ ...newUser, userType: value })}
+              >
+                <SelectTrigger data-testid="select-user-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="regular">Regular User</SelectItem>
+                  <SelectItem value="agency">Agency</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">
+                {newUser.userType === "agency" 
+                  ? "Agencies can buy plans and manage their own users" 
+                  : "Regular users have access to the dashboard"}
+              </p>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>First Name</Label>
@@ -1153,14 +1204,32 @@ export default function AdminDashboard() {
               />
             </div>
             <div>
-              <Label>Company Name (Optional)</Label>
+              <Label>{newUser.userType === "agency" ? "Agency Name" : "Company Name (Optional)"}</Label>
               <Input
                 value={newUser.companyName}
                 onChange={(e) => setNewUser({ ...newUser, companyName: e.target.value })}
-                placeholder="Acme Corp (optional)"
+                placeholder={newUser.userType === "agency" ? "Acme Agency" : "Acme Corp (optional)"}
                 data-testid="input-new-user-company"
+                required={newUser.userType === "agency"}
               />
             </div>
+            {newUser.userType === "agency" && (
+              <div>
+                <Label>Commission Rate (%)</Label>
+                <Input
+                  type="number"
+                  value={newUser.commissionRate}
+                  onChange={(e) => setNewUser({ ...newUser, commissionRate: e.target.value })}
+                  placeholder="30"
+                  min="0"
+                  max="100"
+                  data-testid="input-commission-rate"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Percentage of revenue the agency keeps from their clients
+                </p>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Switch
                 id="newUserAdmin"
