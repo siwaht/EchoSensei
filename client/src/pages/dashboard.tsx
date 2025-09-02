@@ -829,8 +829,8 @@ export default function Dashboard() {
     ? ((stats as any)?.estimatedCost / (stats as any)?.totalCalls).toFixed(2)
     : '0.00';
 
-  // Calculate credits (ElevenLabs uses a credit system where 1 credit ≈ $0.0001)
-  const totalCredits = Math.round((stats as any)?.estimatedCost * 10000) || 0;
+  // Calculate credits (ElevenLabs uses a credit system where 1 credit = $0.001)
+  const totalCredits = Math.round((stats as any)?.estimatedCost * 1000) || 0;
 
   return (
     <TooltipProvider>
