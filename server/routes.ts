@@ -5870,7 +5870,8 @@ Generate the complete prompt now:`;
         return res.status(404).json({ message: "User not found" });
       }
 
-      const stats = await storage.getOrganizationStats(user.organizationId);
+      const agentId = req.query.agentId as string | undefined;
+      const stats = await storage.getOrganizationStats(user.organizationId, agentId);
       res.json(stats);
     } catch (error) {
       console.error("Error fetching analytics:", error);

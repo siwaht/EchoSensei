@@ -93,7 +93,7 @@ export interface IStorage {
   deletePhoneNumber(id: string, organizationId: string): Promise<void>;
 
   // Analytics operations
-  getOrganizationStats(organizationId: string): Promise<{
+  getOrganizationStats(organizationId: string, agentId?: string): Promise<{
     totalCalls: number;
     totalMinutes: number;
     estimatedCost: number;
@@ -385,13 +385,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Analytics operations
-  async getOrganizationStats(organizationId: string): Promise<{
+  async getOrganizationStats(organizationId: string, agentId?: string): Promise<{
     totalCalls: number;
     totalMinutes: number;
     estimatedCost: number;
     activeAgents: number;
     lastSync?: Date;
   }> {
+    // Build where conditions for call logs
+    const callLogsConditions = agentId 
+      ? and(eq(callLogs.organizationId, organizationId), eq(callLogs.agentId, agentId))
+      : eq(callLogs.organizationId, organizationId);
+
     const [callStats] = await db()
       .select({
         totalCalls: count(callLogs.id),
@@ -400,14 +405,19 @@ export class DatabaseStorage implements IStorage {
         lastSync: max(callLogs.createdAt),
       })
       .from(callLogs)
-      .where(eq(callLogs.organizationId, organizationId));
+      .where(callLogsConditions);
+
+    // For agent stats, if a specific agent is selected, count just that one (if active)
+    const agentConditions = agentId
+      ? and(eq(agents.organizationId, organizationId), eq(agents.id, agentId), eq(agents.isActive, true))
+      : and(eq(agents.organizationId, organizationId), eq(agents.isActive, true));
 
     const [agentStats] = await db()
       .select({
         activeAgents: count(agents.id),
       })
       .from(agents)
-      .where(and(eq(agents.organizationId, organizationId), eq(agents.isActive, true)));
+      .where(agentConditions);
 
     return {
       totalCalls: Number(callStats.totalCalls) || 0,

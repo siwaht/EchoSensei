@@ -14,9 +14,18 @@ import { useLocation } from "wouter";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Success Rate Chart Component
-function SuccessRateChart() {
+function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
+  const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
+  
   const { data: callLogs } = useQuery({
-    queryKey: ["/api/call-logs"],
+    queryKey: ["/api/call-logs", selectedAgentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/call-logs${queryParams}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch call logs");
+      return response.json();
+    },
   });
 
   // Process call logs for success rate over time
@@ -106,9 +115,18 @@ function SuccessRateChart() {
 }
 
 // Agent Performance Table Component
-function AgentPerformanceTable() {
+function AgentPerformanceTable({ selectedAgentId }: { selectedAgentId: string }) {
+  const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
+  
   const { data: callLogs } = useQuery({
-    queryKey: ["/api/call-logs"],
+    queryKey: ["/api/call-logs", selectedAgentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/call-logs${queryParams}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch call logs");
+      return response.json();
+    },
   });
 
   const { data: agents } = useQuery({
@@ -535,11 +553,19 @@ function CostAnalysisChart() {
 }
 
 // Call Volume Chart Component
-function CallVolumeChart() {
+function CallVolumeChart({ selectedAgentId }: { selectedAgentId: string }) {
   const [timeRange, setTimeRange] = useState('daily');
+  const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
   
   const { data: callLogs } = useQuery({
-    queryKey: ["/api/call-logs"],
+    queryKey: ["/api/call-logs", selectedAgentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/call-logs${queryParams}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch call logs");
+      return response.json();
+    },
   });
 
   // Process call logs based on selected time range
@@ -704,17 +730,36 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("all");
+  
+  // Get agents first
+  const { data: agents } = useQuery({
+    queryKey: ["/api/agents"],
+  });
+  
+  // Build query parameters based on selected agent
+  const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
   
   const { data: stats, isLoading, refetch: refetchStats } = useQuery({
-    queryKey: ["/api/analytics/organization"],
+    queryKey: ["/api/analytics/organization", selectedAgentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/analytics/organization${queryParams}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch stats");
+      return response.json();
+    },
   });
   
   const { data: callLogs, refetch: refetchCallLogs } = useQuery({
-    queryKey: ["/api/call-logs"],
-  });
-  
-  const { data: agents } = useQuery({
-    queryKey: ["/api/agents"],
+    queryKey: ["/api/call-logs", selectedAgentId],
+    queryFn: async () => {
+      const response = await fetch(`/api/call-logs${queryParams}`, {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Failed to fetch call logs");
+      return response.json();
+    },
   });
 
   // Fetch pending approvals for current user
@@ -797,22 +842,42 @@ export default function Dashboard() {
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-purple-400" />
             <span className="text-sm text-muted-foreground">
-              {lastSyncTime || (stats as any)?.lastSync 
-                ? `Last synced: ${(lastSyncTime || new Date((stats as any)?.lastSync)).toLocaleString()}` 
-                : 'Click sync to update data from ElevenLabs'}
+              {selectedAgentId !== "all" 
+                ? `Showing data for: ${agents?.find((a: any) => a.id === selectedAgentId)?.name || 'Agent'}`
+                : lastSyncTime || (stats as any)?.lastSync 
+                  ? `Last synced: ${(lastSyncTime || new Date((stats as any)?.lastSync)).toLocaleString()}` 
+                  : 'Click sync to update data from ElevenLabs'}
             </span>
           </div>
         </div>
-        <Button
-          onClick={() => syncMutation.mutate()}
-          disabled={syncMutation.isPending}
-          size="sm"
-          className="gap-2 gradient-purple text-white btn-premium shadow-lg hover:shadow-xl hover:scale-105 transition-all"
-          data-testid="button-sync-data"
-        >
-          <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-          {syncMutation.isPending ? 'Syncing...' : 'Sync with ElevenLabs'}
-        </Button>
+        <div className="flex items-center gap-4">
+          {/* Agent Selector */}
+          <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+            <SelectTrigger className="w-[250px]" data-testid="select-agent-filter">
+              <Bot className="w-4 h-4 mr-2" />
+              <SelectValue placeholder="All Agents" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Agents</SelectItem>
+              {Array.isArray(agents) && agents.map((agent: any) => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  {agent.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Button
+            onClick={() => syncMutation.mutate()}
+            disabled={syncMutation.isPending}
+            size="sm"
+            className="gap-2 gradient-purple text-white btn-premium shadow-lg hover:shadow-xl hover:scale-105 transition-all"
+            data-testid="button-sync-data"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
+            {syncMutation.isPending ? 'Syncing...' : 'Sync with ElevenLabs'}
+          </Button>
+        </div>
       </div>
       
       {/* Data Accuracy Notice */}
@@ -1069,7 +1134,7 @@ export default function Dashboard() {
               <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"></div>
               Overall success rate
             </h3>
-            <SuccessRateChart />
+            <SuccessRateChart selectedAgentId={selectedAgentId} />
           </div>
 
           {/* Divider */}
@@ -1087,7 +1152,7 @@ export default function Dashboard() {
                   See all {Array.isArray(agents) ? agents.length : 0} agents
                 </button>
               </div>
-              <AgentPerformanceTable />
+              <AgentPerformanceTable selectedAgentId={selectedAgentId} />
             </div>
             
             <div>
