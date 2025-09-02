@@ -82,10 +82,10 @@ const availablePermissions = [
   { id: "manage_agents", label: "Manage Agents", category: "Agents" },
   { id: "configure_tools", label: "Configure Tools", category: "Agents" },
   { id: "access_knowledge_base", label: "Access Knowledge Base", category: "Content" },
+  { id: "access_recordings", label: "Access Recordings", category: "Content" },
   { id: "view_billing", label: "View Billing", category: "Administration" },
   { id: "manage_users", label: "Manage Users", category: "Administration" },
-  { id: "download_reports", label: "Download Reports", category: "Reports" },
-  { id: "access_recordings", label: "Access Recordings", category: "Content" },
+  { id: "download_reports", label: "Download Reports", category: "Administration" },
 ];
 
 // Permission presets for quick selection
@@ -335,7 +335,7 @@ export function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Permissions</Label>
                 <div className="border rounded-lg p-4 space-y-4 max-h-64 overflow-y-auto">
-                  {["General", "Agents", "Content", "Administration", "Reports"].map(category => {
+                  {["General", "Agents", "Content", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
                     return (
