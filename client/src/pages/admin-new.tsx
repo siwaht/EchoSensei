@@ -1137,12 +1137,12 @@ export default function AdminDashboard() {
 
       {/* Create User Dialog */}
       <Dialog open={creatingUser} onOpenChange={setCreatingUser}>
-        <DialogContent className="w-[95vw] max-w-lg">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create New User</DialogTitle>
             <DialogDescription>Add a new user or agency to the platform</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label>User Type</Label>
               <Select
@@ -1240,7 +1240,7 @@ export default function AdminDashboard() {
               <Label htmlFor="newUserAdmin">Grant Admin Access</Label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setCreatingUser(false)}>
               Cancel
             </Button>
@@ -1257,11 +1257,11 @@ export default function AdminDashboard() {
 
       {/* Edit User Dialog */}
       <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
-        <DialogContent className="w-[95vw] max-w-lg">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label>First Name</Label>
               <Input
@@ -1288,7 +1288,7 @@ export default function AdminDashboard() {
               <Label htmlFor="editUserAdmin">Admin Access</Label>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setEditingUser(null)}>Cancel</Button>
             <Button
               onClick={() => {
@@ -1424,7 +1424,7 @@ export default function AdminDashboard() {
               <p className="text-sm"><strong>Revenue Generated:</strong> ${editingOrg?.estimatedCost?.toFixed(2) || "0.00"}</p>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setEditingOrg(null)}>Cancel</Button>
             <Button
               onClick={() => {
@@ -1455,14 +1455,14 @@ export default function AdminDashboard() {
 
       {/* Connect Stripe Dialog */}
       <Dialog open={connectingStripe} onOpenChange={setConnectingStripe}>
-        <DialogContent className="w-[95vw] max-w-lg">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Connect Stripe Account</DialogTitle>
             <DialogDescription>
               Enter your Stripe API keys to enable payment processing. You can find these in your Stripe dashboard.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label>Publishable Key</Label>
               <Input
@@ -1495,7 +1495,7 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setConnectingStripe(false)}>Cancel</Button>
             <Button
               onClick={() => {
@@ -1518,14 +1518,14 @@ export default function AdminDashboard() {
 
       {/* Connect PayPal Dialog */}
       <Dialog open={connectingPayPal} onOpenChange={setConnectingPayPal}>
-        <DialogContent className="w-[95vw] max-w-lg">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Connect PayPal Account</DialogTitle>
             <DialogDescription>
               Enter your PayPal API credentials to enable payment processing. You can find these in your PayPal developer dashboard.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div>
               <Label>Client ID</Label>
               <Input
@@ -1558,7 +1558,7 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setConnectingPayPal(false)}>Cancel</Button>
             <Button
               onClick={() => {
@@ -1604,12 +1604,12 @@ export default function AdminDashboard() {
 
       {/* Create Billing Package Dialog */}
       <Dialog open={creatingPackage} onOpenChange={setCreatingPackage}>
-        <DialogContent className="w-[95vw] max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Create Billing Package</DialogTitle>
             <DialogDescription>Define a new billing package with custom rates and limits</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+          <div className="space-y-4 overflow-y-auto flex-1 pr-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label>Package ID</Label>
@@ -1717,7 +1717,7 @@ export default function AdminDashboard() {
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setCreatingPackage(false)}>Cancel</Button>
             <Button
               onClick={() => createPackageMutation.mutate(newPackage)}
@@ -1732,13 +1732,13 @@ export default function AdminDashboard() {
 
       {/* Edit Billing Package Dialog */}
       <Dialog open={!!editingPackage} onOpenChange={() => setEditingPackage(null)}>
-        <DialogContent className="w-[95vw] max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit Billing Package</DialogTitle>
             <DialogDescription>Update the billing package settings</DialogDescription>
           </DialogHeader>
           {editingPackage && (
-            <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            <div className="space-y-4 overflow-y-auto flex-1 pr-2">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Package ID</Label>
@@ -1844,7 +1844,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0 pt-4 border-t">
             <Button variant="outline" onClick={() => setEditingPackage(null)}>Cancel</Button>
             <Button
               onClick={() => {
