@@ -226,6 +226,7 @@ export class DatabaseStorage implements IStorage {
       profileImageUrl: userData.profileImageUrl,
       organizationId,
       isAdmin: userData.email === "cc@siwaht.com",
+      permissions: userData.permissions || [],
     }).returning();
     return user;
   }
@@ -244,7 +245,7 @@ export class DatabaseStorage implements IStorage {
 
     const [user] = await db()
       .insert(users)
-      .values({ ...userData, organizationId, isAdmin })
+      .values({ ...userData, organizationId, isAdmin, permissions: userData.permissions || [] })
       .onConflictDoUpdate({
         target: users.id,
         set: {

@@ -808,6 +808,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Create user directly (for managers)
+  app.post('/api/users/create', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Only admins and managers can create users
+      if (!currentUser?.isAdmin && !currentUser?.permissions?.includes('manage_users')) {
+        return res.status(403).json({ message: "Forbidden: Insufficient permissions to create users" });
+      }
+
+      const { email, password, firstName, lastName, permissions } = req.body;
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+      
+      // Create the user with the same organization ID
+      const newUser = await storage.createUser({
+        email,
+        password, // In production, this should be hashed
+        firstName,
+        lastName,
+        organizationId,
+        permissions: permissions || [],
+      });
+      
+      res.json(newUser);
+    } catch (error) {
+      console.error("Error creating user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // User invitation endpoints
   app.get('/api/users/invitations', isAuthenticated, async (req: any, res) => {
     try {

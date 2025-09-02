@@ -57,6 +57,7 @@ interface User {
   role: "admin" | "manager" | "member" | "viewer";
   status: "active" | "inactive" | "pending";
   isAdmin: boolean;
+  permissions?: string[];
   lastLogin?: string;
   createdAt: string;
   invitedBy?: string;
@@ -84,30 +85,41 @@ interface ActivityLog {
   timestamp: string;
 }
 
-const rolePermissions = {
-  admin: {
-    label: "Administrator",
-    description: "Full access to all features and settings",
-    color: "red",
-    permissions: ["manage_users", "manage_billing", "manage_integrations", "view_all", "edit_all"]
+// Available permissions
+const availablePermissions = [
+  { id: "view_dashboard", label: "View Dashboard", category: "General" },
+  { id: "view_call_history", label: "View Call History", category: "General" },
+  { id: "view_analytics", label: "View Analytics", category: "General" },
+  { id: "manage_agents", label: "Manage Agents", category: "Agents" },
+  { id: "configure_tools", label: "Configure Tools", category: "Agents" },
+  { id: "access_knowledge_base", label: "Access Knowledge Base", category: "Content" },
+  { id: "view_billing", label: "View Billing", category: "Administration" },
+  { id: "manage_users", label: "Manage Users", category: "Administration" },
+  { id: "download_reports", label: "Download Reports", category: "Reports" },
+  { id: "access_recordings", label: "Access Recordings", category: "Content" },
+];
+
+// Permission presets for quick selection
+const permissionPresets = {
+  viewer: {
+    label: "Viewer",
+    description: "Read-only access",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics"]
   },
   manager: {
     label: "Manager",
-    description: "Manage agents, view reports, and handle operations",
-    color: "blue",
-    permissions: ["manage_agents", "view_reports", "manage_calls", "view_billing"]
+    description: "Can manage agents & tools",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "access_knowledge_base", "download_reports", "access_recordings"]
   },
-  member: {
-    label: "Member",
-    description: "Create and manage own agents, view own data",
-    color: "green",
-    permissions: ["create_agents", "view_own", "edit_own"]
+  analyst: {
+    label: "Analyst",
+    description: "Analytics & reports",
+    permissions: ["view_dashboard", "view_analytics", "download_reports", "view_call_history"]
   },
-  viewer: {
-    label: "Viewer",
-    description: "View-only access to permitted resources",
-    color: "gray",
-    permissions: ["view_limited"]
+  admin: {
+    label: "Admin",
+    description: "Full access",
+    permissions: availablePermissions.map(p => p.id)
   }
 };
 
@@ -115,12 +127,14 @@ export function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterRole, setFilterRole] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState<string>("member");
-  const [inviteMessage, setInviteMessage] = useState("");
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -140,31 +154,33 @@ export function UserManagementPage() {
     queryKey: ["/api/users/activity-logs"],
   });
 
-  // Invite user mutation
-  const inviteMutation = useMutation({
-    mutationFn: async () => {
-      return apiRequest("/api/users/invite", {
-        method: "POST",
-        body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole,
-          message: inviteMessage,
-        }),
-      });
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (data: { 
+      email: string; 
+      password: string;
+      firstName: string;
+      lastName: string;
+      permissions: string[];
+    }) => {
+      return apiRequest("POST", "/api/users/create", data);
     },
     onSuccess: () => {
       toast({
-        title: "Invitation sent",
-        description: `An invitation has been sent to ${inviteEmail}`,
+        title: "User created",
+        description: "New user has been created successfully",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/invitations"] });
-      setShowInviteDialog(false);
-      setInviteEmail("");
-      setInviteMessage("");
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setShowAddUserDialog(false);
+      setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserFirstName("");
+      setNewUserLastName("");
+      setSelectedPermissions([]);
     },
     onError: (error: Error) => {
       toast({
-        title: "Invitation failed",
+        title: "User creation failed",
         description: error.message,
         variant: "destructive",
       });
@@ -174,10 +190,7 @@ export function UserManagementPage() {
   // Update user mutation
   const updateUserMutation = useMutation({
     mutationFn: async (data: { userId: string; updates: Partial<User> }) => {
-      return apiRequest(`/api/users/${data.userId}`, {
-        method: "PATCH",
-        body: JSON.stringify(data.updates),
-      });
+      return apiRequest("PATCH", `/api/users/${data.userId}`, data.updates);
     },
     onSuccess: () => {
       toast({
@@ -200,9 +213,7 @@ export function UserManagementPage() {
   // Delete user mutation
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      return apiRequest(`/api/users/${userId}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/users/${userId}`);
     },
     onSuccess: () => {
       toast({
@@ -223,9 +234,7 @@ export function UserManagementPage() {
   // Resend invitation mutation
   const resendInviteMutation = useMutation({
     mutationFn: async (invitationId: string) => {
-      return apiRequest(`/api/users/invitations/${invitationId}/resend`, {
-        method: "POST",
-      });
+      return apiRequest("POST", `/api/users/invitations/${invitationId}/resend`);
     },
     onSuccess: () => {
       toast({
@@ -246,9 +255,7 @@ export function UserManagementPage() {
   // Cancel invitation mutation
   const cancelInviteMutation = useMutation({
     mutationFn: async (invitationId: string) => {
-      return apiRequest(`/api/users/invitations/${invitationId}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/users/invitations/${invitationId}`);
     },
     onSuccess: () => {
       toast({
@@ -306,87 +313,160 @@ export function UserManagementPage() {
             Manage team members, roles, and permissions
           </p>
         </div>
-        <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
+        <Dialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog}>
           <DialogTrigger asChild>
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
-              Invite User
+              Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Invite Team Member</DialogTitle>
+              <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>
-                Send an invitation to join your organization
+                Create a new user account with specific permissions
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    placeholder="John"
+                    value={newUserFirstName}
+                    onChange={(e) => setNewUserFirstName(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    placeholder="Doe"
+                    value={newUserLastName}
+                    onChange={(e) => setNewUserLastName(e.target.value)}
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="colleague@example.com"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={inviteRole} onValueChange={setInviteRole}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(rolePermissions).map(([key, role]) => (
-                      <SelectItem key={key} value={key}>
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          <div>
-                            <div className="font-medium">{role.label}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {role.description}
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter a secure password"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                />
+              </div>
+              
+              {/* Permission Presets */}
+              <div className="space-y-2">
+                <Label>Quick Templates</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(permissionPresets).map(([key, preset]) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedPermissions(preset.permissions)}
+                      className="text-xs"
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedPermissions([])}
+                    className="text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Permissions Checkboxes */}
+              <div className="space-y-2">
+                <Label>Permissions</Label>
+                <div className="border rounded-lg p-4 space-y-4 max-h-64 overflow-y-auto">
+                  {["General", "Agents", "Content", "Administration", "Reports"].map(category => {
+                    const categoryPermissions = availablePermissions.filter(p => p.category === category);
+                    if (categoryPermissions.length === 0) return null;
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className="font-medium text-sm text-muted-foreground">{category}</div>
+                        <div className="space-y-2">
+                          {categoryPermissions.map(permission => (
+                            <div key={permission.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={permission.id}
+                                checked={selectedPermissions.includes(permission.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedPermissions([...selectedPermissions, permission.id]);
+                                  } else {
+                                    setSelectedPermissions(selectedPermissions.filter(p => p !== permission.id));
+                                  }
+                                }}
+                                className="rounded border-gray-300"
+                              />
+                              <Label htmlFor={permission.id} className="text-sm font-normal cursor-pointer">
+                                {permission.label}
+                              </Label>
                             </div>
-                          </div>
+                          ))}
                         </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="message">Personal Message (Optional)</Label>
-                <Textarea
-                  id="message"
-                  placeholder="Add a personal message to the invitation..."
-                  value={inviteMessage}
-                  onChange={(e) => setInviteMessage(e.target.value)}
-                  rows={3}
-                />
+              
+              <div className="text-sm text-muted-foreground">
+                Selected permissions: {selectedPermissions.length} of {availablePermissions.length}
               </div>
             </div>
             <DialogFooter>
               <Button
+                type="button"
                 variant="outline"
-                onClick={() => setShowInviteDialog(false)}
+                onClick={() => setShowAddUserDialog(false)}
               >
                 Cancel
               </Button>
               <Button
-                onClick={() => inviteMutation.mutate()}
-                disabled={!inviteEmail || inviteMutation.isPending}
+                type="submit"
+                onClick={() => {
+                  if (!newUserEmail || !newUserPassword) {
+                    toast({
+                      title: "Missing required fields",
+                      description: "Please enter email and password",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+                  createUserMutation.mutate({
+                    email: newUserEmail,
+                    password: newUserPassword,
+                    firstName: newUserFirstName,
+                    lastName: newUserLastName,
+                    permissions: selectedPermissions,
+                  });
+                }}
+                disabled={createUserMutation.isPending}
               >
-                {inviteMutation.isPending ? (
-                  <>
-                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <SendHorizontal className="mr-2 h-4 w-4" />
-                    Send Invitation
-                  </>
-                )}
+                {createUserMutation.isPending ? "Creating..." : "Create User"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -480,8 +560,8 @@ export function UserManagementPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Roles</SelectItem>
-                    {Object.entries(rolePermissions).map(([key, role]) => (
-                      <SelectItem key={key} value={key}>{role.label}</SelectItem>
+                    {Object.entries(permissionPresets).map(([key, preset]) => (
+                      <SelectItem key={key} value={key}>{preset.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -559,7 +639,7 @@ export function UserManagementPage() {
                           <TableCell>
                             <Badge variant={user.role === "admin" ? "destructive" : "secondary"}>
                               <Shield className="mr-1 h-3 w-3" />
-                              {rolePermissions[user.role as keyof typeof rolePermissions]?.label || user.role}
+                              {user.permissions?.length ? `${user.permissions.length} permissions` : "No permissions"}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -666,7 +746,7 @@ export function UserManagementPage() {
                               {invitation.status}
                             </Badge>
                             <Badge variant="outline">
-                              {rolePermissions[invitation.role as keyof typeof rolePermissions]?.label || invitation.role}
+                              {invitation.role || "Member"}
                             </Badge>
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -800,9 +880,9 @@ export function UserManagementPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(rolePermissions).map(([key, role]) => (
+                    {Object.entries(permissionPresets).map(([key, preset]) => (
                       <SelectItem key={key} value={key}>
-                        {role.label}
+                        {preset.label}
                       </SelectItem>
                     ))}
                   </SelectContent>
