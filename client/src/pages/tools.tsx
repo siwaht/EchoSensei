@@ -927,6 +927,18 @@ export default function Tools() {
                                 Active
                               </span>
                             )}
+                            {webhook.approvalStatus === 'pending' && (
+                              <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending Approval
+                              </Badge>
+                            )}
+                            {webhook.approvalStatus === 'approved' && (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Approved
+                              </Badge>
+                            )}
                           </div>
                           {webhook.description && (
                             <p className="text-sm text-muted-foreground mt-1">{webhook.description}</p>
@@ -941,15 +953,17 @@ export default function Tools() {
                           )}
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => submitForApproval('webhook', webhook)}
-                            title="Submit for admin approval"
-                            data-testid={`button-submit-webhook-approval-${index}`}
-                          >
-                            <SendHorizontal className="w-4 h-4" />
-                          </Button>
+                          {webhook.approvalStatus !== 'approved' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => submitForApproval('webhook', webhook)}
+                              title="Submit for admin approval"
+                              data-testid={`button-submit-webhook-approval-${index}`}
+                            >
+                              <SendHorizontal className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Switch
                             checked={webhook.enabled !== false}
                             onCheckedChange={(checked) => {
@@ -1092,6 +1106,18 @@ export default function Tools() {
                                 {server.mcpConfig.serverType === 'sse' ? 'SSE' : 'HTTP'}
                               </Badge>
                             )}
+                            {server.approvalStatus === 'pending' && (
+                              <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending Approval
+                              </Badge>
+                            )}
+                            {server.approvalStatus === 'approved' && (
+                              <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                <CheckCircle className="w-3 h-3 mr-1" />
+                                Approved
+                              </Badge>
+                            )}
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
                             {server.description}
@@ -1130,16 +1156,18 @@ export default function Tools() {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => submitForApproval('mcp', server)}
-                            title="Submit for admin approval"
-                            data-testid={`button-submit-mcp-approval-${server.id}`}
-                          >
-                            <SendHorizontal className="w-4 h-4 mr-1" />
-                            Submit for Approval
-                          </Button>
+                          {server.approvalStatus !== 'approved' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => submitForApproval('mcp', server)}
+                              title="Submit for admin approval"
+                              data-testid={`button-submit-mcp-approval-${server.id}`}
+                            >
+                              <SendHorizontal className="w-4 h-4 mr-1" />
+                              Submit for Approval
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
