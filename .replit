@@ -1,15 +1,15 @@
-modules = ["nodejs-20", "web", "postgresql-16", "python-3.11"]
+modules = ["nodejs-20", "web"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 packages = ["python3"]
 
 [deployment]
 deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
 run = ["npm", "run", "start"]
+build = ["npm", "run", "build"]
 
 [[ports]]
 localPort = 5000
@@ -40,4 +40,3 @@ args = "npm run dev"
 waitForPort = 5000
 
 [agent]
-integrations = ["javascript_paypal==1.0.0", "javascript_websocket==1.0.0", "javascript_stripe==1.0.0", "javascript_sendgrid==1.0.0", "javascript_auth_all_persistance==1.0.0", "javascript_database==1.0.0", "javascript_object_storage==1.0.0", "javascript_log_in_with_replit==1.0.0"]
