@@ -286,7 +286,7 @@ class ElevenLabsService {
 
   async updateTool(toolId: string, updates: any) {
     return this.makeRequest<any>(`/v1/convai/tools/${toolId}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(updates),
     });
   }
@@ -294,6 +294,276 @@ class ElevenLabsService {
   async deleteTool(toolId: string) {
     return this.makeRequest<any>(`/v1/convai/tools/${toolId}`, {
       method: "DELETE",
+    });
+  }
+
+  // Agent Testing endpoints
+  async getAgentTests(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/tests?agent_id=${agentId}`);
+  }
+
+  async createAgentTest(testData: any) {
+    return this.makeRequest<any>("/v1/convai/tests", {
+      method: "POST",
+      body: JSON.stringify(testData),
+    });
+  }
+
+  async runAgentTest(testId: string) {
+    return this.makeRequest<any>(`/v1/convai/tests/${testId}/run`, {
+      method: "POST",
+    });
+  }
+
+  async getTestResults(testId: string) {
+    return this.makeRequest<any>(`/v1/convai/tests/${testId}/results`);
+  }
+
+  // Widget endpoints
+  async getWidgetConfig(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/widget?agent_id=${agentId}`);
+  }
+
+  async updateWidgetConfig(agentId: string, config: any) {
+    return this.makeRequest<any>("/v1/convai/widget", {
+      method: "POST",
+      body: JSON.stringify({ agent_id: agentId, ...config }),
+    });
+  }
+
+  async getWidgetEmbedCode(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/widget/embed/${agentId}`);
+  }
+
+  // SIP Trunk endpoints
+  async getSipTrunks() {
+    return this.makeRequest<any>("/v1/convai/sip-trunk");
+  }
+
+  async createSipTrunk(sipData: any) {
+    return this.makeRequest<any>("/v1/convai/sip-trunk", {
+      method: "POST",
+      body: JSON.stringify(sipData),
+    });
+  }
+
+  async updateSipTrunk(sipId: string, updates: any) {
+    return this.makeRequest<any>(`/v1/convai/sip-trunk/${sipId}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteSipTrunk(sipId: string) {
+    return this.makeRequest<any>(`/v1/convai/sip-trunk/${sipId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Batch Calling endpoints
+  async getBatchCalls() {
+    return this.makeRequest<any>("/v1/convai/batch-calling");
+  }
+
+  async createBatchCall(batchData: any) {
+    return this.makeRequest<any>("/v1/convai/batch-calling", {
+      method: "POST",
+      body: JSON.stringify(batchData),
+    });
+  }
+
+  async getBatchCallStatus(batchId: string) {
+    return this.makeRequest<any>(`/v1/convai/batch-calling/${batchId}`);
+  }
+
+  async cancelBatchCall(batchId: string) {
+    return this.makeRequest<any>(`/v1/convai/batch-calling/${batchId}/cancel`, {
+      method: "POST",
+    });
+  }
+
+  // Workspace endpoints
+  async getWorkspace() {
+    return this.makeRequest<any>("/v1/convai/workspace");
+  }
+
+  async updateWorkspaceSettings(settings: any) {
+    return this.makeRequest<any>("/v1/convai/workspace", {
+      method: "PATCH",
+      body: JSON.stringify(settings),
+    });
+  }
+
+  async getWorkspaceMembers() {
+    return this.makeRequest<any>("/v1/convai/workspace/members");
+  }
+
+  async inviteWorkspaceMember(email: string, role: string) {
+    return this.makeRequest<any>("/v1/convai/workspace/members/invite", {
+      method: "POST",
+      body: JSON.stringify({ email, role }),
+    });
+  }
+
+  // Knowledge Base endpoints
+  async getKnowledgeBase(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/knowledge-base?agent_id=${agentId}`);
+  }
+
+  async addKnowledgeBaseDocument(agentId: string, document: any) {
+    return this.makeRequest<any>("/v1/convai/knowledge-base", {
+      method: "POST",
+      body: JSON.stringify({ agent_id: agentId, ...document }),
+    });
+  }
+
+  async addKnowledgeBaseUrl(agentId: string, url: string, options?: any) {
+    return this.makeRequest<any>("/v1/convai/knowledge-base/url", {
+      method: "POST",
+      body: JSON.stringify({ agent_id: agentId, url, ...options }),
+    });
+  }
+
+  async deleteKnowledgeBaseItem(itemId: string) {
+    return this.makeRequest<any>(`/v1/convai/knowledge-base/${itemId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async reindexKnowledgeBase(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/knowledge-base/reindex`, {
+      method: "POST",
+      body: JSON.stringify({ agent_id: agentId }),
+    });
+  }
+
+  // LLM Usage endpoints
+  async getLlmUsage(startDate?: string, endDate?: string, agentId?: string) {
+    const queryParams = new URLSearchParams();
+    if (startDate) queryParams.append("start_date", startDate);
+    if (endDate) queryParams.append("end_date", endDate);
+    if (agentId) queryParams.append("agent_id", agentId);
+    
+    const endpoint = `/v1/convai/llm-usage${queryParams.toString() ? `?${queryParams}` : ""}`;
+    return this.makeRequest<any>(endpoint);
+  }
+
+  async getLlmUsageDetails(conversationId: string) {
+    return this.makeRequest<any>(`/v1/convai/llm-usage/${conversationId}`);
+  }
+
+  // Twilio endpoints
+  async getTwilioConfig() {
+    return this.makeRequest<any>("/v1/convai/twilio");
+  }
+
+  async updateTwilioConfig(config: any) {
+    return this.makeRequest<any>("/v1/convai/twilio", {
+      method: "POST",
+      body: JSON.stringify(config),
+    });
+  }
+
+  async verifyTwilioPhone(phoneNumber: string) {
+    return this.makeRequest<any>("/v1/convai/twilio/verify", {
+      method: "POST",
+      body: JSON.stringify({ phone_number: phoneNumber }),
+    });
+  }
+
+  // MCP Server endpoints
+  async getMcpServers() {
+    return this.makeRequest<any>("/v1/convai/mcp/servers");
+  }
+
+  async addMcpServer(serverConfig: any) {
+    return this.makeRequest<any>("/v1/convai/mcp/servers", {
+      method: "POST",
+      body: JSON.stringify(serverConfig),
+    });
+  }
+
+  async updateMcpServer(serverId: string, updates: any) {
+    return this.makeRequest<any>(`/v1/convai/mcp/servers/${serverId}`, {
+      method: "PATCH",
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteMcpServer(serverId: string) {
+    return this.makeRequest<any>(`/v1/convai/mcp/servers/${serverId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async testMcpServer(serverId: string) {
+    return this.makeRequest<any>(`/v1/convai/mcp/servers/${serverId}/test`, {
+      method: "POST",
+    });
+  }
+
+  // Evaluation endpoints
+  async getEvaluationCriteria(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/evaluation`);
+  }
+
+  async updateEvaluationCriteria(agentId: string, criteria: any) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/evaluation`, {
+      method: "POST",
+      body: JSON.stringify(criteria),
+    });
+  }
+
+  async getEvaluationResults(agentId: string, startDate?: string, endDate?: string) {
+    const queryParams = new URLSearchParams();
+    if (startDate) queryParams.append("start_date", startDate);
+    if (endDate) queryParams.append("end_date", endDate);
+    
+    const endpoint = `/v1/convai/agents/${agentId}/evaluation/results${queryParams.toString() ? `?${queryParams}` : ""}`;
+    return this.makeRequest<any>(endpoint);
+  }
+
+  // Privacy & Compliance endpoints
+  async getPrivacySettings(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/privacy`);
+  }
+
+  async updatePrivacySettings(agentId: string, settings: any) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/privacy`, {
+      method: "PATCH",
+      body: JSON.stringify(settings),
+    });
+  }
+
+  // Dynamic variables endpoints
+  async getDynamicVariables(agentId: string) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/variables`);
+  }
+
+  async updateDynamicVariables(agentId: string, variables: any) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/variables`, {
+      method: "POST",
+      body: JSON.stringify(variables),
+    });
+  }
+
+  // Agent cloning endpoint
+  async cloneAgent(agentId: string, name: string) {
+    return this.makeRequest<any>(`/v1/convai/agents/${agentId}/clone`, {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    });
+  }
+
+  // Concurrency settings endpoint
+  async getConcurrencySettings() {
+    return this.makeRequest<any>("/v1/convai/concurrency");
+  }
+
+  async updateConcurrencySettings(settings: any) {
+    return this.makeRequest<any>("/v1/convai/concurrency", {
+      method: "PATCH",
+      body: JSON.stringify(settings),
     });
   }
 }

@@ -641,6 +641,297 @@ export const insertRagConfigurationSchema = createInsertSchema(ragConfigurations
   updatedAt: true,
 });
 
+// Agent Testing table
+export const agentTests = pgTable("agent_tests", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  agentId: varchar("agent_id").notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  testScenarios: json("test_scenarios").$type<Array<{
+    id: string;
+    name: string;
+    userInput: string;
+    expectedResponse?: string;
+    variables?: Record<string, string>;
+    success?: boolean;
+    actualResponse?: string;
+  }>>(),
+  results: json("results").$type<{
+    totalTests: number;
+    passed: number;
+    failed: number;
+    lastRunAt?: string;
+  }>(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Widget configurations table
+export const widgetConfigurations = pgTable("widget_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  agentId: varchar("agent_id").notNull(),
+  name: varchar("name").notNull(),
+  variant: varchar("variant").default("full"), // full, compact, minimal
+  placement: varchar("placement").default("bottom-right"),
+  bgColor: varchar("bg_color").default("#ffffff"),
+  textColor: varchar("text_color").default("#000000"),
+  btnColor: varchar("btn_color").default("#000000"),
+  btnTextColor: varchar("btn_text_color").default("#ffffff"),
+  borderRadius: integer("border_radius").default(8),
+  actionText: text("action_text"),
+  startCallText: text("start_call_text"),
+  endCallText: text("end_call_text"),
+  expandText: text("expand_text"),
+  listeningText: text("listening_text"),
+  speakingText: text("speaking_text"),
+  showAvatar: boolean("show_avatar").default(true),
+  disableBanner: boolean("disable_banner").default(false),
+  micMutingEnabled: boolean("mic_muting_enabled").default(false),
+  transcriptEnabled: boolean("transcript_enabled").default(false),
+  textInputEnabled: boolean("text_input_enabled").default(true),
+  defaultExpanded: boolean("default_expanded").default(false),
+  alwaysExpanded: boolean("always_expanded").default(false),
+  languageSelector: boolean("language_selector").default(false),
+  supportsTextOnly: boolean("supports_text_only").default(true),
+  customCss: text("custom_css"),
+  embedCode: text("embed_code"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// SIP Trunk configurations table
+export const sipTrunkConfigurations = pgTable("sip_trunk_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  name: varchar("name").notNull(),
+  uri: varchar("uri").notNull(),
+  username: varchar("username"),
+  password: varchar("password"), // encrypted
+  domain: varchar("domain"),
+  proxy: varchar("proxy"),
+  transport: varchar("transport").default("udp"), // udp, tcp, tls
+  registrationExpiry: integer("registration_expiry").default(3600),
+  codec: varchar("codec").default("PCMU"), // PCMU, PCMA, G729, etc
+  dtmfMode: varchar("dtmf_mode").default("rfc2833"), // rfc2833, inband, info
+  callerIdName: varchar("caller_id_name"),
+  callerIdNumber: varchar("caller_id_number"),
+  maxConcurrentCalls: integer("max_concurrent_calls").default(10),
+  status: varchar("status").default("inactive"), // active, inactive, error
+  lastRegistered: timestamp("last_registered"),
+  metadata: json("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Workspace settings table
+export const workspaceSettings = pgTable("workspace_settings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().unique(),
+  name: varchar("name").notNull(),
+  logo: varchar("logo"),
+  primaryColor: varchar("primary_color").default("#000000"),
+  accentColor: varchar("accent_color").default("#0066ff"),
+  timezone: varchar("timezone").default("UTC"),
+  dateFormat: varchar("date_format").default("MM/DD/YYYY"),
+  timeFormat: varchar("time_format").default("12h"), // 12h, 24h
+  language: varchar("language").default("en"),
+  currency: varchar("currency").default("USD"),
+  dataResidency: varchar("data_residency").default("us"), // us, eu, ap
+  complianceSettings: json("compliance_settings").$type<{
+    hipaa?: boolean;
+    gdpr?: boolean;
+    soc2?: boolean;
+    zeroRetention?: boolean;
+    recordingConsent?: boolean;
+  }>(),
+  securitySettings: json("security_settings").$type<{
+    twoFactorRequired?: boolean;
+    ssoEnabled?: boolean;
+    ipWhitelist?: string[];
+    sessionTimeout?: number;
+    passwordPolicy?: {
+      minLength?: number;
+      requireUppercase?: boolean;
+      requireNumbers?: boolean;
+      requireSpecialChars?: boolean;
+      expiryDays?: number;
+    };
+  }>(),
+  notificationSettings: json("notification_settings").$type<{
+    emailNotifications?: boolean;
+    smsNotifications?: boolean;
+    webhookNotifications?: boolean;
+    dailyDigest?: boolean;
+    weeklyReport?: boolean;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Analytics data table
+export const analyticsData = pgTable("analytics_data", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  agentId: varchar("agent_id"),
+  date: timestamp("date").notNull(),
+  totalCalls: integer("total_calls").default(0),
+  successfulCalls: integer("successful_calls").default(0),
+  failedCalls: integer("failed_calls").default(0),
+  totalMinutes: decimal("total_minutes", { precision: 10, scale: 2 }).default('0'),
+  totalCost: decimal("total_cost", { precision: 10, scale: 4 }).default('0'),
+  averageCallDuration: decimal("average_call_duration", { precision: 10, scale: 2 }),
+  averageSatisfaction: decimal("average_satisfaction", { precision: 3, scale: 2 }),
+  uniqueCallers: integer("unique_callers").default(0),
+  peakConcurrency: integer("peak_concurrency").default(0),
+  languageBreakdown: json("language_breakdown").$type<Record<string, number>>(),
+  errorBreakdown: json("error_breakdown").$type<Record<string, number>>(),
+  hourlyDistribution: json("hourly_distribution").$type<number[]>(),
+  toolUsage: json("tool_usage").$type<Record<string, number>>(),
+  llmTokensUsed: integer("llm_tokens_used").default(0),
+  llmCost: decimal("llm_cost", { precision: 10, scale: 4 }).default('0'),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Conversation feedback table
+export const conversationFeedback = pgTable("conversation_feedback", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  conversationId: varchar("conversation_id").notNull(),
+  agentId: varchar("agent_id"),
+  rating: integer("rating"), // 1-5
+  feedback: text("feedback"),
+  tags: json("tags").$type<string[]>(),
+  sentiment: varchar("sentiment"), // positive, neutral, negative
+  resolved: boolean("resolved").default(false),
+  resolvedBy: varchar("resolved_by"),
+  resolvedAt: timestamp("resolved_at"),
+  metadata: json("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// LLM Usage tracking table
+export const llmUsage = pgTable("llm_usage", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  agentId: varchar("agent_id"),
+  conversationId: varchar("conversation_id"),
+  model: varchar("model").notNull(),
+  provider: varchar("provider").notNull(), // openai, anthropic, google
+  inputTokens: integer("input_tokens").default(0),
+  outputTokens: integer("output_tokens").default(0),
+  totalTokens: integer("total_tokens").default(0),
+  cost: decimal("cost", { precision: 10, scale: 6 }).default('0'),
+  latency: integer("latency"), // in milliseconds
+  success: boolean("success").default(true),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Agent overrides table
+export const agentOverrides = pgTable("agent_overrides", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  agentId: varchar("agent_id").notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  overrideConfig: json("override_config").$type<{
+    prompt?: string;
+    firstMessage?: string;
+    language?: string;
+    voiceId?: string;
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    tools?: string[];
+    dynamicVariables?: Record<string, string>;
+  }>(),
+  conditions: json("conditions").$type<{
+    timeRange?: { start: string; end: string };
+    dayOfWeek?: string[];
+    phoneNumbers?: string[];
+    customCondition?: string;
+  }>(),
+  priority: integer("priority").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// MCP Server configurations table
+export const mcpServerConfigurations = pgTable("mcp_server_configurations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  serverType: varchar("server_type").notNull(), // sse, streamable_http
+  url: varchar("url").notNull(),
+  secretToken: varchar("secret_token"), // encrypted
+  approvalMode: varchar("approval_mode").default("always_ask"), // always_ask, fine_grained, no_approval
+  trusted: boolean("trusted").default(false),
+  allowedTools: json("allowed_tools").$type<string[]>(),
+  configuration: json("configuration").$type<Record<string, any>>(),
+  status: varchar("status").default("inactive"), // active, inactive, error
+  lastConnected: timestamp("last_connected"),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Insert schemas for new tables
+export const insertAgentTestSchema = createInsertSchema(agentTests).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWidgetConfigurationSchema = createInsertSchema(widgetConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertSipTrunkConfigurationSchema = createInsertSchema(sipTrunkConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWorkspaceSettingsSchema = createInsertSchema(workspaceSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAnalyticsDataSchema = createInsertSchema(analyticsData).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertConversationFeedbackSchema = createInsertSchema(conversationFeedback).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertLlmUsageSchema = createInsertSchema(llmUsage).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertAgentOverrideSchema = createInsertSchema(agentOverrides).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMcpServerConfigurationSchema = createInsertSchema(mcpServerConfigurations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Payment relations (defined after billingPackages table)
 export const paymentsRelations = relations(payments, ({ one }) => ({
   organization: one(organizations, {
@@ -719,3 +1010,21 @@ export type ApprovalWebhook = typeof approvalWebhooks.$inferSelect;
 export type InsertApprovalWebhook = z.infer<typeof insertApprovalWebhookSchema>;
 export type RagConfiguration = typeof ragConfigurations.$inferSelect;
 export type InsertRagConfiguration = z.infer<typeof insertRagConfigurationSchema>;
+export type AgentTest = typeof agentTests.$inferSelect;
+export type InsertAgentTest = z.infer<typeof insertAgentTestSchema>;
+export type WidgetConfiguration = typeof widgetConfigurations.$inferSelect;
+export type InsertWidgetConfiguration = z.infer<typeof insertWidgetConfigurationSchema>;
+export type SipTrunkConfiguration = typeof sipTrunkConfigurations.$inferSelect;
+export type InsertSipTrunkConfiguration = z.infer<typeof insertSipTrunkConfigurationSchema>;
+export type WorkspaceSettings = typeof workspaceSettings.$inferSelect;
+export type InsertWorkspaceSettings = z.infer<typeof insertWorkspaceSettingsSchema>;
+export type AnalyticsData = typeof analyticsData.$inferSelect;
+export type InsertAnalyticsData = z.infer<typeof insertAnalyticsDataSchema>;
+export type ConversationFeedback = typeof conversationFeedback.$inferSelect;
+export type InsertConversationFeedback = z.infer<typeof insertConversationFeedbackSchema>;
+export type LlmUsage = typeof llmUsage.$inferSelect;
+export type InsertLlmUsage = z.infer<typeof insertLlmUsageSchema>;
+export type AgentOverride = typeof agentOverrides.$inferSelect;
+export type InsertAgentOverride = z.infer<typeof insertAgentOverrideSchema>;
+export type McpServerConfiguration = typeof mcpServerConfigurations.$inferSelect;
+export type InsertMcpServerConfiguration = z.infer<typeof insertMcpServerConfigurationSchema>;

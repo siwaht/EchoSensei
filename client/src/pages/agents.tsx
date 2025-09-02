@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bot, Plus, Trash2, Eye, Play, RefreshCw, ExternalLink, HelpCircle, Settings } from "lucide-react";
+import { Bot, Plus, Trash2, Eye, Play, RefreshCw, ExternalLink, HelpCircle, Settings, FlaskConical } from "lucide-react";
 import { AddAgentModal } from "@/components/modals/add-agent-modal";
 import { AgentDetailModal } from "@/components/modals/agent-detail-modal";
 import { useToast } from "@/hooks/use-toast";
@@ -276,6 +276,19 @@ export default function Agents() {
                 >
                   <Settings className="w-4 h-4 mr-2" />
                   Agent Settings
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full hover:bg-blue-50 hover:text-blue-600 hover:border-blue-600 dark:hover:bg-blue-950 dark:hover:text-blue-400 dark:hover:border-blue-400 transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLocation(`/agent-testing?agentId=${agent.id}`);
+                  }}
+                  data-testid={`button-test-${agent.id}`}
+                >
+                  <FlaskConical className="w-4 h-4 mr-2" />
+                  Test Agent
                 </Button>
                 <div className="flex gap-2">
                   <Tooltip>
