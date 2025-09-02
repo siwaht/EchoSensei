@@ -388,11 +388,11 @@ export default function Integrations() {
 
       {/* Webhook Configuration */}
       <Card className="p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-base sm:text-lg font-semibold mb-4" data-testid="text-webhook-config-title">Webhook Configuration</h3>
+        <h3 className="text-base sm:text-lg font-semibold mb-4" data-testid="text-webhook-config-title">ElevenLabs Webhook Configuration</h3>
         <div className="space-y-4">
           <div>
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Webhook URL
+              Webhook URL for Real-time Call Data
             </Label>
             <div className="flex">
               <Input
@@ -411,7 +411,7 @@ export default function Integrations() {
               </Button>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              Add this webhook URL to your voice agent configuration to receive real-time call data.
+              <strong>Essential for call tracking:</strong> Add this webhook URL to your ElevenLabs agent settings to automatically receive call transcripts, duration, costs, and audio recordings in real-time. Without this webhook, your dashboard won't receive new call data.
             </p>
           </div>
         </div>
