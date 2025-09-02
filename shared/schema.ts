@@ -89,7 +89,6 @@ export const taskStatusEnum = pgEnum("task_status", ["pending", "in_progress", "
 export const taskTypeEnum = pgEnum("task_type", ["integration_approval", "webhook_approval", "agent_approval"]);
 
 // RAG Configuration approval status enum
-export const ragApprovalStatusEnum = pgEnum("rag_approval_status", ["PENDING_APPROVAL", "ACTIVE", "REJECTED"]);
 
 // Integrations table for storing API keys
 export const integrations = pgTable("integrations", {
@@ -141,22 +140,6 @@ export const approvalWebhooks = pgTable("approval_webhooks", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// RAG Configurations table - tracks approval status for RAG webhooks
-export const ragConfigurations = pgTable("rag_configurations", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  organizationId: varchar("organization_id").notNull(),
-  name: varchar("name").notNull().default("Custom RAG"),
-  description: text("description"),
-  webhookUrl: text("webhook_url").notNull(),
-  systemPrompt: text("system_prompt"),
-  configuration: json("configuration").$type<any>(),
-  approvalStatus: ragApprovalStatusEnum("approval_status").notNull().default("PENDING_APPROVAL"),
-  approvedBy: varchar("approved_by"),
-  approvedAt: timestamp("approved_at"),
-  firstSavedAt: timestamp("first_saved_at"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
 
 // Phone numbers table
 export const phoneNumbers = pgTable("phone_numbers", {
@@ -646,11 +629,6 @@ export const insertQuickActionButtonSchema = createInsertSchema(quickActionButto
   updatedAt: true,
 });
 
-export const insertRagConfigurationSchema = createInsertSchema(ragConfigurations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
 
 // Agent Testing table
 export const agentTests = pgTable("agent_tests", {
@@ -1090,8 +1068,6 @@ export type AdminTask = typeof adminTasks.$inferSelect;
 export type InsertAdminTask = z.infer<typeof insertAdminTaskSchema>;
 export type ApprovalWebhook = typeof approvalWebhooks.$inferSelect;
 export type InsertApprovalWebhook = z.infer<typeof insertApprovalWebhookSchema>;
-export type RagConfiguration = typeof ragConfigurations.$inferSelect;
-export type InsertRagConfiguration = z.infer<typeof insertRagConfigurationSchema>;
 export type AgentTest = typeof agentTests.$inferSelect;
 export type InsertAgentTest = z.infer<typeof insertAgentTestSchema>;
 export type WidgetConfiguration = typeof widgetConfigurations.$inferSelect;

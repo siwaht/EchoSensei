@@ -4,37 +4,12 @@
 
 VoiceAI Dashboard is a white-label, multi-tenant SaaS platform for managing and monitoring voice AI agents. The platform follows a "Bring Your Own Key" (BYOK) model where clients securely connect their VoiceAI API credentials to monitor call logs, agent performance, and usage analytics. The application provides comprehensive dashboards for tracking voice agent interactions, billing information, and system integrations. While the platform is powered by advanced voice AI technology, it operates as a fully branded solution where customers interact with the VoiceAI brand without awareness of the underlying infrastructure.
 
-### Recent Updates (August 27, 2025)
-- **Webhook Integration for Approval Tasks**: Implemented comprehensive webhook functionality for approval notifications
-- **Webhook Triggers Added**: Webhooks now fire automatically when approval tasks are created, approved, or rejected
-- **Webhook Management UI**: Added interface in admin panel to configure webhook endpoints, events, and custom headers
-- **Security Features**: Implemented webhook signature verification with HMAC-SHA256 for secure payload validation
-- **Event Types Supported**: task.created, task.approved, task.rejected, task.status_changed events
-- **Database Recovery**: Fixed critical database corruption issues and restored missing tables (admin_tasks, integrations, agents, call_logs)
-- **Testing Infrastructure**: Created sample approval tasks and test webhooks for verification
-
-### Previous Updates (August 26, 2025)
-- **RAG Query-Specific Response Fixed**: Completely resolved issue where RAG webhook was returning identical responses regardless of query
-- **Intelligent Content Extraction**: Implemented smart sentence extraction that analyzes query keywords to return only relevant portions of documents
-- **Confidence Threshold Optimization**: Adjusted vector search confidence thresholds to work effectively with limited training data
-- **Query-Aware Filtering**: RAG webhook now properly scores and filters content based on query relevance using keyword matching and semantic scoring
-- **Markdown Content Support**: Fixed extraction logic to properly handle markdown-formatted content with bullet points and special formatting
-- **Verified Working Responses**: Webhook now returns different, targeted responses for queries like "what does he eat?", "where does john work?", and "john hobbies"
-- **RAG System Prompt Configuration Fixed**: Implemented backend endpoints to save and load RAG configuration including system prompts
-- **Configuration Persistence**: Added `/api/tools/rag-config` endpoints for saving and retrieving RAG settings
-- **Frontend Auto-Load**: RAG configuration now automatically loads saved settings when opening the knowledge base page
-- **System Prompt Integration**: RAG webhook now properly uses saved system prompt when formatting responses
-- **Enhanced Search Logic**: Improved document search to work across all organizations when specific agent/org IDs not provided
-- **Vector Search Working**: Resolved issues with embeddings and vector similarity search using LanceDB and OpenAI embeddings
-
-### Previous Updates (August 25, 2025)
-- **Custom RAG Tool**: Implemented custom Retrieval-Augmented Generation (RAG) system as a webhook-based tool for voice agents
-- **RAG Webhook Endpoints**: Created multiple webhook endpoints (/api/public/rag, /api/webhooks/rag, /api/tools/rag) for ElevenLabs agent integration
-- **Simplified Webhook Response**: Updated webhook to return simple JSON with just a "message" field for better ElevenLabs compatibility
-- **Manual Setup Instructions**: Added clear instructions for manually adding webhook to ElevenLabs agents (automatic sync not supported for custom tools)
-- **Renamed to RAG System**: Changed naming from "Knowledge Base" to "RAG System" to clarify this is a custom tool, not ElevenLabs' built-in knowledge base
-- **Vector Database Integration**: Integrated LanceDB for efficient semantic search with OpenAI embeddings
-- **Document Management**: Added ability to upload and manage documents for the RAG system with chunking and indexing
+### Recent Updates (September 2, 2025)
+- **Google Integrations Removed**: Successfully removed all Google OAuth integrations including Google Sheets, Calendar, and Gmail to simplify the platform
+- **RAG System Removed**: Completely removed the custom RAG (Retrieval-Augmented Generation) system to prepare for native ElevenLabs Knowledge Base integration
+- **Code Cleanup**: Removed all RAG configuration tables, endpoints, and related TypeScript code from both frontend and backend
+- **Database Simplified**: Cleaned up database schema by removing RAG configurations and Google OAuth state tables
+- **Ready for ElevenLabs KB**: Platform is now ready for implementation of native ElevenLabs Knowledge Base functionality
 
 ### Previous Updates (August 24, 2025)
 - **Complete Mobile Responsiveness**: Implemented full mobile responsiveness across all application pages

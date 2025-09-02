@@ -25,7 +25,6 @@ import {
 } from "lucide-react";
 import type { Agent, CustomTool } from "@shared/schema";
 import { SystemToolConfigModal } from "@/components/tools/system-tool-config-modal";
-import { GoogleAuthButton } from "@/components/google-auth-button";
 import { MCPServerDialog } from "@/components/mcp-server-dialog";
 import { WebhookToolDialog } from "@/components/webhook-tool-dialog";
 
@@ -92,30 +91,6 @@ interface ToolConfig {
   enabled: boolean;
 }
 
-interface GoogleSheetsConfig {
-  spreadsheetId?: string;
-  sheetName?: string;
-  apiKey?: string;
-  clientId?: string;
-  clientSecret?: string;
-  operations?: string[]; // read, write, append
-}
-
-interface GoogleCalendarConfig {
-  calendarId?: string;
-  apiKey?: string;
-  clientId?: string;
-  clientSecret?: string;
-  operations?: string[]; // read, create, update, delete
-}
-
-interface GoogleGmailConfig {
-  email?: string;
-  apiKey?: string;
-  clientId?: string;
-  clientSecret?: string;
-  operations?: string[]; // read, send, reply, forward, delete
-}
 
 export default function Tools() {
   const { toast } = useToast();
@@ -175,27 +150,12 @@ export default function Tools() {
     integrations: [] as ToolConfig[],
     customTools: [] as ToolConfig[],
     mcpServers: [] as CustomTool[],
-    googleSheets: {
-      enabled: false,
-      config: {} as GoogleSheetsConfig,
-    },
-    googleCalendar: {
-      enabled: false,
-      config: {} as GoogleCalendarConfig,
-    },
-    googleGmail: {
-      enabled: false,
-      config: {} as GoogleGmailConfig,
-    },
   });
 
   // Load agent's tools configuration when agent is selected
   useEffect(() => {
     if (selectedAgent) {
       const tools = selectedAgent.tools as any || {};
-      const googleSheetsIntegration = tools.integrations?.find((i: any) => i.type === 'google-sheets');
-      const googleCalendarIntegration = tools.integrations?.find((i: any) => i.type === 'google-calendar');
-      const googleGmailIntegration = tools.integrations?.find((i: any) => i.type === 'google-gmail');
             const mcpServers = tools.customTools?.filter((t: any) => t.type === 'mcp') || [];
       
       // Ensure each system tool has proper defaults
@@ -225,18 +185,6 @@ export default function Tools() {
         integrations: tools.integrations || [],
         customTools: tools.customTools?.filter((t: any) => t.type !== 'mcp') || [],
         mcpServers: mcpServers,
-        googleSheets: {
-          enabled: googleSheetsIntegration?.enabled || false,
-          config: googleSheetsIntegration?.configuration || {},
-        },
-        googleCalendar: {
-          enabled: googleCalendarIntegration?.enabled || false,
-          config: googleCalendarIntegration?.configuration || {},
-        },
-        googleGmail: {
-          enabled: googleGmailIntegration?.enabled || false,
-          config: googleGmailIntegration?.configuration || {},
-        },
       });
     }
   }, [selectedAgent]);
@@ -272,46 +220,8 @@ export default function Tools() {
       return;
     }
 
-    // Build integrations array including Google services
+    // Build integrations array
     const integrations = [...toolsConfig.integrations];
-    
-    // Remove existing Google integrations
-    const filteredIntegrations = integrations.filter(
-      i => i.type !== 'google-sheets' && i.type !== 'google-calendar' && i.type !== 'google-gmail'
-    );
-    
-    // Add Google Sheets if configured
-    if (toolsConfig.googleSheets.enabled) {
-      filteredIntegrations.push({
-        id: 'google-sheets',
-        name: 'Google Sheets',
-        type: 'google-sheets',
-        configuration: toolsConfig.googleSheets.config,
-        enabled: true,
-      });
-    }
-    
-    // Add Google Calendar if configured
-    if (toolsConfig.googleCalendar.enabled) {
-      filteredIntegrations.push({
-        id: 'google-calendar',
-        name: 'Google Calendar',
-        type: 'google-calendar',
-        configuration: toolsConfig.googleCalendar.config,
-        enabled: true,
-      });
-    }
-    
-    // Add Gmail if configured
-    if (toolsConfig.googleGmail.enabled) {
-      filteredIntegrations.push({
-        id: 'google-gmail',
-        name: 'Gmail',
-        type: 'google-gmail',
-        configuration: toolsConfig.googleGmail.config,
-        enabled: true,
-      });
-    }
 
     // Build custom tools array
     const customTools = [...toolsConfig.customTools.filter(t => t.type !== 'mcp')];
@@ -327,7 +237,7 @@ export default function Tools() {
         conversationInitiationWebhook: toolsConfig.conversationInitiationWebhook,
         postCallWebhook: toolsConfig.postCallWebhook,
         webhooks: toolsConfig.webhooks,
-        integrations: filteredIntegrations as any,
+        integrations: integrations as any,
         customTools: customTools as any,
         toolIds: [], // Maintain backward compatibility
       } as any,
@@ -1173,403 +1083,6 @@ export default function Tools() {
           {/* Integrations Tab */}
           <TabsContent value="integrations" className="space-y-4">
             <div className="space-y-4">
-              {/* Google Sheets Integration */}
-              <Card className="p-4 sm:p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                      <Sheet className="w-5 h-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-semibold">Google Sheets</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        Read from and write to Google Sheets spreadsheets
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={toolsConfig.googleSheets.enabled}
-                    onCheckedChange={(checked) => {
-                      setToolsConfig({
-                        ...toolsConfig,
-                        googleSheets: {
-                          ...toolsConfig.googleSheets,
-                          enabled: checked,
-                        },
-                      });
-                      setHasUnsavedChanges(true);
-                    }}
-                    data-testid="switch-google-sheets"
-                  />
-                </div>
-
-                {toolsConfig.googleSheets.enabled && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="sheets-spreadsheet-id" className="text-sm">Spreadsheet ID</Label>
-                        <Input
-                          id="sheets-spreadsheet-id"
-                          placeholder="e.g., 1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"
-                          value={toolsConfig.googleSheets.config.spreadsheetId || ""}
-                          onChange={(e) => {
-                            setToolsConfig({
-                              ...toolsConfig,
-                              googleSheets: {
-                                ...toolsConfig.googleSheets,
-                                config: {
-                                  ...toolsConfig.googleSheets.config,
-                                  spreadsheetId: e.target.value,
-                                },
-                              },
-                            });
-                            setHasUnsavedChanges(true);
-                          }}
-                          className="text-sm mt-1"
-                          data-testid="input-sheets-spreadsheet-id"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="sheets-sheet-name" className="text-sm">Sheet Name</Label>
-                        <Input
-                          id="sheets-sheet-name"
-                          placeholder="e.g., Sheet1"
-                          value={toolsConfig.googleSheets.config.sheetName || ""}
-                          onChange={(e) => {
-                            setToolsConfig({
-                              ...toolsConfig,
-                              googleSheets: {
-                                ...toolsConfig.googleSheets,
-                                config: {
-                                  ...toolsConfig.googleSheets.config,
-                                  sheetName: e.target.value,
-                                },
-                              },
-                            });
-                            setHasUnsavedChanges(true);
-                          }}
-                          className="text-sm mt-1"
-                          data-testid="input-sheets-sheet-name"
-                        />
-                      </div>
-                    </div>
-
-                    <GoogleAuthButton
-                      onAuthSuccess={() => {
-                        toast({ title: "Google account connected successfully" });
-                      }}
-                      onAuthError={(error) => {
-                        toast({ 
-                          title: "Failed to connect Google account",
-                          description: error,
-                          variant: "destructive"
-                        });
-                      }}
-                    />
-
-                    <div>
-                      <Label className="text-sm">Operations</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {['read', 'write', 'append'].map((operation) => {
-                          const operations = toolsConfig.googleSheets.config.operations || [];
-                          const isSelected = operations.includes(operation);
-                          return (
-                            <Button
-                              key={operation}
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => {
-                                const newOperations = isSelected
-                                  ? operations.filter(op => op !== operation)
-                                  : [...operations, operation];
-                                setToolsConfig({
-                                  ...toolsConfig,
-                                  googleSheets: {
-                                    ...toolsConfig.googleSheets,
-                                    config: {
-                                      ...toolsConfig.googleSheets.config,
-                                      operations: newOperations,
-                                    },
-                                  },
-                                });
-                                setHasUnsavedChanges(true);
-                              }}
-                              data-testid={`button-sheets-operation-${operation}`}
-                            >
-                              {isSelected && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {operation.charAt(0).toUpperCase() + operation.slice(1)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Select which operations the agent can perform on the spreadsheet
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Google Calendar Integration */}
-              <Card className="p-4 sm:p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-semibold">Google Calendar</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        Manage calendar events and scheduling
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={toolsConfig.googleCalendar.enabled}
-                    onCheckedChange={(checked) => {
-                      setToolsConfig({
-                        ...toolsConfig,
-                        googleCalendar: {
-                          ...toolsConfig.googleCalendar,
-                          enabled: checked,
-                        },
-                      });
-                      setHasUnsavedChanges(true);
-                    }}
-                    data-testid="switch-google-calendar"
-                  />
-                </div>
-
-                {toolsConfig.googleCalendar.enabled && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div>
-                      <Label htmlFor="calendar-id" className="text-sm">Calendar ID</Label>
-                      <Input
-                        id="calendar-id"
-                        placeholder="e.g., primary or calendar-id@group.calendar.google.com"
-                        value={toolsConfig.googleCalendar.config.calendarId || ""}
-                        onChange={(e) => {
-                          setToolsConfig({
-                            ...toolsConfig,
-                            googleCalendar: {
-                              ...toolsConfig.googleCalendar,
-                              config: {
-                                ...toolsConfig.googleCalendar.config,
-                                calendarId: e.target.value,
-                              },
-                            },
-                          });
-                          setHasUnsavedChanges(true);
-                        }}
-                        className="text-sm mt-1"
-                        data-testid="input-calendar-id"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Use "primary" for your main calendar or enter a specific calendar ID
-                      </p>
-                    </div>
-
-                    <GoogleAuthButton
-                      onAuthSuccess={() => {
-                        toast({ title: "Google account connected successfully" });
-                      }}
-                      onAuthError={(error) => {
-                        toast({ 
-                          title: "Failed to connect Google account",
-                          description: error,
-                          variant: "destructive"
-                        });
-                      }}
-                    />
-
-                    <div>
-                      <Label className="text-sm">Operations</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {['read', 'create', 'update', 'delete'].map((operation) => {
-                          const operations = toolsConfig.googleCalendar.config.operations || [];
-                          const isSelected = operations.includes(operation);
-                          return (
-                            <Button
-                              key={operation}
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => {
-                                const newOperations = isSelected
-                                  ? operations.filter(op => op !== operation)
-                                  : [...operations, operation];
-                                setToolsConfig({
-                                  ...toolsConfig,
-                                  googleCalendar: {
-                                    ...toolsConfig.googleCalendar,
-                                    config: {
-                                      ...toolsConfig.googleCalendar.config,
-                                      operations: newOperations,
-                                    },
-                                  },
-                                });
-                                setHasUnsavedChanges(true);
-                              }}
-                              data-testid={`button-calendar-operation-${operation}`}
-                            >
-                              {isSelected && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {operation.charAt(0).toUpperCase() + operation.slice(1)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Select which operations the agent can perform on the calendar
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex gap-2">
-                        <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5" />
-                        <div className="text-sm text-blue-800 dark:text-blue-200">
-                          <p className="font-medium">Setup Instructions</p>
-                          <ol className="text-xs mt-1 space-y-1 list-decimal list-inside">
-                            <li>Enable Google Calendar API in Google Cloud Console</li>
-                            <li>Create an API key with calendar permissions</li>
-                            <li>Share your calendar with the service account (if using service account)</li>
-                            <li>Enter your calendar ID and API credentials above</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </Card>
-
-              {/* Gmail Integration */}
-              <Card className="p-4 sm:p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center">
-                      <Mail className="w-5 h-5 text-red-600 dark:text-red-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-base sm:text-lg font-semibold">Gmail</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        Read, send, and manage Gmail messages
-                      </p>
-                    </div>
-                  </div>
-                  <Switch
-                    checked={toolsConfig.googleGmail.enabled}
-                    onCheckedChange={(checked) => {
-                      setToolsConfig({
-                        ...toolsConfig,
-                        googleGmail: {
-                          ...toolsConfig.googleGmail,
-                          enabled: checked,
-                        },
-                      });
-                      setHasUnsavedChanges(true);
-                    }}
-                    data-testid="switch-google-gmail"
-                  />
-                </div>
-
-                {toolsConfig.googleGmail.enabled && (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div>
-                      <Label htmlFor="gmail-email" className="text-sm">Email Address</Label>
-                      <Input
-                        id="gmail-email"
-                        type="email"
-                        placeholder="your.email@gmail.com"
-                        value={toolsConfig.googleGmail.config.email || ""}
-                        onChange={(e) => {
-                          setToolsConfig({
-                            ...toolsConfig,
-                            googleGmail: {
-                              ...toolsConfig.googleGmail,
-                              config: {
-                                ...toolsConfig.googleGmail.config,
-                                email: e.target.value,
-                              },
-                            },
-                          });
-                          setHasUnsavedChanges(true);
-                        }}
-                        className="text-sm mt-1"
-                        data-testid="input-gmail-email"
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        The Gmail account to connect to
-                      </p>
-                    </div>
-
-                    <GoogleAuthButton
-                      onAuthSuccess={() => {
-                        toast({ title: "Google account connected successfully" });
-                      }}
-                      onAuthError={(error) => {
-                        toast({ 
-                          title: "Failed to connect Google account",
-                          description: error,
-                          variant: "destructive"
-                        });
-                      }}
-                    />
-
-                    <div>
-                      <Label className="text-sm">Operations</Label>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {['read', 'send', 'reply', 'forward', 'delete'].map((operation) => {
-                          const operations = toolsConfig.googleGmail.config.operations || [];
-                          const isSelected = operations.includes(operation);
-                          return (
-                            <Button
-                              key={operation}
-                              variant={isSelected ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => {
-                                const newOperations = isSelected
-                                  ? operations.filter(op => op !== operation)
-                                  : [...operations, operation];
-                                setToolsConfig({
-                                  ...toolsConfig,
-                                  googleGmail: {
-                                    ...toolsConfig.googleGmail,
-                                    config: {
-                                      ...toolsConfig.googleGmail.config,
-                                      operations: newOperations,
-                                    },
-                                  },
-                                });
-                                setHasUnsavedChanges(true);
-                              }}
-                              data-testid={`button-gmail-operation-${operation}`}
-                            >
-                              {isSelected && <CheckCircle className="w-3 h-3 mr-1" />}
-                              {operation.charAt(0).toUpperCase() + operation.slice(1)}
-                            </Button>
-                          );
-                        })}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Select which operations the agent can perform on Gmail
-                      </p>
-                    </div>
-
-                    <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <div className="flex gap-2">
-                        <Mail className="w-4 h-4 text-red-600 dark:text-red-400 mt-0.5" />
-                        <div className="text-sm text-red-800 dark:text-red-200">
-                          <p className="font-medium">Setup Instructions</p>
-                          <ol className="text-xs mt-1 space-y-1 list-decimal list-inside">
-                            <li>Enable Gmail API in Google Cloud Console</li>
-                            <li>Create an API key with Gmail permissions</li>
-                            <li>Configure OAuth 2.0 consent screen if needed</li>
-                            <li>Enter your email address and API credentials above</li>
-                          </ol>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </Card>
 
               {/* Other Integrations Coming Soon */}
               <Card className="p-4 sm:p-6">
