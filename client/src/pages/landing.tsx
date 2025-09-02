@@ -38,13 +38,9 @@ export default function Landing() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Special case for admin user
-    if (email === "cc@siwaht.com" && password === "Hola173!") {
-      loginMutation.mutate({ email, password });
-    } else {
-      // For demo purposes, allow any other email with any password
-      loginMutation.mutate({ email, password: password || "demo" });
-    }
+    // Submit credentials for authentication
+    // Backend will handle validation
+    loginMutation.mutate({ email, password });
   };
 
   return (
