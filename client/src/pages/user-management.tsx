@@ -63,17 +63,6 @@ interface User {
   invitedBy?: string;
 }
 
-interface UserInvitation {
-  id: string;
-  email: string;
-  role: string;
-  status: "pending" | "accepted" | "expired";
-  invitedBy: string;
-  invitedAt: string;
-  expiresAt: string;
-  organizationId: string;
-  inviteCode: string;
-}
 
 interface ActivityLog {
   id: string;
@@ -144,10 +133,6 @@ export function UserManagementPage() {
     queryKey: ["/api/users"],
   });
 
-  // Fetch invitations
-  const { data: invitations = [], isLoading: isLoadingInvitations } = useQuery<UserInvitation[]>({
-    queryKey: ["/api/users/invitations"],
-  });
 
   // Fetch activity logs
   const { data: activityLogs = [], isLoading: isLoadingLogs } = useQuery<ActivityLog[]>({
@@ -231,47 +216,6 @@ export function UserManagementPage() {
     },
   });
 
-  // Resend invitation mutation
-  const resendInviteMutation = useMutation({
-    mutationFn: async (invitationId: string) => {
-      return apiRequest("POST", `/api/users/invitations/${invitationId}/resend`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Invitation resent",
-        description: "The invitation has been resent successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/invitations"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Resend failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Cancel invitation mutation
-  const cancelInviteMutation = useMutation({
-    mutationFn: async (invitationId: string) => {
-      return apiRequest("DELETE", `/api/users/invitations/${invitationId}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "Invitation cancelled",
-        description: "The invitation has been cancelled",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users/invitations"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Cancel failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
 
   const filteredUsers = users.filter((user) => {
     const matchesSearch = 
@@ -295,14 +239,6 @@ export function UserManagementPage() {
     }
   };
 
-  const copyInviteLink = (code: string) => {
-    const link = `${window.location.origin}/invite/${code}`;
-    navigator.clipboard.writeText(link);
-    toast({
-      title: "Link copied",
-      description: "Invitation link copied to clipboard",
-    });
-  };
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -503,15 +439,15 @@ export function UserManagementPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Invites</CardTitle>
-            <Mail className="h-4 w-4 text-yellow-500" />
+            <CardTitle className="text-sm font-medium">With Permissions</CardTitle>
+            <Key className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {invitations.filter(i => i.status === "pending").length}
+              {users.filter(u => u.permissions && u.permissions.length > 0).length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Awaiting acceptance
+              Users with custom permissions
             </p>
           </CardContent>
         </Card>
@@ -532,9 +468,8 @@ export function UserManagementPage() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="invitations">Invitations</TabsTrigger>
           <TabsTrigger value="activity">Activity Logs</TabsTrigger>
         </TabsList>
 
@@ -600,7 +535,7 @@ export function UserManagementPage() {
                   <p className="text-muted-foreground">
                     {searchQuery || filterRole !== "all" || filterStatus !== "all"
                       ? "Try adjusting your search or filter criteria"
-                      : "Invite team members to get started"}
+                      : "Add team members to get started"}
                   </p>
                 </div>
               ) : (
@@ -702,92 +637,6 @@ export function UserManagementPage() {
                       ))}
                     </TableBody>
                   </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="invitations" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Pending Invitations</CardTitle>
-              <CardDescription>
-                Manage pending invitations sent to new team members
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingInvitations ? (
-                <div className="flex justify-center items-center h-32">
-                  <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : invitations.length === 0 ? (
-                <div className="text-center py-8">
-                  <Mail className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">No pending invitations</h3>
-                  <p className="text-muted-foreground">
-                    All invitations have been accepted or expired
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {invitations.map((invitation) => (
-                    <div key={invitation.id} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Mail className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{invitation.email}</span>
-                            <Badge variant={
-                              invitation.status === "pending" ? "secondary" :
-                              invitation.status === "accepted" ? "success" :
-                              "destructive"
-                            }>
-                              {invitation.status}
-                            </Badge>
-                            <Badge variant="outline">
-                              {invitation.role || "Member"}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            Invited by {invitation.invitedBy} • {formatDistanceToNow(new Date(invitation.invitedAt), { addSuffix: true })}
-                          </div>
-                          {invitation.status === "pending" && (
-                            <div className="text-sm text-muted-foreground mt-1">
-                              Expires {formatDistanceToNow(new Date(invitation.expiresAt), { addSuffix: true })}
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyInviteLink(invitation.inviteCode)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          {invitation.status === "pending" && (
-                            <>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => resendInviteMutation.mutate(invitation.id)}
-                              >
-                                <RefreshCw className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => cancelInviteMutation.mutate(invitation.id)}
-                              >
-                                <XCircle className="h-4 w-4 text-red-500" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
                 </div>
               )}
             </CardContent>
