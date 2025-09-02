@@ -272,32 +272,68 @@ export function setupElevenLabsSyncOptimized(app: any, storage: any, isAuthentic
             
             const details = await response.json();
             
+            // Log the actual response structure to understand the data
+            console.log(`Conversation ${convId} details structure:`, {
+              hasTranscript: !!details.transcript,
+              hasMessages: !!details.messages,
+              hasAnalysis: !!details.analysis,
+              hasMetadata: !!details.metadata,
+              hasCost: !!details.cost,
+              hasCredits: !!details.credits_consumed,
+              topLevelKeys: Object.keys(details).slice(0, 20)
+            });
+            
             // Process audio URL
             let audioUrl = details.metadata?.audio_url || 
                           details.metadata?.recording_url || 
+                          details.audio_url ||
                           `/api/audio/${convId}`;
             
-            // Process transcript
+            // Process transcript - check multiple possible fields
             let transcriptJson: any = [];
-            if (details.transcript) {
-              if (Array.isArray(details.transcript)) {
-                transcriptJson = details.transcript.map((msg: any) => ({
-                  role: msg.role || (msg.is_agent ? 'agent' : 'user'),
-                  message: msg.text || msg.message || msg.content || "",
-                  time_in_call_secs: msg.time_in_call_secs
+            const transcriptSource = details.transcript || details.messages || details.analysis?.transcript;
+            
+            if (transcriptSource) {
+              if (Array.isArray(transcriptSource)) {
+                transcriptJson = transcriptSource.map((msg: any) => ({
+                  role: msg.role || msg.speaker || (msg.is_agent ? 'agent' : 'user') || 'unknown',
+                  message: msg.text || msg.message || msg.content || msg.transcript || "",
+                  time_in_call_secs: msg.time_in_call_secs || msg.timestamp || msg.start_time
                 }));
+              } else if (typeof transcriptSource === 'string') {
+                // Try to parse as JSON string
+                try {
+                  const parsed = JSON.parse(transcriptSource);
+                  if (Array.isArray(parsed)) {
+                    transcriptJson = parsed.map((msg: any) => ({
+                      role: msg.role || msg.speaker || 'unknown',
+                      message: msg.text || msg.message || msg.content || "",
+                      time_in_call_secs: msg.time_in_call_secs || msg.timestamp
+                    }));
+                  } else {
+                    transcriptJson = [{ role: 'system', message: transcriptSource }];
+                  }
+                } catch {
+                  transcriptJson = [{ role: 'system', message: transcriptSource }];
+                }
               } else {
-                transcriptJson = [{ role: 'system', message: JSON.stringify(details.transcript) }];
+                transcriptJson = [{ role: 'system', message: JSON.stringify(transcriptSource) }];
               }
             }
             
-            // Extract metadata
-            const metadata = details.metadata || {};
+            // Extract cost data - check all possible locations
             const costData = {
-              llm_cost: metadata.llm_cost || 0,
-              cost: metadata.cost || 0,
-              credits_used: metadata.credits_used || 0,
+              llm_cost: details.llm_cost || details.metadata?.llm_cost || details.cost?.llm || 0,
+              cost: details.cost || details.metadata?.cost || details.total_cost || 0,
+              credits_used: details.credits_consumed || details.credits_used || details.metadata?.credits_used || 0,
             };
+            
+            // Also use the duration from the conversation details
+            const duration = details.call_duration_secs || 
+                           details.duration || 
+                           details.metadata?.call_duration_secs || 
+                           conv.call_duration_secs || 
+                           0;
             
             // Create call log - ensure convId is not null
             if (!convId) {
@@ -314,13 +350,10 @@ export function setupElevenLabsSyncOptimized(app: any, storage: any, isAuthentic
               agentId: conv.localAgent.id,
               conversationId: convId,  // Required field in database
               elevenLabsCallId: convId,  // Also store as elevenLabsCallId
-              duration: metadata.call_duration_secs || 0,
+              duration: duration,
               transcript: transcriptJson,
               audioUrl: audioUrl,
-              cost: calculateCallCost(
-                metadata.call_duration_secs || 0,
-                costData
-              ).toString(),
+              cost: calculateCallCost(duration, costData).toString(),
               status: details.status || "completed",
               createdAt: conv.start_time_unix_secs 
                 ? new Date(conv.start_time_unix_secs * 1000)

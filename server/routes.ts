@@ -236,15 +236,15 @@ function decryptApiKey(encryptedApiKey: string): string {
 
 // Cost calculation helper
 function calculateCallCost(durationSeconds: number, costData?: any): number {
-  // ElevenLabs returns credits_used where 1 credit = $0.001
-  if (costData?.credits_used) {
-    return Number(costData.credits_used) * 0.001; // Convert credits to dollars
+  // ElevenLabs may return credits_consumed or credits_used where 1 credit = $0.001
+  const credits = costData?.credits_consumed || costData?.credits_used;
+  if (credits) {
+    return Number(credits) * 0.001; // Convert credits to dollars
   }
   
-  // Check for other cost fields
-  if (costData?.llm_cost) {
-    // If llm_cost is in credits, convert it
-    const cost = Number(costData.llm_cost);
+  // Check for direct cost field (might already be in dollars)
+  if (costData?.cost !== undefined && costData?.cost !== null) {
+    const cost = Number(costData.cost);
     // If the value seems too high (> $100 for a call), assume it's in credits
     if (cost > 100) {
       return cost * 0.001;
@@ -252,8 +252,9 @@ function calculateCallCost(durationSeconds: number, costData?: any): number {
     return cost;
   }
   
-  if (costData?.cost) {
-    const cost = Number(costData.cost);
+  // Check for llm_cost field
+  if (costData?.llm_cost !== undefined && costData?.llm_cost !== null) {
+    const cost = Number(costData.llm_cost);
     // If the value seems too high (> $100 for a call), assume it's in credits
     if (cost > 100) {
       return cost * 0.001;
