@@ -99,9 +99,7 @@ export function KnowledgeBasePage() {
   // Delete document mutation
   const deleteMutation = useMutation({
     mutationFn: async (documentId: string) => {
-      return apiRequest(`/api/knowledge-base/documents/${documentId}`, {
-        method: "DELETE",
-      });
+      return apiRequest("DELETE", `/api/knowledge-base/documents/${documentId}`);
     },
     onSuccess: () => {
       toast({
@@ -122,9 +120,7 @@ export function KnowledgeBasePage() {
   // Sync documents mutation
   const syncMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest("/api/knowledge-base/sync", {
-        method: "POST",
-      });
+      return apiRequest("POST", "/api/knowledge-base/sync");
     },
     onSuccess: () => {
       toast({
@@ -145,10 +141,7 @@ export function KnowledgeBasePage() {
   // Update agent assignments mutation
   const updateAssignmentsMutation = useMutation({
     mutationFn: async ({ documentId, agentIds }: { documentId: string; agentIds: string[] }) => {
-      return apiRequest(`/api/knowledge-base/documents/${documentId}/assign`, {
-        method: "PATCH",
-        body: JSON.stringify({ agentIds }),
-      });
+      return apiRequest("PATCH", `/api/knowledge-base/documents/${documentId}/assign`, { agentIds });
     },
     onSuccess: () => {
       toast({
@@ -454,7 +447,7 @@ export function KnowledgeBasePage() {
                         <div className="flex items-center gap-1">
                           {getStatusIcon(doc.status)}
                           <Badge variant={
-                            doc.status === "ready" ? "success" :
+                            doc.status === "ready" ? "default" :
                             doc.status === "processing" ? "secondary" :
                             doc.status === "failed" ? "destructive" :
                             "outline"

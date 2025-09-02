@@ -28,11 +28,14 @@ export function AgentDetailModal({ agent, open, onOpenChange }: AgentDetailModal
     }
   }, [open]);
   
-  const { data: callLogs } = useQuery<CallLog[]>({
+  const { data: callLogsResponse } = useQuery({
     queryKey: ["/api/call-logs"],
     queryFn: () => fetch(`/api/call-logs?agentId=${agent?.id}`).then(res => res.json()),
     enabled: !!agent?.id && open,
   });
+  
+  // Extract data from paginated response
+  const callLogs = callLogsResponse?.data || callLogsResponse || [];
 
   const toggleAgentMutation = useMutation({
     mutationFn: async () => {
@@ -57,7 +60,7 @@ export function AgentDetailModal({ agent, open, onOpenChange }: AgentDetailModal
 
   if (!agent) return null;
 
-  const agentCalls = callLogs?.filter(log => log.agentId === agent.id) || [];
+  const agentCalls = (Array.isArray(callLogs) ? callLogs : []).filter(log => log.agentId === agent.id);
   const totalCalls = agentCalls.length;
   const totalMinutes = Math.round(agentCalls.reduce((sum, log) => sum + (log.duration || 0), 0) / 60);
   const totalCost = agentCalls.reduce((sum, log) => sum + parseFloat(log.cost || "0"), 0);
