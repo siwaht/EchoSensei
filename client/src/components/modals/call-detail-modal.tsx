@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Bot } from "lucide-react";
+import { SentimentIndicator } from "@/components/analytics/sentiment-indicator";
 import type { CallLog } from "@shared/schema";
 
 interface CallDetailModalProps {
@@ -158,7 +159,10 @@ export function CallDetailModal({ callLog, open, onOpenChange }: CallDetailModal
         {/* Transcript */}
         {callLog.transcript && (
           <div>
-            <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 sm:mb-3">Call Transcript</h4>
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
+              <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">Call Transcript</h4>
+              <SentimentIndicator transcript={callLog.transcript} showDetails={false} />
+            </div>
             <Card className="p-3 sm:p-4 bg-gray-50 dark:bg-gray-700 max-h-48 sm:max-h-64 overflow-y-auto">
               <div className="space-y-3" data-testid="text-call-transcript">
                 {(() => {

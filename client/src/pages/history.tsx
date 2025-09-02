@@ -7,8 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Bot, Calendar, RefreshCw, Play, Pause, Download } from "lucide-react";
+import { Bot, Calendar, RefreshCw, Play, Pause, Download, Filter, FileDown } from "lucide-react";
 import { CallDetailModal } from "@/components/modals/call-detail-modal";
+import { TranscriptSearch } from "@/components/call-history/transcript-search";
+import { AnalyticsExport } from "@/components/analytics/analytics-export";
 import type { CallLog, Agent } from "@shared/schema";
 
 export default function History() {
@@ -17,6 +19,10 @@ export default function History() {
   const [endDate, setEndDate] = useState<string>("");
   const [selectedCallLog, setSelectedCallLog] = useState<CallLog | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [durationFilter, setDurationFilter] = useState<string>("all");
+  const [searchResults, setSearchResults] = useState<CallLog[] | null>(null);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -112,11 +118,32 @@ export default function History() {
     });
   };
 
-  // Filter call logs based on selected agent and date range
-  const filteredCallLogs = callLogs?.filter((log) => {
+  // Filter call logs based on selected filters
+  const filteredCallLogs = (searchResults || callLogs)?.filter((log) => {
     // Filter by agent
     if (selectedAgent !== "all" && log.agentId !== selectedAgent) {
       return false;
+    }
+    
+    // Filter by status
+    if (statusFilter !== "all" && log.status !== statusFilter) {
+      return false;
+    }
+    
+    // Filter by duration
+    if (durationFilter !== "all" && log.duration) {
+      const duration = log.duration;
+      switch (durationFilter) {
+        case "short":
+          if (duration >= 60) return false; // Less than 1 minute
+          break;
+        case "medium":
+          if (duration < 60 || duration >= 300) return false; // 1-5 minutes
+          break;
+        case "long":
+          if (duration < 300) return false; // More than 5 minutes
+          break;
+      }
     }
     
     // Filter by date range
@@ -134,6 +161,18 @@ export default function History() {
     
     return true;
   }) || [];
+
+  // Prepare export data
+  const exportData = filteredCallLogs.map((log) => ({
+    id: log.id,
+    agent: getAgentName(log.agentId),
+    date: log.createdAt ? new Date(log.createdAt).toLocaleString() : "Unknown",
+    duration: formatDuration(log.duration),
+    status: log.status || "unknown",
+    cost: log.cost ? `$${Number(log.cost).toFixed(4)}` : "N/A",
+    hasTranscript: !!log.transcript,
+    hasAudio: !!log.audioUrl
+  }));
 
   if (isLoading) {
     return (
@@ -214,6 +253,101 @@ export default function History() {
             )}
           </div>
         </div>
+        
+        {/* Advanced Filters and Search */}
+        <div className="space-y-4">
+          {/* Transcript Search */}
+          <TranscriptSearch 
+            callLogs={callLogs || []}
+            onSearchResults={setSearchResults}
+            onClearSearch={() => setSearchResults(null)}
+          />
+          
+          {/* Advanced Filters Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="flex items-center gap-2"
+            data-testid="button-toggle-filters"
+          >
+            <Filter className="w-4 h-4" />
+            {showAdvancedFilters ? 'Hide' : 'Show'} Advanced Filters
+          </Button>
+          
+          {/* Advanced Filters Panel */}
+          {showAdvancedFilters && (
+            <Card className="p-4 space-y-4 bg-gray-50 dark:bg-gray-800">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                    Status
+                  </label>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger data-testid="select-status-filter">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">
+                    Duration
+                  </label>
+                  <Select value={durationFilter} onValueChange={setDurationFilter}>
+                    <SelectTrigger data-testid="select-duration-filter">
+                      <SelectValue placeholder="All Durations" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Durations</SelectItem>
+                      <SelectItem value="short">Short (&lt; 1 min)</SelectItem>
+                      <SelectItem value="medium">Medium (1-5 min)</SelectItem>
+                      <SelectItem value="long">Long (&gt; 5 min)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-end gap-2">
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setStatusFilter("all");
+                      setDurationFilter("all");
+                      setSelectedAgent("all");
+                      setStartDate("");
+                      setEndDate("");
+                      setSearchResults(null);
+                    }}
+                    className="flex-1"
+                    data-testid="button-reset-filters"
+                  >
+                    Reset All Filters
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Export Options */}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                    {filteredCallLogs.length} call{filteredCallLogs.length !== 1 ? 's' : ''} found
+                  </div>
+                  <AnalyticsExport 
+                    data={exportData}
+                    filename="call_history"
+                    label="Export Call History"
+                  />
+                </div>
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
 
       {/* Call History Table */}
@@ -225,8 +359,10 @@ export default function History() {
               No call history found
             </h3>
             <p className="text-gray-600 dark:text-gray-400" data-testid="text-no-calls-description">
-              {callLogs && callLogs.length > 0 
-                ? "No calls match your current filters. Try adjusting the date or agent filter."
+              {searchResults !== null
+                ? "No calls match your search query. Try different keywords."
+                : callLogs && callLogs.length > 0 
+                ? "No calls match your current filters. Try adjusting the filters."
                 : "Call logs will appear here once your agents start receiving calls."}
             </p>
           </div>

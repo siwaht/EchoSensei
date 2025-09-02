@@ -6,13 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Clock, DollarSign, Bot, PhoneCall, MessageSquare, AlertCircle, RefreshCw, BarChart3, TrendingUp, Activity, HelpCircle, CheckCircle, XCircle, FileText } from "lucide-react";
-import { useState } from "react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { Phone, Clock, DollarSign, Bot, PhoneCall, MessageSquare, AlertCircle, RefreshCw, BarChart3, TrendingUp, Activity, HelpCircle, CheckCircle, XCircle, FileText, Download, TrendingDown, Users, Calendar } from "lucide-react";
+import { useState, useMemo } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell } from "recharts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { SentimentIndicator } from "@/components/analytics/sentiment-indicator";
 
 // Success Rate Chart Component
 const SuccessRateChart = memo(function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
