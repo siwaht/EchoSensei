@@ -459,7 +459,7 @@ export default function Tools() {
         </Card>
       ) : (
         <Tabs defaultValue="system" className="space-y-4">
-          <TabsList className="grid grid-cols-4 w-full sm:w-auto">
+          <TabsList className="grid grid-cols-3 w-full sm:w-auto">
             <TabsTrigger value="system" className="gap-2">
               <Settings2 className="w-4 h-4" />
               <span className="hidden sm:inline">System</span>
@@ -467,10 +467,6 @@ export default function Tools() {
             <TabsTrigger value="webhooks" className="gap-2">
               <Webhook className="w-4 h-4" />
               <span className="hidden sm:inline">Webhooks</span>
-            </TabsTrigger>
-            <TabsTrigger value="integrations" className="gap-2">
-              <Zap className="w-4 h-4" />
-              <span className="hidden sm:inline">Integrations</span>
             </TabsTrigger>
             <TabsTrigger value="custom" className="gap-2">
               <Code className="w-4 h-4" />
@@ -1081,23 +1077,6 @@ export default function Tools() {
                 )}
               </div>
             </Card>
-          </TabsContent>
-
-          {/* Integrations Tab */}
-          <TabsContent value="integrations" className="space-y-4">
-            <div className="space-y-4">
-
-              {/* Other Integrations Coming Soon */}
-              <Card className="p-4 sm:p-6">
-                <div className="text-center py-8 text-muted-foreground">
-                  <Zap className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <h4 className="text-base font-medium mb-2">More Integrations Coming Soon</h4>
-                  <p className="text-sm">
-                    Slack, Microsoft Teams, Salesforce, HubSpot, and more
-                  </p>
-                </div>
-              </Card>
-            </div>
           </TabsContent>
 
           {/* Custom Tools Tab */}
