@@ -14,9 +14,9 @@ import {
   adminTasks,
   ragConfigurations,
   approvalWebhooks,
-  agentCommissions,
+  agencyCommissions,
   creditTransactions,
-  agentInvitations,
+  agencyInvitations,
   type User,
   type UpsertUser,
   type Organization,
@@ -46,12 +46,12 @@ import {
   type InsertApprovalWebhook,
   type RagConfiguration,
   type InsertRagConfiguration,
-  type AgentCommission,
-  type InsertAgentCommission,
+  type AgencyCommission,
+  type InsertAgencyCommission,
   type CreditTransaction,
   type InsertCreditTransaction,
-  type AgentInvitation,
-  type InsertAgentInvitation,
+  type AgencyInvitation,
+  type InsertAgencyInvitation,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sum, avg, max, or } from "drizzle-orm";
@@ -184,18 +184,18 @@ export interface IStorage {
 
   // Multi-tier operations
   getChildOrganizations(parentId: string): Promise<Organization[]>;
-  getAgentCommissions(agentOrganizationId: string): Promise<AgentCommission[]>;
-  createAgentCommission(commission: InsertAgentCommission): Promise<AgentCommission>;
-  updateAgentCommission(id: string, updates: Partial<AgentCommission>): Promise<AgentCommission>;
+  getAgencyCommissions(agencyOrganizationId: string): Promise<AgencyCommission[]>;
+  createAgencyCommission(commission: InsertAgencyCommission): Promise<AgencyCommission>;
+  updateAgencyCommission(id: string, updates: Partial<AgencyCommission>): Promise<AgencyCommission>;
   
   getCreditTransactions(organizationId: string): Promise<CreditTransaction[]>;
   createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction>;
   
-  getAgentInvitations(organizationId: string): Promise<AgentInvitation[]>;
-  getAgentInvitationByCode(code: string): Promise<AgentInvitation | undefined>;
-  createAgentInvitation(invitation: InsertAgentInvitation): Promise<AgentInvitation>;
-  updateAgentInvitation(id: string, updates: Partial<AgentInvitation>): Promise<AgentInvitation>;
-  acceptAgentInvitation(code: string, userId: string): Promise<Organization>;
+  getAgencyInvitations(organizationId: string): Promise<AgencyInvitation[]>;
+  getAgencyInvitationByCode(code: string): Promise<AgencyInvitation | undefined>;
+  createAgencyInvitation(invitation: InsertAgencyInvitation): Promise<AgencyInvitation>;
+  updateAgencyInvitation(id: string, updates: Partial<AgencyInvitation>): Promise<AgencyInvitation>;
+  acceptAgencyInvitation(code: string, userId: string): Promise<Organization>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -970,30 +970,30 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(organizations.createdAt));
   }
 
-  async getAgentCommissions(agentOrganizationId: string): Promise<AgentCommission[]> {
+  async getAgencyCommissions(agencyOrganizationId: string): Promise<AgencyCommission[]> {
     return await db()
       .select()
-      .from(agentCommissions)
-      .where(eq(agentCommissions.agentOrganizationId, agentOrganizationId))
-      .orderBy(desc(agentCommissions.createdAt));
+      .from(agencyCommissions)
+      .where(eq(agencyCommissions.agencyOrganizationId, agencyOrganizationId))
+      .orderBy(desc(agencyCommissions.createdAt));
   }
 
-  async createAgentCommission(commission: InsertAgentCommission): Promise<AgentCommission> {
+  async createAgencyCommission(commission: InsertAgencyCommission): Promise<AgencyCommission> {
     const [result] = await db()
-      .insert(agentCommissions)
+      .insert(agencyCommissions)
       .values(commission)
       .returning();
     return result;
   }
 
-  async updateAgentCommission(id: string, updates: Partial<AgentCommission>): Promise<AgentCommission> {
+  async updateAgencyCommission(id: string, updates: Partial<AgencyCommission>): Promise<AgencyCommission> {
     const [result] = await db()
-      .update(agentCommissions)
+      .update(agencyCommissions)
       .set(updates)
-      .where(eq(agentCommissions.id, id))
+      .where(eq(agencyCommissions.id, id))
       .returning();
     if (!result) {
-      throw new Error("Agent commission not found");
+      throw new Error("Agency commission not found");
     }
     return result;
   }
@@ -1036,28 +1036,28 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getAgentInvitations(organizationId: string): Promise<AgentInvitation[]> {
+  async getAgencyInvitations(organizationId: string): Promise<AgencyInvitation[]> {
     return await db()
       .select()
-      .from(agentInvitations)
-      .where(eq(agentInvitations.inviterOrganizationId, organizationId))
-      .orderBy(desc(agentInvitations.createdAt));
+      .from(agencyInvitations)
+      .where(eq(agencyInvitations.inviterOrganizationId, organizationId))
+      .orderBy(desc(agencyInvitations.createdAt));
   }
 
-  async getAgentInvitationByCode(code: string): Promise<AgentInvitation | undefined> {
+  async getAgencyInvitationByCode(code: string): Promise<AgencyInvitation | undefined> {
     const [invitation] = await db()
       .select()
-      .from(agentInvitations)
-      .where(eq(agentInvitations.invitationCode, code));
+      .from(agencyInvitations)
+      .where(eq(agencyInvitations.invitationCode, code));
     return invitation;
   }
 
-  async createAgentInvitation(invitation: InsertAgentInvitation): Promise<AgentInvitation> {
+  async createAgencyInvitation(invitation: InsertAgencyInvitation): Promise<AgencyInvitation> {
     // Generate unique invitation code
     const invitationCode = `INV-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
     
     const [result] = await db()
-      .insert(agentInvitations)
+      .insert(agencyInvitations)
       .values({
         ...invitation,
         invitationCode,
@@ -1067,21 +1067,21 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async updateAgentInvitation(id: string, updates: Partial<AgentInvitation>): Promise<AgentInvitation> {
+  async updateAgencyInvitation(id: string, updates: Partial<AgencyInvitation>): Promise<AgencyInvitation> {
     const [result] = await db()
-      .update(agentInvitations)
+      .update(agencyInvitations)
       .set(updates)
-      .where(eq(agentInvitations.id, id))
+      .where(eq(agencyInvitations.id, id))
       .returning();
     if (!result) {
-      throw new Error("Agent invitation not found");
+      throw new Error("Agency invitation not found");
     }
     return result;
   }
 
-  async acceptAgentInvitation(code: string, userId: string): Promise<Organization> {
+  async acceptAgencyInvitation(code: string, userId: string): Promise<Organization> {
     // Get invitation
-    const invitation = await this.getAgentInvitationByCode(code);
+    const invitation = await this.getAgencyInvitationByCode(code);
     if (!invitation) {
       throw new Error("Invalid invitation code");
     }
@@ -1098,16 +1098,16 @@ export class DatabaseStorage implements IStorage {
       throw new Error("User not found");
     }
 
-    // Create agent organization
-    const [agentOrg] = await db()
+    // Create agency organization
+    const [agencyOrg] = await db()
       .insert(organizations)
       .values({
         name: invitation.inviteeCompany || `${user.firstName || user.email}'s Agency`,
         parentOrganizationId: invitation.inviterOrganizationId,
-        organizationType: "agent",
+        organizationType: "agency",
         commissionRate: invitation.commissionRate,
         creditBalance: invitation.initialCredits,
-        billingPackage: "professional", // Default package for agents
+        billingPackage: "professional", // Default package for agencies
         maxAgents: 10,
         maxUsers: 50,
       })
@@ -1116,23 +1116,23 @@ export class DatabaseStorage implements IStorage {
     // Update user to belong to new organization
     await db()
       .update(users)
-      .set({ organizationId: agentOrg.id, updatedAt: new Date() })
+      .set({ organizationId: agencyOrg.id, updatedAt: new Date() })
       .where(eq(users.id, userId));
 
     // Update invitation status
     await db()
-      .update(agentInvitations)
+      .update(agencyInvitations)
       .set({
         status: "accepted",
         acceptedAt: new Date(),
-        createdOrganizationId: agentOrg.id,
+        createdOrganizationId: agencyOrg.id,
       })
-      .where(eq(agentInvitations.id, invitation.id));
+      .where(eq(agencyInvitations.id, invitation.id));
 
     // If initial credits provided, create transaction
     if (invitation.initialCredits && Number(invitation.initialCredits) > 0) {
       await this.createCreditTransaction({
-        organizationId: agentOrg.id,
+        organizationId: agencyOrg.id,
         type: "transfer",
         amount: invitation.initialCredits,
         creditAmount: Math.round(Number(invitation.initialCredits) * 1000), // Convert to credits
@@ -1140,7 +1140,7 @@ export class DatabaseStorage implements IStorage {
       });
     }
 
-    return agentOrg;
+    return agencyOrg;
   }
 }
 

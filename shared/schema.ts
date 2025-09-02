@@ -46,21 +46,21 @@ export const users = pgTable("users", {
 export const billingPackageEnum = pgEnum("billing_package", ["starter", "professional", "enterprise", "custom"]);
 
 // Organization type enum for multi-tier hierarchy
-export const organizationTypeEnum = pgEnum("organization_type", ["platform_owner", "agent", "end_customer"]);
+export const organizationTypeEnum = pgEnum("organization_type", ["platform_owner", "agency", "end_customer"]);
 
 // Organizations table for multi-tenancy and multi-tier hierarchy
 export const organizations = pgTable("organizations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
-  parentOrganizationId: varchar("parent_organization_id"), // For hierarchy (agents have parent, end customers have agent as parent)
-  organizationType: organizationTypeEnum("organization_type").default("end_customer"), // platform_owner, agent, end_customer
+  parentOrganizationId: varchar("parent_organization_id"), // For hierarchy (agencies have parent, end customers have agency as parent)
+  organizationType: organizationTypeEnum("organization_type").default("end_customer"), // platform_owner, agency, end_customer
   billingPackage: billingPackageEnum("billing_package").default("starter"),
   perCallRate: decimal("per_call_rate", { precision: 10, scale: 4 }).default('0.30'),
   perMinuteRate: decimal("per_minute_rate", { precision: 10, scale: 4 }).default('0.30'),
   monthlyCredits: integer("monthly_credits").default(0),
   usedCredits: integer("used_credits").default(0),
-  creditBalance: decimal("credit_balance", { precision: 10, scale: 2 }).default('0'), // Prepaid credits for agents
-  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default('30'), // Percentage agents keep from sales
+  creditBalance: decimal("credit_balance", { precision: 10, scale: 2 }).default('0'), // Prepaid credits for agencies
+  commissionRate: decimal("commission_rate", { precision: 5, scale: 2 }).default('30'), // Percentage agencies keep from sales
   creditResetDate: timestamp("credit_reset_date"),
   customRateEnabled: boolean("custom_rate_enabled").default(false),
   maxAgents: integer("max_agents").default(5),
@@ -894,10 +894,10 @@ export const mcpServerConfigurations = pgTable("mcp_server_configurations", {
 // Transaction type enum for credit transactions
 export const transactionTypeEnum = pgEnum("transaction_type", ["purchase", "usage", "refund", "commission", "transfer"]);
 
-// Agent Commissions table for tracking revenue sharing
-export const agentCommissions = pgTable("agent_commissions", {
+// Agency Commissions table for tracking revenue sharing
+export const agencyCommissions = pgTable("agency_commissions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  agentOrganizationId: varchar("agent_organization_id").notNull(), // Agent who earned commission
+  agencyOrganizationId: varchar("agency_organization_id").notNull(), // Agency who earned commission
   customerOrganizationId: varchar("customer_organization_id").notNull(), // Customer who made purchase
   paymentId: varchar("payment_id"), // Link to payment record
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(), // Commission amount
@@ -924,11 +924,11 @@ export const creditTransactions = pgTable("credit_transactions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Agent invitation status enum
+// Agency invitation status enum
 export const invitationStatusEnum = pgEnum("invitation_status", ["pending", "accepted", "rejected", "expired"]);
 
-// Agent Invitations table for onboarding new agents
-export const agentInvitations = pgTable("agent_invitations", {
+// Agency Invitations table for onboarding new agencies
+export const agencyInvitations = pgTable("agency_invitations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   inviterOrganizationId: varchar("inviter_organization_id").notNull(), // Platform owner who sent invitation
   inviteeEmail: varchar("invitee_email").notNull(),
@@ -998,7 +998,7 @@ export const insertMcpServerConfigurationSchema = createInsertSchema(mcpServerCo
   updatedAt: true,
 });
 
-export const insertAgentCommissionSchema = createInsertSchema(agentCommissions).omit({
+export const insertAgencyCommissionSchema = createInsertSchema(agencyCommissions).omit({
   id: true,
   createdAt: true,
 });
@@ -1008,7 +1008,7 @@ export const insertCreditTransactionSchema = createInsertSchema(creditTransactio
   createdAt: true,
 });
 
-export const insertAgentInvitationSchema = createInsertSchema(agentInvitations).omit({
+export const insertAgencyInvitationSchema = createInsertSchema(agencyInvitations).omit({
   id: true,
   invitationCode: true,
   createdAt: true,
@@ -1110,9 +1110,9 @@ export type AgentOverride = typeof agentOverrides.$inferSelect;
 export type InsertAgentOverride = z.infer<typeof insertAgentOverrideSchema>;
 export type McpServerConfiguration = typeof mcpServerConfigurations.$inferSelect;
 export type InsertMcpServerConfiguration = z.infer<typeof insertMcpServerConfigurationSchema>;
-export type AgentCommission = typeof agentCommissions.$inferSelect;
-export type InsertAgentCommission = z.infer<typeof insertAgentCommissionSchema>;
+export type AgencyCommission = typeof agencyCommissions.$inferSelect;
+export type InsertAgencyCommission = z.infer<typeof insertAgencyCommissionSchema>;
 export type CreditTransaction = typeof creditTransactions.$inferSelect;
 export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
-export type AgentInvitation = typeof agentInvitations.$inferSelect;
-export type InsertAgentInvitation = z.infer<typeof insertAgentInvitationSchema>;
+export type AgencyInvitation = typeof agencyInvitations.$inferSelect;
+export type InsertAgencyInvitation = z.infer<typeof insertAgencyInvitationSchema>;

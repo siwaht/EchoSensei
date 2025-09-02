@@ -17,6 +17,7 @@ import { z } from "zod";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { UserPlus, Building2, DollarSign, CreditCard, Users, TrendingUp, Copy, Check, Mail, Building, Briefcase } from "lucide-react";
 import { format } from "date-fns";
+import type { Organization, AgencyInvitation, AgencyCommission, CreditTransaction } from "@shared/schema";
 
 const invitationSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -29,7 +30,7 @@ const invitationSchema = z.object({
 
 type InvitationFormData = z.infer<typeof invitationSchema>;
 
-export default function AgentManagement() {
+export default function AgencyManagement() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [acceptCode, setAcceptCode] = useState("");
@@ -39,32 +40,32 @@ export default function AgentManagement() {
     queryKey: ["/api/auth/user"],
   });
 
-  const { data: organization } = useQuery({
+  const { data: organization } = useQuery<Organization>({
     queryKey: ["/api/organization"],
     enabled: !!user,
   });
 
   // Fetch invitations
-  const { data: invitations, isLoading: invitationsLoading } = useQuery({
-    queryKey: ["/api/agent/invitations"],
-    enabled: !!user && (organization?.organizationType === 'platform_owner' || organization?.organizationType === 'agent'),
+  const { data: invitations, isLoading: invitationsLoading } = useQuery<AgencyInvitation[]>({
+    queryKey: ["/api/agency/invitations"],
+    enabled: !!user && (organization?.organizationType === 'platform_owner' || organization?.organizationType === 'agency'),
   });
 
   // Fetch child organizations
-  const { data: childOrganizations, isLoading: childOrgsLoading } = useQuery({
-    queryKey: ["/api/agent/child-organizations"],
+  const { data: childOrganizations, isLoading: childOrgsLoading } = useQuery<Organization[]>({
+    queryKey: ["/api/agency/child-organizations"],
     enabled: !!user && organization?.organizationType !== 'end_customer',
   });
 
-  // Fetch commissions (for agents)
-  const { data: commissions, isLoading: commissionsLoading } = useQuery({
-    queryKey: ["/api/agent/commissions"],
-    enabled: !!user && organization?.organizationType === 'agent',
+  // Fetch commissions (for agencies)
+  const { data: commissions, isLoading: commissionsLoading } = useQuery<AgencyCommission[]>({
+    queryKey: ["/api/agency/commissions"],
+    enabled: !!user && organization?.organizationType === 'agency',
   });
 
   // Fetch credit transactions
-  const { data: creditTransactions, isLoading: transactionsLoading } = useQuery({
-    queryKey: ["/api/agent/credit-transactions"],
+  const { data: creditTransactions, isLoading: transactionsLoading } = useQuery<CreditTransaction[]>({
+    queryKey: ["/api/agency/credit-transactions"],
     enabled: !!user,
   });
 
@@ -83,13 +84,13 @@ export default function AgentManagement() {
 
   // Create invitation mutation
   const createInvitationMutation = useMutation({
-    mutationFn: (data: InvitationFormData) => apiRequest('/api/agent/invitations', 'POST', data),
+    mutationFn: (data: InvitationFormData) => apiRequest('/api/agency/invitations', 'POST', data),
     onSuccess: () => {
       toast({
         title: "Invitation created",
-        description: "The agent invitation has been created successfully.",
+        description: "The agency invitation has been created successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/agent/invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agency/invitations"] });
       setIsInviteDialogOpen(false);
       form.reset();
     },
@@ -104,11 +105,11 @@ export default function AgentManagement() {
 
   // Accept invitation mutation
   const acceptInvitationMutation = useMutation({
-    mutationFn: (invitationCode: string) => apiRequest('/api/agent/invitations/accept', 'POST', { invitationCode }),
+    mutationFn: (invitationCode: string) => apiRequest('/api/agency/invitations/accept', 'POST', { invitationCode }),
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "You have successfully joined as an agent!",
+        description: "You have successfully joined as an agency!",
       });
       // Refresh the page to update organization context
       window.location.reload();
@@ -124,13 +125,13 @@ export default function AgentManagement() {
 
   // Purchase credits mutation
   const purchaseCreditsMutation = useMutation({
-    mutationFn: (amount: number) => apiRequest('/api/agent/purchase-credits', 'POST', { amount }),
+    mutationFn: (amount: number) => apiRequest('/api/agency/purchase-credits', 'POST', { amount }),
     onSuccess: () => {
       toast({
         title: "Credits purchased",
         description: "Your credits have been added to your account.",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/agent/credit-transactions"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agency/credit-transactions"] });
     },
     onError: (error: any) => {
       toast({
@@ -163,9 +164,9 @@ export default function AgentManagement() {
       <div className="container mx-auto p-6">
         <Card>
           <CardHeader>
-            <CardTitle>Agent Features Not Available</CardTitle>
+            <CardTitle>Agency Features Not Available</CardTitle>
             <CardDescription>
-              Agent management features are only available for platform owners and agents.
+              Agency management features are only available for platform owners and agencies.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -173,18 +174,18 @@ export default function AgentManagement() {
     );
   }
 
-  // Show invitation acceptance UI for users without agent status
-  if (!organization?.organizationType || organization.organizationType === 'end_customer') {
+  // Show invitation acceptance UI for users without agency status
+  if (!organization?.organizationType) {
     return (
       <div className="container mx-auto p-6 max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Become an Agent
+              Become an Agency
             </CardTitle>
             <CardDescription>
-              Enter your invitation code to join as an agent and start earning commissions.
+              Enter your invitation code to join as an agency and start earning commissions.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -213,9 +214,9 @@ export default function AgentManagement() {
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold">Agent Management</h1>
+        <h1 className="text-3xl font-bold">Agency Management</h1>
         <p className="text-muted-foreground mt-2">
-          Manage your agent network, track commissions, and monitor credit usage.
+          Manage your agency network, track commissions, and monitor credit usage.
         </p>
       </div>
 
@@ -230,7 +231,7 @@ export default function AgentManagement() {
               <Building2 className="h-4 w-4 text-muted-foreground" />
               <Badge variant="default">
                 {organization?.organizationType === 'platform_owner' ? 'Platform Owner' : 
-                 organization?.organizationType === 'agent' ? 'Agent' : 'End Customer'}
+                 organization?.organizationType === 'agency' ? 'Agency' : 'End Customer'}
               </Badge>
             </div>
           </CardContent>
@@ -265,9 +266,9 @@ export default function AgentManagement() {
         <TabsList>
           <TabsTrigger value="invitations">Invitations</TabsTrigger>
           <TabsTrigger value="organizations">
-            {organization?.organizationType === 'platform_owner' ? 'Agents' : 'Customers'}
+            {organization?.organizationType === 'platform_owner' ? 'Agencies' : 'Customers'}
           </TabsTrigger>
-          {organization?.organizationType === 'agent' && (
+          {organization?.organizationType === 'agency' && (
             <TabsTrigger value="commissions">Commissions</TabsTrigger>
           )}
           <TabsTrigger value="credits">Credit History</TabsTrigger>
@@ -279,23 +280,23 @@ export default function AgentManagement() {
             <CardHeader>
               <div className="flex justify-between items-center">
                 <div>
-                  <CardTitle>Agent Invitations</CardTitle>
+                  <CardTitle>Agency Invitations</CardTitle>
                   <CardDescription>
-                    Invite new agents to join your network
+                    Invite new agencies to join your network
                   </CardDescription>
                 </div>
                 <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
                   <DialogTrigger asChild>
                     <Button>
                       <UserPlus className="mr-2 h-4 w-4" />
-                      Invite Agent
+                      Invite Agency
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[500px]">
                     <DialogHeader>
-                      <DialogTitle>Invite New Agent</DialogTitle>
+                      <DialogTitle>Invite New Agency</DialogTitle>
                       <DialogDescription>
-                        Send an invitation to a new agent to join your network.
+                        Send an invitation to a new agency to join your network.
                       </DialogDescription>
                     </DialogHeader>
                     <Form {...form}>
@@ -349,7 +350,7 @@ export default function AgentManagement() {
                                 <Input type="number" step="0.01" {...field} />
                               </FormControl>
                               <FormDescription>
-                                The percentage of revenue the agent will earn
+                                The percentage of revenue the agency will earn
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -365,7 +366,7 @@ export default function AgentManagement() {
                                 <Input type="number" step="0.01" {...field} />
                               </FormControl>
                               <FormDescription>
-                                Bonus credits to get the agent started
+                                Bonus credits to get the agency started
                               </FormDescription>
                               <FormMessage />
                             </FormItem>
@@ -379,7 +380,7 @@ export default function AgentManagement() {
                               <FormLabel>Custom Message (Optional)</FormLabel>
                               <FormControl>
                                 <Textarea 
-                                  placeholder="Welcome to our agent network..."
+                                  placeholder="Welcome to our agency network..."
                                   {...field}
                                 />
                               </FormControl>
@@ -474,7 +475,7 @@ export default function AgentManagement() {
           <Card>
             <CardHeader>
               <CardTitle>
-                {organization?.organizationType === 'platform_owner' ? 'Your Agents' : 'Your Customers'}
+                {organization?.organizationType === 'platform_owner' ? 'Your Agencies' : 'Your Customers'}
               </CardTitle>
               <CardDescription>
                 Manage organizations under your account
@@ -526,8 +527,8 @@ export default function AgentManagement() {
           </Card>
         </TabsContent>
 
-        {/* Commissions Tab (Agents Only) */}
-        {organization?.organizationType === 'agent' && (
+        {/* Commissions Tab (Agencies Only) */}
+        {organization?.organizationType === 'agency' && (
           <TabsContent value="commissions">
             <Card>
               <CardHeader>
@@ -590,7 +591,7 @@ export default function AgentManagement() {
                     Your credit purchase and usage history
                   </CardDescription>
                 </div>
-                {organization?.organizationType === 'agent' && (
+                {organization?.organizationType === 'agency' && (
                   <Button onClick={() => {
                     const amount = prompt("Enter the amount of credits to purchase (in dollars):");
                     if (amount && !isNaN(Number(amount))) {

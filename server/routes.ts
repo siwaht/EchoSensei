@@ -1321,11 +1321,11 @@ export function registerRoutes(app: Express): Server {
   });
 
   // ==========================================
-  // Multi-tier Agent Management Routes
+  // Multi-tier Agency Management Routes
   // ==========================================
   
-  // Get agent invitations for the current organization
-  app.get('/api/agent/invitations', isAuthenticated, async (req: any, res) => {
+  // Get agency invitations for the current organization
+  app.get('/api/agency/invitations', isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -1337,21 +1337,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Organization not found" });
       }
       
-      // Only platform owners and agents can view invitations
-      if (org.organizationType !== 'platform_owner' && org.organizationType !== 'agent') {
-        return res.status(403).json({ message: "Only platform owners and agents can view invitations" });
+      // Only platform owners and agencies can view invitations
+      if (org.organizationType !== 'platform_owner' && org.organizationType !== 'agency') {
+        return res.status(403).json({ message: "Only platform owners and agencies can view invitations" });
       }
       
-      const invitations = await storage.getAgentInvitations(user.organizationId);
+      const invitations = await storage.getAgencyInvitations(user.organizationId);
       res.json(invitations);
     } catch (error) {
-      console.error("Error fetching agent invitations:", error);
-      res.status(500).json({ message: "Failed to fetch agent invitations" });
+      console.error("Error fetching agency invitations:", error);
+      res.status(500).json({ message: "Failed to fetch agency invitations" });
     }
   });
 
-  // Create a new agent invitation
-  app.post('/api/agent/invitations', isAuthenticated, async (req: any, res) => {
+  // Create a new agency invitation
+  app.post('/api/agency/invitations', isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -1363,14 +1363,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Organization not found" });
       }
       
-      // Only platform owners and agents can create invitations
-      if (org.organizationType !== 'platform_owner' && org.organizationType !== 'agent') {
-        return res.status(403).json({ message: "Only platform owners and agents can create invitations" });
+      // Only platform owners and agencies can create invitations
+      if (org.organizationType !== 'platform_owner' && org.organizationType !== 'agency') {
+        return res.status(403).json({ message: "Only platform owners and agencies can create invitations" });
       }
       
       const { email, name, company, commissionRate, initialCredits, customMessage } = req.body;
       
-      const invitation = await storage.createAgentInvitation({
+      const invitation = await storage.createAgencyInvitation({
         inviterOrganizationId: user.organizationId,
         inviteeEmail: email,
         inviteeName: name,
@@ -1385,13 +1385,13 @@ export function registerRoutes(app: Express): Server {
       
       res.json(invitation);
     } catch (error) {
-      console.error("Error creating agent invitation:", error);
-      res.status(500).json({ message: "Failed to create agent invitation" });
+      console.error("Error creating agency invitation:", error);
+      res.status(500).json({ message: "Failed to create agency invitation" });
     }
   });
 
-  // Accept an agent invitation
-  app.post('/api/agent/invitations/accept', isAuthenticated, async (req: any, res) => {
+  // Accept an agency invitation
+  app.post('/api/agency/invitations/accept', isAuthenticated, async (req: any, res) => {
     try {
       const { invitationCode } = req.body;
       
@@ -1399,19 +1399,19 @@ export function registerRoutes(app: Express): Server {
         return res.status(400).json({ message: "Invitation code is required" });
       }
       
-      const agentOrg = await storage.acceptAgentInvitation(invitationCode, req.user.id);
+      const agencyOrg = await storage.acceptAgencyInvitation(invitationCode, req.user.id);
       res.json({ 
         message: "Invitation accepted successfully", 
-        organization: agentOrg 
+        organization: agencyOrg 
       });
     } catch (error: any) {
-      console.error("Error accepting agent invitation:", error);
+      console.error("Error accepting agency invitation:", error);
       res.status(400).json({ message: error.message || "Failed to accept invitation" });
     }
   });
 
-  // Get child organizations (agents or customers)
-  app.get('/api/agent/child-organizations', isAuthenticated, async (req: any, res) => {
+  // Get child organizations (agencies or customers)
+  app.get('/api/agency/child-organizations', isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -1423,7 +1423,7 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Organization not found" });
       }
       
-      // Only platform owners and agents can view child organizations
+      // Only platform owners and agencies can view child organizations
       if (org.organizationType === 'end_customer') {
         return res.status(403).json({ message: "End customers cannot have child organizations" });
       }
@@ -1436,8 +1436,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Get agent commissions
-  app.get('/api/agent/commissions', isAuthenticated, async (req: any, res) => {
+  // Get agency commissions
+  app.get('/api/agency/commissions', isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -1449,21 +1449,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Organization not found" });
       }
       
-      // Only agents can view their commissions
-      if (org.organizationType !== 'agent') {
-        return res.status(403).json({ message: "Only agents can view commissions" });
+      // Only agencies can view their commissions
+      if (org.organizationType !== 'agency') {
+        return res.status(403).json({ message: "Only agencies can view commissions" });
       }
       
-      const commissions = await storage.getAgentCommissions(user.organizationId);
+      const commissions = await storage.getAgencyCommissions(user.organizationId);
       res.json(commissions);
     } catch (error) {
-      console.error("Error fetching agent commissions:", error);
-      res.status(500).json({ message: "Failed to fetch agent commissions" });
+      console.error("Error fetching agency commissions:", error);
+      res.status(500).json({ message: "Failed to fetch agency commissions" });
     }
   });
 
   // Get credit transactions
-  app.get('/api/agent/credit-transactions', isAuthenticated, async (req: any, res) => {
+  app.get('/api/agency/credit-transactions', isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -1478,8 +1478,8 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  // Purchase credits (for agents)
-  app.post('/api/agent/purchase-credits', isAuthenticated, async (req: any, res) => {
+  // Purchase credits (for agencies)
+  app.post('/api/agency/purchase-credits', isAuthenticated, async (req: any, res) => {
     try {
       const user = await storage.getUser(req.user.id);
       if (!user) {
@@ -1491,9 +1491,9 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "Organization not found" });
       }
       
-      // Only agents can purchase credits
-      if (org.organizationType !== 'agent') {
-        return res.status(403).json({ message: "Only agents can purchase credits" });
+      // Only agencies can purchase credits
+      if (org.organizationType !== 'agency') {
+        return res.status(403).json({ message: "Only agencies can purchase credits" });
       }
       
       const { amount, paymentMethodId } = req.body;

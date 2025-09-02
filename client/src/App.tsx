@@ -23,7 +23,7 @@ import Tools from "@/pages/tools";
 import KnowledgeBase from "@/pages/knowledge-base";
 import AgentSettings from "@/pages/agent-settings";
 import AgentTesting from "@/pages/agent-testing";
-import AgentManagement from "@/pages/agent-management";
+import AgencyManagement from "@/pages/agency-management";
 import AppShell from "@/components/layout/app-shell";
 
 function Router() {
@@ -45,7 +45,7 @@ function Router() {
         <Route path="/agents" component={Agents} />
         <Route path="/agent-settings" component={AgentSettings} />
         <Route path="/agent-testing" component={AgentTesting} />
-        <Route path="/agent-management" component={AgentManagement} />
+        <Route path="/agency-management" component={AgencyManagement} />
         <Route path="/voices" component={Voices} />
         <Route path="/phone-numbers" component={PhoneNumbers} />
         <Route path="/outbound-calling" component={OutboundCalling} />
