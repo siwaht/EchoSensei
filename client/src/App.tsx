@@ -22,6 +22,7 @@ import OutboundCalling from "@/pages/outbound-calling";
 import Tools from "@/pages/tools";
 import AgentSettings from "@/pages/agent-settings";
 import AgentTesting from "@/pages/agent-testing";
+import { KnowledgeBasePage } from "@/pages/knowledge-base";
 import AppShell from "@/components/layout/app-shell";
 
 function Router() {
@@ -47,6 +48,7 @@ function Router() {
         <Route path="/phone-numbers" component={PhoneNumbers} />
         <Route path="/outbound-calling" component={OutboundCalling} />
         <Route path="/tools" component={Tools} />
+        <Route path="/knowledge-base" component={KnowledgeBasePage} />
         <Route path="/playground" component={Playground} />
         <Route path="/history" component={History} />
         <Route path="/integrations" component={Integrations} />

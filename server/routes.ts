@@ -8,7 +8,6 @@ import crypto from "crypto";
 import multer from "multer";
 import type { RequestHandler } from "express";
 import { seedAdminUser } from "./seedAdmin";
-import { vectorDB } from "./vectordb";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -688,6 +687,257 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
+  // ==========================================
+  // User Management Routes (Non-Admin)
+  // ==========================================
+
+  // In-memory storage for invitations and activity logs (should be moved to database in production)
+  const userInvitations = new Map<string, any[]>();
+  const activityLogs = new Map<string, any[]>();
+
+  // Get users in the same organization (for managers)
+  app.get('/api/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Only admins and managers can view all users
+      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const allUsers = await storage.getAllUsers();
+      const orgUsers = allUsers.filter(u => u.organizationId === organizationId);
+      
+      // Add role and status fields if not present
+      const enrichedUsers = orgUsers.map(user => ({
+        ...user,
+        role: user.role || (user.isAdmin ? 'admin' : 'member'),
+        status: user.status || 'active',
+        organizationName: 'Organization',
+      }));
+      
+      res.json(enrichedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Update user (for managers)
+  app.patch('/api/users/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Only admins and managers can update users
+      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const targetUser = await storage.getUser(req.params.userId);
+      if (!targetUser || targetUser.organizationId !== organizationId) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updatedUser = await storage.updateUser(req.params.userId, req.body);
+      
+      // Log activity
+      const log = {
+        id: crypto.randomBytes(16).toString('hex'),
+        userId: req.user.id,
+        userEmail: currentUser.email,
+        action: 'updated user',
+        details: `Updated ${targetUser.email}`,
+        timestamp: new Date().toISOString(),
+      };
+      const logs = activityLogs.get(organizationId) || [];
+      logs.unshift(log);
+      activityLogs.set(organizationId, logs.slice(0, 100)); // Keep last 100 logs
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Delete user (for managers)
+  app.delete('/api/users/:userId', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Only admins and managers can delete users
+      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const targetUser = await storage.getUser(req.params.userId);
+      if (!targetUser || targetUser.organizationId !== organizationId) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Prevent self-deletion
+      if (targetUser.id === req.user.id) {
+        return res.status(400).json({ message: "Cannot delete yourself" });
+      }
+
+      await storage.deleteUser(req.params.userId);
+      
+      // Log activity
+      const log = {
+        id: crypto.randomBytes(16).toString('hex'),
+        userId: req.user.id,
+        userEmail: currentUser.email,
+        action: 'deleted user',
+        details: `Deleted ${targetUser.email}`,
+        timestamp: new Date().toISOString(),
+      };
+      const logs = activityLogs.get(organizationId) || [];
+      logs.unshift(log);
+      activityLogs.set(organizationId, logs);
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // User invitation endpoints
+  app.get('/api/users/invitations', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const invitations = userInvitations.get(organizationId) || [];
+      res.json(invitations);
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+
+  app.post('/api/users/invite', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Only admins and managers can invite users
+      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const { email, role, message } = req.body;
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.organizationId === organizationId) {
+        return res.status(400).json({ message: "User already exists in organization" });
+      }
+
+      // Create invitation
+      const invitation = {
+        id: crypto.randomBytes(16).toString('hex'),
+        email,
+        role,
+        status: 'pending',
+        invitedBy: currentUser.email,
+        invitedAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        organizationId,
+        inviteCode: crypto.randomBytes(32).toString('hex'),
+        message,
+      };
+
+      const invitations = userInvitations.get(organizationId) || [];
+      invitations.push(invitation);
+      userInvitations.set(organizationId, invitations);
+
+      // Log activity
+      const log = {
+        id: crypto.randomBytes(16).toString('hex'),
+        userId: req.user.id,
+        userEmail: currentUser.email,
+        action: 'invited user',
+        details: `Invited ${email} as ${role}`,
+        timestamp: new Date().toISOString(),
+      };
+      const logs = activityLogs.get(organizationId) || [];
+      logs.unshift(log);
+      activityLogs.set(organizationId, logs);
+
+      // In production, send email with invitation link
+      console.log(`Invitation link: ${process.env.APP_URL || 'http://localhost:5000'}/invite/${invitation.inviteCode}`);
+
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error inviting user:", error);
+      res.status(500).json({ message: "Failed to invite user" });
+    }
+  });
+
+  app.post('/api/users/invitations/:invitationId/resend', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const invitations = userInvitations.get(organizationId) || [];
+      const invitation = invitations.find(i => i.id === req.params.invitationId);
+
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      // Update expiration
+      invitation.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      // In production, resend email
+      console.log(`Resending invitation to ${invitation.email}`);
+
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error resending invitation:", error);
+      res.status(500).json({ message: "Failed to resend invitation" });
+    }
+  });
+
+  app.delete('/api/users/invitations/:invitationId', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const invitations = userInvitations.get(organizationId) || [];
+      const index = invitations.findIndex(i => i.id === req.params.invitationId);
+
+      if (index === -1) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+
+      invitations.splice(index, 1);
+      userInvitations.set(organizationId, invitations);
+
+      res.json({ message: "Invitation cancelled successfully" });
+    } catch (error) {
+      console.error("Error cancelling invitation:", error);
+      res.status(500).json({ message: "Failed to cancel invitation" });
+    }
+  });
+
+  // Activity logs endpoint
+  app.get('/api/users/activity-logs', isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Only admins and managers can view activity logs
+      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+        return res.status(403).json({ message: "Insufficient permissions" });
+      }
+
+      const logs = activityLogs.get(organizationId) || [];
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching activity logs:", error);
+      res.status(500).json({ message: "Failed to fetch activity logs" });
     }
   });
 
@@ -7078,6 +7328,200 @@ Generate the complete prompt now:`;
     } catch (error) {
       console.error("Error fetching test results:", error);
       res.status(500).json({ error: "Failed to fetch test results" });
+    }
+  });
+
+  // ==========================================
+  // Knowledge Base Management Routes
+  // ==========================================
+
+  // Get all knowledge base documents
+  app.get("/api/knowledge-base/documents", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const integration = await storage.getIntegration(organizationId, "elevenlabs");
+      
+      if (!integration || !integration.apiKey) {
+        return res.json([]); // Return empty array if no integration
+      }
+
+      const apiKey = decryptApiKey(integration.apiKey);
+      
+      try {
+        // Fetch documents from ElevenLabs Knowledge Base API
+        const response = await callElevenLabsAPI(
+          apiKey,
+          "/v1/knowledge-base/documents",
+          "GET",
+          null,
+          integration.id
+        );
+
+        // Transform the response to our format
+        const documents = (response.documents || []).map((doc: any) => ({
+          id: doc.document_id,
+          name: doc.name || doc.filename || "Untitled",
+          content_type: doc.content_type || "text/plain",
+          size: doc.size || 0,
+          status: doc.status || "ready",
+          created_at: doc.created_at || new Date().toISOString(),
+          updated_at: doc.updated_at || new Date().toISOString(),
+          agent_assignments: doc.agent_ids || [],
+          chunk_count: doc.chunk_count || 0,
+          elevenlabs_id: doc.document_id,
+        }));
+
+        res.json(documents);
+      } catch (error: any) {
+        console.error("Error fetching knowledge base documents:", error);
+        res.json([]); // Return empty array on error
+      }
+    } catch (error: any) {
+      console.error("Error in knowledge base documents endpoint:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch documents" });
+    }
+  });
+
+  // Upload document to knowledge base
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
+  });
+
+  app.post("/api/knowledge-base/upload", isAuthenticated, upload.single("file"), async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const integration = await storage.getIntegration(organizationId, "elevenlabs");
+      
+      if (!integration || !integration.apiKey) {
+        return res.status(400).json({ error: "ElevenLabs integration not configured" });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
+      const apiKey = decryptApiKey(integration.apiKey);
+      const agentIds = req.body.agentIds ? JSON.parse(req.body.agentIds) : [];
+
+      // Create form data for ElevenLabs API
+      const formData = new FormData();
+      const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
+      formData.append("file", blob, req.file.originalname);
+      
+      // Add agent IDs if provided
+      if (agentIds.length > 0) {
+        agentIds.forEach((agentId: string) => {
+          formData.append("agent_ids", agentId);
+        });
+      }
+
+      // Upload to ElevenLabs
+      const response = await fetch("https://api.elevenlabs.io/v1/knowledge-base/documents", {
+        method: "POST",
+        headers: {
+          "xi-api-key": apiKey,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("ElevenLabs upload error:", errorText);
+        return res.status(response.status).json({ 
+          error: "Failed to upload document to ElevenLabs",
+          details: errorText 
+        });
+      }
+
+      const result = await response.json();
+      res.json({
+        success: true,
+        documentId: result.document_id,
+        message: "Document uploaded successfully",
+      });
+    } catch (error: any) {
+      console.error("Error uploading document:", error);
+      res.status(500).json({ error: error.message || "Failed to upload document" });
+    }
+  });
+
+  // Delete document from knowledge base
+  app.delete("/api/knowledge-base/documents/:documentId", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const integration = await storage.getIntegration(organizationId, "elevenlabs");
+      
+      if (!integration || !integration.apiKey) {
+        return res.status(400).json({ error: "ElevenLabs integration not configured" });
+      }
+
+      const apiKey = decryptApiKey(integration.apiKey);
+      
+      await callElevenLabsAPI(
+        apiKey,
+        `/v1/knowledge-base/documents/${req.params.documentId}`,
+        "DELETE",
+        null,
+        integration.id
+      );
+
+      res.json({ success: true, message: "Document deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting document:", error);
+      res.status(500).json({ error: error.message || "Failed to delete document" });
+    }
+  });
+
+  // Update document agent assignments
+  app.patch("/api/knowledge-base/documents/:documentId/assign", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const integration = await storage.getIntegration(organizationId, "elevenlabs");
+      
+      if (!integration || !integration.apiKey) {
+        return res.status(400).json({ error: "ElevenLabs integration not configured" });
+      }
+
+      const { agentIds } = req.body;
+      const apiKey = decryptApiKey(integration.apiKey);
+
+      // Update document with new agent assignments
+      await callElevenLabsAPI(
+        apiKey,
+        `/v1/knowledge-base/documents/${req.params.documentId}`,
+        "PATCH",
+        { agent_ids: agentIds },
+        integration.id
+      );
+
+      res.json({ success: true, message: "Agent assignments updated successfully" });
+    } catch (error: any) {
+      console.error("Error updating document assignments:", error);
+      res.status(500).json({ error: error.message || "Failed to update assignments" });
+    }
+  });
+
+  // Sync knowledge base with ElevenLabs
+  app.post("/api/knowledge-base/sync", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const integration = await storage.getIntegration(organizationId, "elevenlabs");
+      
+      if (!integration || !integration.apiKey) {
+        return res.status(400).json({ error: "ElevenLabs integration not configured" });
+      }
+
+      // For now, sync just means refreshing the document list
+      // In the future, this could sync document content, embeddings, etc.
+      res.json({ 
+        success: true, 
+        message: "Knowledge base synchronized successfully",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Error syncing knowledge base:", error);
+      res.status(500).json({ error: error.message || "Failed to sync knowledge base" });
     }
   });
 
