@@ -1250,13 +1250,6 @@ export default function Tools() {
               </Alert>
             </Card>
 
-            {/* RAG System Redirect */}
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription>
-                Looking for RAG (Retrieval-Augmented Generation) configuration? Visit the dedicated <strong>RAG System</strong> tab from the navigation menu.
-              </AlertDescription>
-            </Alert>
           </TabsContent>
         </Tabs>
       )}

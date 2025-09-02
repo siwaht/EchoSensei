@@ -20,7 +20,6 @@ import Playground from "@/pages/playground";
 import PhoneNumbers from "@/pages/phone-numbers";
 import OutboundCalling from "@/pages/outbound-calling";
 import Tools from "@/pages/tools";
-import KnowledgeBase from "@/pages/knowledge-base";
 import AgentSettings from "@/pages/agent-settings";
 import AgentTesting from "@/pages/agent-testing";
 import AgencyManagement from "@/pages/agency-management";
@@ -50,7 +49,6 @@ function Router() {
         <Route path="/phone-numbers" component={PhoneNumbers} />
         <Route path="/outbound-calling" component={OutboundCalling} />
         <Route path="/tools" component={Tools} />
-        <Route path="/knowledge-base" component={KnowledgeBase} />
         <Route path="/playground" component={Playground} />
         <Route path="/history" component={History} />
         <Route path="/integrations" component={Integrations} />

@@ -34,7 +34,6 @@ const navigation = [
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone },
   { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing },
   { name: "Tools", href: "/tools", icon: Wrench },
-  { name: "RAG System", href: "/knowledge-base", icon: Brain },
   { name: "Playground", href: "/playground", icon: FlaskConical },
   { name: "Call History", href: "/history", icon: History },
   { name: "Integrations", href: "/integrations", icon: Plug },
@@ -86,8 +85,6 @@ export default function AppShell({ children }: AppShellProps) {
     // Check for conversations route
     if (location === "/conversations") return "Conversations";
     
-    // Check for knowledge base route (RAG system)
-    if (location === "/knowledge-base") return "RAG System";
     
     // Default to "Page Not Found" for unknown routes
     return "Page Not Found";
