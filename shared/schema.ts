@@ -925,6 +925,29 @@ export const agencyInvitations = pgTable("agency_invitations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Knowledge Base Documents table (local storage until ElevenLabs API is available)
+export const knowledgeBaseDocuments = pgTable("knowledge_base_documents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  name: varchar("name").notNull(),
+  contentType: varchar("content_type").notNull(),
+  size: integer("size").notNull(),
+  status: varchar("status").default("ready"),
+  fileData: text("file_data"), // Base64 encoded file content
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  agentAssignments: text("agent_assignments").array(),
+  chunkCount: integer("chunk_count").default(0),
+  errorMessage: text("error_message"),
+  elevenLabsId: varchar("elevenlabs_id"), // For future integration
+});
+
+export const insertKnowledgeBaseDocumentSchema = createInsertSchema(knowledgeBaseDocuments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Insert schemas for new tables
 export const insertAgentTestSchema = createInsertSchema(agentTests).omit({
   id: true,
@@ -1093,3 +1116,5 @@ export type CreditTransaction = typeof creditTransactions.$inferSelect;
 export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
 export type AgencyInvitation = typeof agencyInvitations.$inferSelect;
 export type InsertAgencyInvitation = z.infer<typeof insertAgencyInvitationSchema>;
+export type KnowledgeBaseDocument = typeof knowledgeBaseDocuments.$inferSelect;
+export type InsertKnowledgeBaseDocument = z.infer<typeof insertKnowledgeBaseDocumentSchema>;

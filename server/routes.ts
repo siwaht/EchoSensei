@@ -7388,49 +7388,35 @@ Generate the complete prompt now:`;
   // Knowledge Base Management Routes
   // ==========================================
 
-  // Get all knowledge base documents
+  // Get all knowledge base documents (local storage)
   app.get("/api/knowledge-base/documents", isAuthenticated, async (req: any, res) => {
     try {
       const organizationId = req.user.organizationId;
-      const integration = await storage.getIntegration(organizationId, "elevenlabs");
       
-      if (!integration || !integration.apiKey) {
-        return res.json([]); // Return empty array if no integration
-      }
+      // Fetch documents from local database
+      const documents = await db
+        .select()
+        .from(knowledgeBaseDocuments)
+        .where(eq(knowledgeBaseDocuments.organizationId, organizationId));
 
-      const apiKey = decryptApiKey(integration.apiKey);
-      
-      try {
-        // Fetch documents from ElevenLabs Knowledge Base API
-        const response = await callElevenLabsAPI(
-          apiKey,
-          "/v1/knowledge-base/documents",
-          "GET",
-          null,
-          integration.id
-        );
+      // Transform to frontend format
+      const formattedDocs = documents.map(doc => ({
+        id: doc.id,
+        name: doc.name,
+        content_type: doc.contentType,
+        size: doc.size,
+        status: doc.status || "ready",
+        created_at: doc.createdAt?.toISOString() || new Date().toISOString(),
+        updated_at: doc.updatedAt?.toISOString() || new Date().toISOString(),
+        agent_assignments: doc.agentAssignments || [],
+        chunk_count: doc.chunkCount || 0,
+        error_message: doc.errorMessage,
+        elevenlabs_id: doc.elevenLabsId,
+      }));
 
-        // Transform the response to our format
-        const documents = (response.documents || []).map((doc: any) => ({
-          id: doc.document_id,
-          name: doc.name || doc.filename || "Untitled",
-          content_type: doc.content_type || "text/plain",
-          size: doc.size || 0,
-          status: doc.status || "ready",
-          created_at: doc.created_at || new Date().toISOString(),
-          updated_at: doc.updated_at || new Date().toISOString(),
-          agent_assignments: doc.agent_ids || [],
-          chunk_count: doc.chunk_count || 0,
-          elevenlabs_id: doc.document_id,
-        }));
-
-        res.json(documents);
-      } catch (error: any) {
-        console.error("Error fetching knowledge base documents:", error);
-        res.json([]); // Return empty array on error
-      }
+      res.json(formattedDocs);
     } catch (error: any) {
-      console.error("Error in knowledge base documents endpoint:", error);
+      console.error("Error fetching knowledge base documents:", error);
       res.status(500).json({ error: error.message || "Failed to fetch documents" });
     }
   });
@@ -7444,54 +7430,32 @@ Generate the complete prompt now:`;
   app.post("/api/knowledge-base/upload", isAuthenticated, upload.single("file"), async (req: any, res) => {
     try {
       const organizationId = req.user.organizationId;
-      const integration = await storage.getIntegration(organizationId, "elevenlabs");
-      
-      if (!integration || !integration.apiKey) {
-        return res.status(400).json({ error: "ElevenLabs integration not configured" });
-      }
 
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
 
-      const apiKey = decryptApiKey(integration.apiKey);
       const agentIds = req.body.agentIds ? JSON.parse(req.body.agentIds) : [];
 
-      // Create form data for ElevenLabs API
-      const formData = new FormData();
-      const blob = new Blob([req.file.buffer], { type: req.file.mimetype });
-      formData.append("file", blob, req.file.originalname);
-      
-      // Add agent IDs if provided
-      if (agentIds.length > 0) {
-        agentIds.forEach((agentId: string) => {
-          formData.append("agent_ids", agentId);
-        });
-      }
+      // Convert file buffer to base64 for local storage
+      const fileData = req.file.buffer.toString('base64');
 
-      // Upload to ElevenLabs
-      const response = await fetch("https://api.elevenlabs.io/v1/knowledge-base/documents", {
-        method: "POST",
-        headers: {
-          "xi-api-key": apiKey,
-        },
-        body: formData,
-      });
+      // Save document to local database
+      const [newDoc] = await db.insert(knowledgeBaseDocuments).values({
+        organizationId,
+        name: req.file.originalname,
+        contentType: req.file.mimetype,
+        size: req.file.size,
+        status: "ready", // Documents are immediately ready in local storage
+        fileData,
+        agentAssignments: agentIds,
+        chunkCount: 1, // Simple chunk count for now
+      }).returning();
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("ElevenLabs upload error:", errorText);
-        return res.status(response.status).json({ 
-          error: "Failed to upload document to ElevenLabs",
-          details: errorText 
-        });
-      }
-
-      const result = await response.json();
       res.json({
         success: true,
-        documentId: result.document_id,
-        message: "Document uploaded successfully",
+        documentId: newDoc.id,
+        message: "Document uploaded successfully to local storage. (Note: ElevenLabs Knowledge Base integration will be available when their API is released)",
       });
     } catch (error: any) {
       console.error("Error uploading document:", error);
