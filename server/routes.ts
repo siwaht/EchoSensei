@@ -5,7 +5,6 @@ import { setupAuth } from "./auth";
 import { insertIntegrationSchema, insertAgentSchema, insertCallLogSchema, insertPhoneNumberSchema, insertBatchCallSchema, insertBatchCallRecipientSchema, type Integration } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
-import multer from "multer";
 import type { RequestHandler } from "express";
 import { seedAdminUser } from "./seedAdmin";
 
@@ -374,9 +373,6 @@ export function registerRoutes(app: Express): Server {
         { name: 'agents/get', path: '/v1/convai/agents/:id', method: 'GET', status: 'active' },
         { name: 'conversations/list', path: '/v1/convai/conversations', method: 'GET', status: 'active' },
         { name: 'conversations/get', path: '/v1/convai/conversations/:id', method: 'GET', status: 'active' },
-        { name: 'knowledge-base/list', path: '/v1/knowledge-base/documents', method: 'GET', status: 'active' },
-        { name: 'knowledge-base/upload', path: '/v1/knowledge-base/documents', method: 'POST', status: 'active' },
-        { name: 'knowledge-base/delete', path: '/v1/knowledge-base/documents/:id', method: 'DELETE', status: 'active' },
         { name: 'webhook/register', path: '/v1/convai/conversation/register-webhook', method: 'POST', status: 'active' },
       ];
 
@@ -447,33 +443,6 @@ export function registerRoutes(app: Express): Server {
           description: 'Stream audio for a conversation'
         },
         {
-          name: 'Knowledge Base List',
-          path: '/v1/knowledge-base/documents',
-          method: 'GET',
-          status: 'active',
-          lastChecked: new Date().toISOString(),
-          currentVersion: 'v1',
-          description: 'List all knowledge base documents'
-        },
-        {
-          name: 'Knowledge Base Upload',
-          path: '/v1/knowledge-base/documents',
-          method: 'POST',
-          status: 'active',
-          lastChecked: new Date().toISOString(),
-          currentVersion: 'v1',
-          description: 'Upload document to knowledge base'
-        },
-        {
-          name: 'Knowledge Base Delete',
-          path: '/v1/knowledge-base/documents/:id',
-          method: 'DELETE',
-          status: 'active',
-          lastChecked: new Date().toISOString(),
-          currentVersion: 'v1',
-          description: 'Delete a knowledge base document'
-        },
-        {
           name: 'Webhook Register',
           path: '/v1/convai/conversation/register-webhook',
           method: 'POST',
@@ -507,10 +476,10 @@ export function registerRoutes(app: Express): Server {
           timestamp: new Date(Date.now() - 3600000).toISOString(),
           action: 'Endpoint Validation',
           status: 'warning',
-          message: 'Knowledge base endpoint path updated from /convai/knowledge-base to /knowledge-base/documents',
+          message: 'API endpoints validated successfully',
           details: {
-            old_path: '/v1/convai/knowledge-base',
-            new_path: '/v1/knowledge-base/documents'
+            endpoint_count: 5,
+            status: 'operational'
           }
         }
       ];
@@ -597,8 +566,6 @@ export function registerRoutes(app: Express): Server {
         testUrl += '/v1/convai/agents';
       } else if (endpoint.path.includes('conversations')) {
         testUrl += '/v1/convai/conversations?page_size=1';
-      } else if (endpoint.path.includes('knowledge-base')) {
-        testUrl += '/v1/knowledge-base/documents';
       }
 
       const response = await fetch(testUrl, {
@@ -2229,28 +2196,7 @@ Generate the complete prompt now:`;
         tools: {
           webhooks: [],
           integrations: [],
-          customTools: [
-            {
-              id: 'rag-search',
-              name: 'RAG Search',
-              type: 'webhook',
-              enabled: true,
-              description: 'Search your custom knowledge base for information',
-              url: process.env.REPLIT_DEV_DOMAIN 
-                ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/public/rag`
-                : 'https://voiceai-dashboard.replit.app/api/public/rag',
-              method: 'GET',
-              queryParameters: [
-                {
-                  name: 'query',
-                  type: 'String',
-                  required: true,
-                  valueType: 'LLM Prompt',
-                  description: 'Extract what the user is asking about. Be specific and include key terms from their question.'
-                }
-              ]
-            }
-          ],
+          customTools: [],
           toolIds: []
         }
       });
@@ -2346,27 +2292,6 @@ Generate the complete prompt now:`;
               webhooks: [],
               integrations: [],
               customTools: [
-                // Add default RAG webhook tool
-                {
-                  id: 'rag-search',
-                  name: 'RAG Search',
-                  type: 'webhook',
-                  enabled: true,
-                  description: 'Search your custom knowledge base for information',
-                  url: process.env.REPLIT_DEV_DOMAIN 
-                    ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/public/rag`
-                    : 'https://voiceai-dashboard.replit.app/api/public/rag',
-                  method: 'GET',
-                  queryParameters: [
-                    {
-                      name: 'query',
-                      type: 'String',
-                      required: true,
-                      valueType: 'LLM Prompt',
-                      description: 'Extract what the user is asking about. Be specific and include key terms from their question.'
-                    }
-                  ]
-                },
                 // Add any existing tool IDs from ElevenLabs
                 ...(agentConfig.tool_ids ? agentConfig.tool_ids.map((id: string) => ({
                   id,
@@ -2446,28 +2371,7 @@ Generate the complete prompt now:`;
             const tools: any = {
               webhooks: [],
               integrations: [],
-              customTools: [
-                {
-                  id: 'rag-search',
-                  name: 'RAG Search',
-                  type: 'webhook',
-                  enabled: true,
-                  description: 'Search your custom knowledge base for information',
-                  url: process.env.REPLIT_DEV_DOMAIN 
-                    ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/public/rag`
-                    : 'https://voiceai-dashboard.replit.app/api/public/rag',
-                  method: 'GET',
-                  queryParameters: [
-                    {
-                      name: 'query',
-                      type: 'String',
-                      required: true,
-                      valueType: 'LLM Prompt',
-                      description: 'Extract what the user is asking about. Be specific and include key terms from their question.'
-                    }
-                  ]
-                }
-              ],
+              customTools: [],
               toolIds: []
             };
             
@@ -2641,28 +2545,6 @@ Generate the complete prompt now:`;
                   enhancedSystemPrompt = enhancedSystemPrompt + toolInstructions;
                 }
                 
-                if (updates.tools?.customTools) {
-                  const ragTool = updates.tools.customTools.find((t: any) => t.type === 'rag' && t.enabled);
-                  if (ragTool) {
-                    const ragInstructions = '\n\n**KNOWLEDGE BASE ACCESS:**\n' +
-                      'You have access to a knowledge_base_search webhook that searches your custom knowledge base.\n\n' +
-                      '**WHEN TO USE THE KNOWLEDGE BASE:**\n' +
-                      '- When users ask about ANY stored information, facts, people, companies, or documents\n' +
-                      '- When users request specific details that might be in the knowledge base\n' +
-                      '- When users ask "what do you know about..." or similar questions\n' +
-                      '- Always attempt to search before saying you don\'t know something\n\n' +
-                      '**HOW IT WORKS:**\n' +
-                      '1. The knowledge base webhook will be called automatically when you need information\n' +
-                      '2. It searches based on the user\'s question and returns relevant data\n' +
-                      '3. Use the returned information to answer comprehensively\n' +
-                      '4. If the webhook returns no results, politely explain you don\'t have that information\n\n' +
-                      '**IMPORTANT:** Never mention "searching" or "using tools" - just naturally incorporate the information into your response.';
-                    if (enhancedSystemPrompt && !enhancedSystemPrompt.includes('knowledge_base_search webhook')) {
-                      enhancedSystemPrompt = enhancedSystemPrompt + ragInstructions;
-                      console.log('Enhanced system prompt with knowledge base webhook instructions');
-                    }
-                  }
-                }
                 
                 // System prompt and language go in the prompt object
                 if (enhancedSystemPrompt || updates.language) {
@@ -2838,41 +2720,7 @@ Generate the complete prompt now:`;
                     })));
                     for (const customTool of updates.tools.customTools) {
                       if (customTool.enabled) {
-                        if (customTool.type === 'rag') {
-                          // Add RAG tool as a webhook
-                          // Use the current application's domain for the webhook URL
-                          const currentDomain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(',')[0];
-                          const webhookUrl = currentDomain 
-                            ? `https://${currentDomain}/api/public/rag`
-                            : 'https://voiceai-dashboard.replit.app/api/public/rag';
-                          
-                          const ragTool: any = {
-                            type: "webhook",
-                            name: "knowledge_base_search", // RAG webhook has its own name
-                            description: customTool.configuration?.description || customTool.description || "Searches the knowledge base for information. Use this when users ask questions about stored information, documents, people, or company data.",
-                            url: webhookUrl,
-                            method: "GET",
-                            headers: {},
-                            query_parameters: [
-                              {
-                                identifier: "query",
-                                data_type: "String",
-                                required: true,
-                                value_type: "LLM Prompt",
-                                description: "Extract what the user is asking about. Be specific and include key terms from their question."
-                              }
-                            ],
-                            body_parameters: []
-                          };
-                          console.log('Adding RAG tool to ElevenLabs:', {
-                            name: ragTool.name,
-                            description: ragTool.description,
-                            url: ragTool.url,
-                            method: ragTool.method,
-                            query_parameters: ragTool.query_parameters
-                          });
-                          elevenLabsTools.push(ragTool);
-                        } else if (customTool.type === 'webhook' && customTool.url) {
+                        if (customTool.type === 'webhook' && customTool.url) {
                           // Add regular webhooks with proper ElevenLabs format
                           const webhookTool: any = {
                             type: "webhook",
@@ -3262,27 +3110,6 @@ Generate the complete prompt now:`;
           }
         }
         
-        // Always add the RAG webhook tool to customTools
-        tools.customTools.push({
-          id: 'rag-search',
-          name: 'RAG Search',
-          type: 'webhook',
-          enabled: true,
-          description: 'Search your custom knowledge base for information',
-          url: process.env.REPLIT_DEV_DOMAIN 
-            ? `https://${process.env.REPLIT_DEV_DOMAIN}/api/public/rag`
-            : 'https://voiceai-dashboard.replit.app/api/public/rag',
-          method: 'GET',
-          queryParameters: [
-            {
-              name: 'query',
-              type: 'String',
-              required: true,
-              valueType: 'LLM Prompt',
-              description: 'Extract what the user is asking about. Be specific and include key terms from their question.'
-            }
-          ]
-        });
         
         const agentData = {
           organizationId: user.organizationId,
@@ -3318,82 +3145,6 @@ Generate the complete prompt now:`;
           createdCount++;
         }
         syncedCount++;
-        
-        // After creating/updating the agent locally, ensure the RAG tool is configured in ElevenLabs
-        try {
-          // Get the agent that was just created/updated to get its full configuration
-          const updatedAgent = existingAgent 
-            ? await storage.getAgent(existingAgent.id, user.organizationId)
-            : await storage.getAgentByElevenLabsId(agentId, user.organizationId);
-          
-          if (updatedAgent && updatedAgent.tools?.customTools) {
-            const ragTool = updatedAgent.tools.customTools.find((t: any) => t.id === 'rag-search');
-            if (ragTool) {
-              // Format the RAG tool for ElevenLabs
-              const elevenLabsTools = [];
-              
-              // Add system tools that are enabled
-              const systemTools = updatedAgent.tools.systemTools || {};
-              if (systemTools.endCall?.enabled) {
-                elevenLabsTools.push({
-                  type: 'system',
-                  name: 'end_call',
-                  description: systemTools.endCall.description || 'End the call'
-                });
-              }
-              
-              // Add the RAG webhook tool
-              const ragWebhookTool = {
-                type: 'webhook',
-                name: 'rag_search',
-                description: ragTool.description || 'Search your custom knowledge base for information',
-                url: ragTool.url,
-                method: ragTool.method || 'GET',
-                headers: {},
-                query_parameters: ragTool.queryParameters?.map((param: any) => ({
-                  identifier: param.name,
-                  data_type: param.type || 'String',
-                  required: param.required || false,
-                  value_type: param.valueType || 'LLM Prompt',
-                  description: param.description || ''
-                })) || [],
-                body_parameters: []
-              };
-              
-              console.log(`Configuring RAG webhook for agent ${agentId}:`, {
-                url: ragWebhookTool.url,
-                method: ragWebhookTool.method,
-                parameters: ragWebhookTool.query_parameters
-              });
-              
-              elevenLabsTools.push(ragWebhookTool);
-              
-              // Update the agent in ElevenLabs with the tools
-              const updatePayload = {
-                conversation_config: {
-                  agent: {
-                    tools: elevenLabsTools
-                  }
-                }
-              };
-              
-              console.log(`Sending tools update to ElevenLabs for agent ${agentId}:`, JSON.stringify(updatePayload, null, 2));
-              
-              const updateResponse = await callElevenLabsAPI(
-                decryptedKey,
-                `/v1/convai/agents/${agentId}`,
-                "PATCH",
-                updatePayload,
-                integration.id
-              );
-              
-              console.log(`ElevenLabs update response for agent ${agentId}:`, updateResponse);
-            }
-          }
-        } catch (toolError) {
-          console.error(`Error configuring RAG tool for agent ${agentId}:`, toolError);
-          // Don't fail the sync if tool configuration fails
-        }
       }
       
       res.json({ 
@@ -6103,11 +5854,6 @@ Generate the complete prompt now:`;
     }
   });
 
-  // Configure multer for memory storage (for ElevenLabs knowledge base uploads)
-  const kbUpload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 20 * 1024 * 1024 } // 20MB limit
-  });
 
 
 
@@ -7384,163 +7130,6 @@ Generate the complete prompt now:`;
     }
   });
 
-  // ==========================================
-  // Knowledge Base Management Routes
-  // ==========================================
-
-  // Get all knowledge base documents (local storage)
-  app.get("/api/knowledge-base/documents", isAuthenticated, async (req: any, res) => {
-    try {
-      const organizationId = req.user.organizationId;
-      
-      // Fetch documents from local database
-      const documents = await db
-        .select()
-        .from(knowledgeBaseDocuments)
-        .where(eq(knowledgeBaseDocuments.organizationId, organizationId));
-
-      // Transform to frontend format
-      const formattedDocs = documents.map(doc => ({
-        id: doc.id,
-        name: doc.name,
-        content_type: doc.contentType,
-        size: doc.size,
-        status: doc.status || "ready",
-        created_at: doc.createdAt?.toISOString() || new Date().toISOString(),
-        updated_at: doc.updatedAt?.toISOString() || new Date().toISOString(),
-        agent_assignments: doc.agentAssignments || [],
-        chunk_count: doc.chunkCount || 0,
-        error_message: doc.errorMessage,
-        elevenlabs_id: doc.elevenLabsId,
-      }));
-
-      res.json(formattedDocs);
-    } catch (error: any) {
-      console.error("Error fetching knowledge base documents:", error);
-      res.status(500).json({ error: error.message || "Failed to fetch documents" });
-    }
-  });
-
-  // Upload document to knowledge base
-  const upload = multer({ 
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 50 * 1024 * 1024 } // 50MB limit
-  });
-
-  app.post("/api/knowledge-base/upload", isAuthenticated, upload.single("file"), async (req: any, res) => {
-    try {
-      const organizationId = req.user.organizationId;
-
-      if (!req.file) {
-        return res.status(400).json({ error: "No file uploaded" });
-      }
-
-      const agentIds = req.body.agentIds ? JSON.parse(req.body.agentIds) : [];
-
-      // Convert file buffer to base64 for local storage
-      const fileData = req.file.buffer.toString('base64');
-
-      // Save document to local database
-      const [newDoc] = await db.insert(knowledgeBaseDocuments).values({
-        organizationId,
-        name: req.file.originalname,
-        contentType: req.file.mimetype,
-        size: req.file.size,
-        status: "ready", // Documents are immediately ready in local storage
-        fileData,
-        agentAssignments: agentIds,
-        chunkCount: 1, // Simple chunk count for now
-      }).returning();
-
-      res.json({
-        success: true,
-        documentId: newDoc.id,
-        message: "Document uploaded successfully to local storage. (Note: ElevenLabs Knowledge Base integration will be available when their API is released)",
-      });
-    } catch (error: any) {
-      console.error("Error uploading document:", error);
-      res.status(500).json({ error: error.message || "Failed to upload document" });
-    }
-  });
-
-  // Delete document from knowledge base
-  app.delete("/api/knowledge-base/documents/:documentId", isAuthenticated, async (req: any, res) => {
-    try {
-      const organizationId = req.user.organizationId;
-      const integration = await storage.getIntegration(organizationId, "elevenlabs");
-      
-      if (!integration || !integration.apiKey) {
-        return res.status(400).json({ error: "ElevenLabs integration not configured" });
-      }
-
-      const apiKey = decryptApiKey(integration.apiKey);
-      
-      await callElevenLabsAPI(
-        apiKey,
-        `/v1/knowledge-base/documents/${req.params.documentId}`,
-        "DELETE",
-        null,
-        integration.id
-      );
-
-      res.json({ success: true, message: "Document deleted successfully" });
-    } catch (error: any) {
-      console.error("Error deleting document:", error);
-      res.status(500).json({ error: error.message || "Failed to delete document" });
-    }
-  });
-
-  // Update document agent assignments
-  app.patch("/api/knowledge-base/documents/:documentId/assign", isAuthenticated, async (req: any, res) => {
-    try {
-      const organizationId = req.user.organizationId;
-      const integration = await storage.getIntegration(organizationId, "elevenlabs");
-      
-      if (!integration || !integration.apiKey) {
-        return res.status(400).json({ error: "ElevenLabs integration not configured" });
-      }
-
-      const { agentIds } = req.body;
-      const apiKey = decryptApiKey(integration.apiKey);
-
-      // Update document with new agent assignments
-      await callElevenLabsAPI(
-        apiKey,
-        `/v1/knowledge-base/documents/${req.params.documentId}`,
-        "PATCH",
-        { agent_ids: agentIds },
-        integration.id
-      );
-
-      res.json({ success: true, message: "Agent assignments updated successfully" });
-    } catch (error: any) {
-      console.error("Error updating document assignments:", error);
-      res.status(500).json({ error: error.message || "Failed to update assignments" });
-    }
-  });
-
-  // Sync knowledge base with ElevenLabs
-  app.post("/api/knowledge-base/sync", isAuthenticated, async (req: any, res) => {
-    try {
-      const organizationId = req.user.organizationId;
-      const integration = await storage.getIntegration(organizationId, "elevenlabs");
-      
-      if (!integration || !integration.apiKey) {
-        return res.status(400).json({ error: "ElevenLabs integration not configured" });
-      }
-
-      // For now, sync just means refreshing the document list
-      // In the future, this could sync document content, embeddings, etc.
-      res.json({ 
-        success: true, 
-        message: "Knowledge base synchronized successfully",
-        timestamp: new Date().toISOString()
-      });
-    } catch (error: any) {
-      console.error("Error syncing knowledge base:", error);
-      res.status(500).json({ error: error.message || "Failed to sync knowledge base" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

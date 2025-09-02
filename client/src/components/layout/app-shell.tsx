@@ -22,8 +22,7 @@ import {
   Wrench,
   MessageSquare,
   Brain,
-  Users,
-  BookOpen
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +33,6 @@ const navigation = [
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone },
   { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing },
   { name: "Tools", href: "/tools", icon: Wrench },
-  { name: "Knowledge Base", href: "/knowledge-base", icon: BookOpen },
   { name: "Playground", href: "/playground", icon: FlaskConical },
   { name: "Call History", href: "/history", icon: History },
   { name: "Integrations", href: "/integrations", icon: Plug },
@@ -79,9 +77,6 @@ export default function AppShell({ children }: AppShellProps) {
     
     // Check for tools route
     if (location === "/tools") return "Tools";
-    
-    // Check for knowledge base route
-    if (location === "/knowledge-base") return "Knowledge Base";
     
     // Check for conversations route
     if (location === "/conversations") return "Conversations";

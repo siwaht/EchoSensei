@@ -7,9 +7,9 @@ VoiceAI Dashboard is a white-label, multi-tenant SaaS platform for managing and 
 ### Recent Updates (September 2, 2025)
 - **Google Integrations Removed**: Successfully removed all Google OAuth integrations including Google Sheets, Calendar, and Gmail to simplify the platform
 - **RAG System Removed**: Completely removed the custom RAG (Retrieval-Augmented Generation) system to prepare for native ElevenLabs Knowledge Base integration
-- **Code Cleanup**: Removed all RAG configuration tables, endpoints, and related TypeScript code from both frontend and backend
-- **Database Simplified**: Cleaned up database schema by removing RAG configurations and Google OAuth state tables
-- **Ready for ElevenLabs KB**: Platform is now ready for implementation of native ElevenLabs Knowledge Base functionality
+- **Knowledge Base Feature Removed**: Completely removed all knowledge base functionality since ElevenLabs doesn't support it yet - users will use ElevenLabs directly
+- **Code Cleanup**: Removed all knowledge base and RAG configuration tables, endpoints, routes, and related TypeScript code from both frontend and backend
+- **Database Simplified**: Cleaned up database schema by removing knowledge base documents table and RAG configurations
 
 ### Previous Updates (August 24, 2025)
 - **Complete Mobile Responsiveness**: Implemented full mobile responsiveness across all application pages

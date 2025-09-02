@@ -29,7 +29,6 @@ const OutboundCalling = lazy(() => import("@/pages/outbound-calling"));
 const Tools = lazy(() => import("@/pages/tools"));
 const AgentSettings = lazy(() => import("@/pages/agent-settings"));
 const AgentTesting = lazy(() => import("@/pages/agent-testing"));
-const KnowledgeBasePage = lazy(() => import("@/pages/knowledge-base"));
 
 // Loading fallback component
 function PageLoader() {
@@ -64,7 +63,6 @@ function Router() {
           <Route path="/phone-numbers" component={PhoneNumbers} />
           <Route path="/outbound-calling" component={OutboundCalling} />
           <Route path="/tools" component={Tools} />
-          <Route path="/knowledge-base" component={KnowledgeBasePage} />
           <Route path="/playground" component={Playground} />
           <Route path="/history" component={History} />
           <Route path="/integrations" component={Integrations} />
