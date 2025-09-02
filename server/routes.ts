@@ -91,7 +91,7 @@ async function callElevenLabsAPI(apiKey: string, endpoint: string, method = "GET
 // Helper function to manage ElevenLabs tools
 async function manageElevenLabsTools(apiKey: string, tools: any[], integrationId?: string) {
   const toolIds: string[] = [];
-  const builtInTools: string[] = [];
+  const builtInTools: any = {}; // Changed to object format for ElevenLabs API
   
   if (!tools || tools.length === 0) {
     return { toolIds, builtInTools };
@@ -107,9 +107,10 @@ async function manageElevenLabsTools(apiKey: string, tools: any[], integrationId
       if (tool.name === 'play_dtmf') {
         builtInToolName = 'play_keypad_tone';
       }
-      if (!builtInTools.includes(builtInToolName)) {
-        builtInTools.push(builtInToolName);
-      }
+      // Add tool to object format with proper configuration
+      builtInTools[builtInToolName] = {
+        enabled: true
+      };
     }
     // Handle client and server tools (webhooks)
     else if (tool.type === 'webhook' || tool.type === 'client') {
@@ -2859,11 +2860,11 @@ Generate the complete prompt now:`;
                   }
                   
                   // Set built_in_tools for system tools
-                  if (builtInTools.length > 0) {
+                  if (Object.keys(builtInTools).length > 0) {
                     elevenLabsPayload.conversation_config.agent.prompt.built_in_tools = builtInTools;
                   } else {
                     // Clear built_in_tools if no system tools
-                    elevenLabsPayload.conversation_config.agent.prompt.built_in_tools = [];
+                    elevenLabsPayload.conversation_config.agent.prompt.built_in_tools = {};
                   }
                 }
               }
