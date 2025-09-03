@@ -23,7 +23,18 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  // Handle cases where stored password might not have the expected format
+  if (!stored || !stored.includes('.')) {
+    return false;
+  }
+  
   const [hashed, salt] = stored.split(".");
+  
+  // Ensure both hashed and salt exist
+  if (!hashed || !salt) {
+    return false;
+  }
+  
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);

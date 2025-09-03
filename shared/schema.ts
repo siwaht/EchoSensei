@@ -38,6 +38,8 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   organizationId: varchar("organization_id").notNull(),
   isAdmin: boolean("is_admin").default(false),
+  role: varchar("role").default("member"), // admin, manager, member
+  status: varchar("status").default("active"), // active, inactive, pending
   permissions: jsonb("permissions").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
