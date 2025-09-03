@@ -219,12 +219,13 @@ export default function AppShell({ children }: AppShellProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                asChild
+                onClick={() => {
+                  // Use window.location to bypass client-side routing
+                  window.location.href = "/api/logout";
+                }}
                 data-testid="button-logout"
               >
-                <a href="/api/logout">
-                  <LogOut className="w-4 h-4" />
-                </a>
+                <LogOut className="w-4 h-4" />
               </Button>
             </div>
           </div>
