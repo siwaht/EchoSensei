@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth } from "./auth";
+import { setupAuth, hashPassword } from "./auth";
 import { insertIntegrationSchema, insertAgentSchema, insertCallLogSchema, insertPhoneNumberSchema, insertBatchCallSchema, insertBatchCallRecipientSchema, type Integration } from "@shared/schema";
 import { z } from "zod";
 import crypto from "crypto";
@@ -316,7 +316,13 @@ export function registerRoutes(app: Express): Server {
 
   app.patch('/api/admin/users/:userId', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const updatedUser = await storage.updateUser(req.params.userId, req.body);
+      // Hash password if provided
+      const updates = { ...req.body };
+      if (updates.password) {
+        updates.password = await hashPassword(updates.password);
+      }
+      
+      const updatedUser = await storage.updateUser(req.params.userId, updates);
       res.json(updatedUser);
     } catch (error) {
       console.error("Error updating user:", error);
@@ -710,7 +716,13 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const updatedUser = await storage.updateUser(req.params.userId, req.body);
+      // Hash password if provided
+      const updates = { ...req.body };
+      if (updates.password) {
+        updates.password = await hashPassword(updates.password);
+      }
+
+      const updatedUser = await storage.updateUser(req.params.userId, updates);
       
       // Log activity
       const log = {

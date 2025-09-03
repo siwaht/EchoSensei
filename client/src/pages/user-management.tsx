@@ -114,6 +114,7 @@ export function UserManagementPage() {
   const [showAddUserDialog, setShowAddUserDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [editPassword, setEditPassword] = useState("");
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
@@ -603,15 +604,12 @@ export function UserManagementPage() {
                                 <DropdownMenuItem
                                   onClick={() => {
                                     setSelectedUser(user);
+                                    setEditPassword("");
                                     setShowEditDialog(true);
                                   }}
                                 >
                                   <Edit className="mr-2 h-4 w-4" />
                                   Edit User
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Key className="mr-2 h-4 w-4" />
-                                  Reset Password
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-red-600"
@@ -747,21 +745,36 @@ export function UserManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="space-y-2">
+                <Label>New Password (optional)</Label>
+                <Input
+                  type="password"
+                  placeholder="Leave blank to keep current password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
               <Button
-                onClick={() => updateUserMutation.mutate({
-                  userId: selectedUser.id,
-                  updates: {
+                onClick={() => {
+                  const updates: any = {
                     firstName: selectedUser.firstName,
                     lastName: selectedUser.lastName,
                     role: selectedUser.role,
                     status: selectedUser.status,
+                  };
+                  if (editPassword) {
+                    updates.password = editPassword;
                   }
-                })}
+                  updateUserMutation.mutate({
+                    userId: selectedUser.id,
+                    updates
+                  });
+                }}
                 disabled={updateUserMutation.isPending}
               >
                 {updateUserMutation.isPending ? "Saving..." : "Save Changes"}
