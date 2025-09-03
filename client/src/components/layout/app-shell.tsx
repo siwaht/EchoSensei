@@ -220,18 +220,18 @@ export default function AppShell({ children }: AppShellProps) {
                 variant="ghost"
                 size="sm"
                 onClick={async () => {
-                  // Call logout endpoint then redirect client-side
+                  // Call logout endpoint then redirect to login page
                   try {
                     await fetch("/api/logout", { 
                       method: "GET",
                       credentials: "same-origin"
                     });
-                    // Force a full page reload to clear client state and redirect to home
-                    window.location.href = "/";
+                    // Redirect to the Replit Auth login page to ensure clean logout
+                    window.location.href = "/api/login";
                   } catch (error) {
                     console.error("Logout error:", error);
-                    // Even on error, redirect to home
-                    window.location.href = "/";
+                    // Even on error, redirect to login
+                    window.location.href = "/api/login";
                   }
                 }}
                 data-testid="button-logout"
