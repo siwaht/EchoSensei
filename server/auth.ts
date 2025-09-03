@@ -112,12 +112,33 @@ export function setupAuth(app: Express) {
     res.status(200).json(req.user);
   });
 
-  app.post("/api/logout", (req, res, next) => {
-    req.logout((err) => {
-      if (err) return next(err);
-      res.sendStatus(200);
+  // Handle both GET and POST logout for compatibility
+  const handleLogout = (req: any, res: any, next: any) => {
+    req.logout((err: any) => {
+      if (err) {
+        console.error("Error during logout:", err);
+        return next(err);
+      }
+      
+      // Destroy the session completely
+      if (req.session) {
+        req.session.destroy((destroyErr: any) => {
+          if (destroyErr) {
+            console.error("Error destroying session:", destroyErr);
+          }
+          // Clear the session cookie
+          res.clearCookie('connect.sid', { path: '/' });
+          // Send success response
+          res.status(200).send('Logged out');
+        });
+      } else {
+        res.status(200).send('Logged out');
+      }
     });
-  });
+  };
+
+  app.get("/api/logout", handleLogout);
+  app.post("/api/logout", handleLogout);
 
   app.get("/api/auth/user", (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Unauthorized" });
