@@ -25,6 +25,7 @@ import {
   Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { queryClient } from "@/lib/queryClient";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -220,18 +221,20 @@ export default function AppShell({ children }: AppShellProps) {
                 variant="ghost"
                 size="sm"
                 onClick={async () => {
-                  // Call logout endpoint then redirect to login page
+                  // Call logout endpoint then redirect to home page
                   try {
                     await fetch("/api/logout", { 
                       method: "GET",
                       credentials: "same-origin"
                     });
-                    // Redirect to the Replit Auth login page to ensure clean logout
-                    window.location.href = "/api/login";
+                    // Clear the auth query cache to ensure fresh auth check
+                    queryClient.removeQueries({ queryKey: ["/api/auth/user"] });
+                    // Redirect to home page which will show the landing page
+                    window.location.href = "/";
                   } catch (error) {
                     console.error("Logout error:", error);
-                    // Even on error, redirect to login
-                    window.location.href = "/api/login";
+                    // Even on error, redirect to home
+                    window.location.href = "/";
                   }
                 }}
                 data-testid="button-logout"
