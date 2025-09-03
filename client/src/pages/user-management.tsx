@@ -90,20 +90,15 @@ const availablePermissions = [
 
 // Permission presets for quick selection
 const permissionPresets = {
-  viewer: {
-    label: "Viewer",
-    description: "Read-only access",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics"]
+  user: {
+    label: "User",
+    description: "Standard access",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "access_recordings"]
   },
-  manager: {
-    label: "Manager",
-    description: "Can manage agents & tools",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "access_knowledge_base", "download_reports", "access_recordings"]
-  },
-  analyst: {
-    label: "Analyst",
-    description: "Analytics & reports",
-    permissions: ["view_dashboard", "view_analytics", "download_reports", "view_call_history"]
+  agency: {
+    label: "Agency",
+    description: "Agency management access",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "download_reports", "access_recordings", "manage_integrations"]
   },
   admin: {
     label: "Admin",

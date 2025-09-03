@@ -671,8 +671,8 @@ export function registerRoutes(app: Express): Server {
       const organizationId = req.user.organizationId;
       const currentUser = await storage.getUser(req.user.id);
       
-      // Only admins and managers can view all users
-      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+      // Only admins can view all users
+      if (!currentUser?.isAdmin) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -682,7 +682,7 @@ export function registerRoutes(app: Express): Server {
       // Add role and status fields if not present
       const enrichedUsers = orgUsers.map(user => ({
         ...user,
-        role: user.role || (user.isAdmin ? 'admin' : 'member'),
+        role: user.role || (user.isAdmin ? 'admin' : 'user'),
         status: user.status || 'active',
         organizationName: 'Organization',
       }));
@@ -700,8 +700,8 @@ export function registerRoutes(app: Express): Server {
       const organizationId = req.user.organizationId;
       const currentUser = await storage.getUser(req.user.id);
       
-      // Only admins and managers can update users
-      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+      // Only admins can update users
+      if (!currentUser?.isAdmin) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
@@ -738,8 +738,8 @@ export function registerRoutes(app: Express): Server {
       const organizationId = req.user.organizationId;
       const currentUser = await storage.getUser(req.user.id);
       
-      // Only admins and managers can delete users
-      if (!currentUser?.isAdmin && currentUser?.role !== 'manager') {
+      // Only admins can delete users
+      if (!currentUser?.isAdmin) {
         return res.status(403).json({ message: "Insufficient permissions" });
       }
 
