@@ -2341,9 +2341,12 @@ Generate the complete prompt now:`;
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Get ElevenLabs integration to sync agents
+      // Get agents filtered by user permissions using the new access control
+      const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
+      
+      // Only sync with ElevenLabs if user has access to agents
       const integration = await storage.getIntegration(user.organizationId, "elevenlabs");
-      if (integration && integration.apiKey) {
+      if (integration && integration.apiKey && userAgents.length > 0) {
         const decryptedKey = decryptApiKey(integration.apiKey);
         
         try {
@@ -2451,19 +2454,19 @@ Generate the complete prompt now:`;
             }
           }
           
-          // Return all active agents
-          const allAgents = await storage.getAgents(user.organizationId);
+          // Return only agents the user has access to
+          const allAgents = await storage.getAgentsForUser(userId, user.organizationId);
           res.json(allAgents);
           
         } catch (syncError) {
           console.error("Error syncing with ElevenLabs:", syncError);
           // Fall back to local data if sync fails
-          const agents = await storage.getAgents(user.organizationId);
+          const agents = await storage.getAgentsForUser(userId, user.organizationId);
           res.json(agents);
         }
       } else {
         // No integration, just return local agents
-        const agents = await storage.getAgents(user.organizationId);
+        const agents = await storage.getAgentsForUser(userId, user.organizationId);
         res.json(agents);
       }
     } catch (error) {
@@ -2482,10 +2485,13 @@ Generate the complete prompt now:`;
       }
 
       const agentId = req.params.id;
-      const agent = await storage.getAgent(agentId, user.organizationId);
+      
+      // Check if user has access to this agent
+      const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
+      const agent = userAgents.find(a => a.id === agentId);
       
       if (!agent) {
-        return res.status(404).json({ message: "Agent not found" });
+        return res.status(404).json({ message: "Agent not found or access denied" });
       }
 
       // Don't sync from ElevenLabs - keep local data as source of truth
@@ -2507,6 +2513,14 @@ Generate the complete prompt now:`;
       }
 
       const agentId = req.params.id;
+      
+      // Check if user has access to this agent
+      const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
+      const hasAccess = userAgents.some(a => a.id === agentId);
+      
+      if (!hasAccess) {
+        return res.status(403).json({ message: "Access denied to this agent" });
+      }
       const updates = req.body;
       
       // Check if agent exists

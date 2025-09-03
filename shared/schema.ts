@@ -380,6 +380,21 @@ export const agents = pgTable("agents", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// User-Agent assignments table (maps which users can access which agents)
+export const userAgents = pgTable("user_agents", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  agentId: varchar("agent_id").notNull(),
+  assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: varchar("assigned_by"), // User ID of who made the assignment
+}, (table) => ({
+  // Unique constraint to prevent duplicate assignments
+  uniqueUserAgent: unique("unique_user_agent").on(table.userId, table.agentId),
+  // Index for faster lookups
+  userIdIdx: index("user_agents_user_id_idx").on(table.userId),
+  agentIdIdx: index("user_agents_agent_id_idx").on(table.agentId),
+}));
+
 // Call logs table
 export const callLogs = pgTable("call_logs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -427,11 +442,12 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   batchCalls: many(batchCalls),
 }));
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   organization: one(organizations, {
     fields: [users.organizationId],
     references: [organizations.id],
   }),
+  assignedAgents: many(userAgents),
 }));
 
 export const integrationsRelations = relations(integrations, ({ one }) => ({
@@ -447,6 +463,18 @@ export const agentsRelations = relations(agents, ({ one, many }) => ({
     references: [organizations.id],
   }),
   callLogs: many(callLogs),
+  userAssignments: many(userAgents),
+}));
+
+export const userAgentsRelations = relations(userAgents, ({ one }) => ({
+  user: one(users, {
+    fields: [userAgents.userId],
+    references: [users.id],
+  }),
+  agent: one(agents, {
+    fields: [userAgents.agentId],
+    references: [agents.id],
+  }),
 }));
 
 export const callLogsRelations = relations(callLogs, ({ one }) => ({
@@ -483,6 +511,11 @@ export const insertAgentSchema = createInsertSchema(agents).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+});
+
+export const insertUserAgentSchema = createInsertSchema(userAgents).omit({
+  id: true,
+  assignedAt: true,
 });
 
 export const insertCallLogSchema = createInsertSchema(callLogs).omit({

@@ -3,6 +3,7 @@ import {
   organizations,
   integrations,
   agents,
+  userAgents,
   callLogs,
   billingPackages,
   payments,
@@ -51,7 +52,7 @@ import {
   type InsertAgencyInvitation,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sum, avg, max, or } from "drizzle-orm";
+import { eq, and, desc, count, sum, avg, max, or, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -360,6 +361,78 @@ export class DatabaseStorage implements IStorage {
     await db()
       .delete(agents)
       .where(and(eq(agents.id, id), eq(agents.organizationId, organizationId)));
+  }
+
+  // User-Agent assignment operations
+  async getAgentsForUser(userId: string, organizationId: string): Promise<Agent[]> {
+    const user = await this.getUser(userId);
+    if (!user) return [];
+    
+    // Admins and agencies can see all agents in their org
+    if (user.isAdmin || user.role === 'agency') {
+      // For agencies, also include agents from child organizations
+      if (user.role === 'agency') {
+        const childOrgs = await db()
+          .select()
+          .from(organizations)
+          .where(eq(organizations.parentOrganizationId, organizationId));
+        const orgIds = [organizationId, ...childOrgs.map(org => org.id)];
+        return db()
+          .select()
+          .from(agents)
+          .where(inArray(agents.organizationId, orgIds));
+      }
+      // Regular admins see all agents in their org
+      return this.getAgents(organizationId);
+    }
+    
+    // Regular users only see agents assigned to them
+    const assignedAgents = await db()
+      .select({
+        agent: agents,
+      })
+      .from(userAgents)
+      .innerJoin(agents, eq(userAgents.agentId, agents.id))
+      .where(eq(userAgents.userId, userId));
+    
+    return assignedAgents.map(row => row.agent);
+  }
+
+  async assignAgentToUser(userId: string, agentId: string, assignedBy?: string): Promise<void> {
+    await db()
+      .insert(userAgents)
+      .values({ userId, agentId, assignedBy })
+      .onConflictDoNothing();
+  }
+
+  async unassignAgentFromUser(userId: string, agentId: string): Promise<void> {
+    await db()
+      .delete(userAgents)
+      .where(and(eq(userAgents.userId, userId), eq(userAgents.agentId, agentId)));
+  }
+
+  async getUserAgentAssignments(agentId: string): Promise<any[]> {
+    return db()
+      .select({
+        id: userAgents.id,
+        userId: userAgents.userId,
+        agentId: userAgents.agentId,
+        assignedAt: userAgents.assignedAt,
+        user: users,
+      })
+      .from(userAgents)
+      .innerJoin(users, eq(userAgents.userId, users.id))
+      .where(eq(userAgents.agentId, agentId));
+  }
+
+  async bulkAssignAgentsToUser(userId: string, agentIds: string[], assignedBy?: string): Promise<void> {
+    if (agentIds.length === 0) return;
+    
+    const assignments = agentIds.map(agentId => ({ userId, agentId, assignedBy }));
+    await db()
+      .insert(userAgents)
+      .values(assignments)
+      .onConflictDoNothing();
   }
 
   // Call log operations
