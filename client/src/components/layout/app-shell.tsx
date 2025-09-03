@@ -219,9 +219,20 @@ export default function AppShell({ children }: AppShellProps) {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => {
-                  // Use window.location to bypass client-side routing
-                  window.location.href = "/api/logout";
+                onClick={async () => {
+                  // Call logout endpoint then redirect client-side
+                  try {
+                    await fetch("/api/logout", { 
+                      method: "GET",
+                      credentials: "same-origin"
+                    });
+                    // Force a full page reload to clear client state and redirect to home
+                    window.location.href = "/";
+                  } catch (error) {
+                    console.error("Logout error:", error);
+                    // Even on error, redirect to home
+                    window.location.href = "/";
+                  }
                 }}
                 data-testid="button-logout"
               >

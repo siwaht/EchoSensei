@@ -125,23 +125,29 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/logout", (req, res) => {
+    // Logout from passport
     req.logout((err) => {
       if (err) {
         console.error("Error during logout:", err);
+        // Send success anyway to allow client to redirect
+        return res.status(200).send('Logged out');
       }
       
       // Destroy the session
-      req.session.destroy((destroyErr) => {
-        if (destroyErr) {
-          console.error("Error destroying session:", destroyErr);
-        }
-        
-        // Clear the session cookie
-        res.clearCookie('connect.sid');
-        
-        // Redirect to the home page (which will show login if not authenticated)
-        res.redirect('/');
-      });
+      if (req.session) {
+        req.session.destroy((destroyErr) => {
+          if (destroyErr) {
+            console.error("Error destroying session:", destroyErr);
+          }
+          // Clear the session cookie
+          res.clearCookie('connect.sid', { path: '/' });
+          // Send success response
+          return res.status(200).send('Logged out');
+        });
+      } else {
+        // If no session, just send success
+        return res.status(200).send('Logged out');
+      }
     });
   });
 }
