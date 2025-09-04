@@ -76,40 +76,61 @@ interface ActivityLog {
   timestamp: string;
 }
 
-// Available permissions
+// Available permissions with clear descriptions
 const availablePermissions = [
-  { id: "view_dashboard", label: "View Dashboard", category: "General" },
-  { id: "view_call_history", label: "View Call History", category: "General" },
-  { id: "view_analytics", label: "View Analytics", category: "General" },
-  { id: "manage_agents", label: "Manage Agents", category: "Agents" },
-  { id: "configure_tools", label: "Configure Tools", category: "Agents" },
-  { id: "manage_voices", label: "Manage Voices", category: "Agents" },
-  { id: "access_playground", label: "Access Playground", category: "Agents" },
-  { id: "access_recordings", label: "Access Recordings", category: "Content" },
-  { id: "manage_phone_numbers", label: "Manage Phone Numbers", category: "Communications" },
-  { id: "make_outbound_calls", label: "Make Outbound Calls", category: "Communications" },
-  { id: "view_billing", label: "View Billing", category: "Administration" },
-  { id: "manage_users", label: "Manage Users", category: "Administration" },
-  { id: "manage_integrations", label: "Manage Integrations", category: "Administration" },
-  { id: "manage_settings", label: "Manage Settings", category: "Administration" },
-  { id: "download_reports", label: "Download Reports", category: "Administration" },
+  // Core Access - Basic viewing rights
+  { id: "view_dashboard", label: "View Dashboard", category: "Core Access", description: "Access to main dashboard and metrics" },
+  { id: "view_call_history", label: "View Call History", category: "Core Access", description: "View call logs and conversation history" },
+  { id: "view_analytics", label: "View Analytics", category: "Core Access", description: "Access analytics and reporting dashboards" },
+  
+  // Agent Management - Managing AI agents
+  { id: "manage_agents", label: "Manage Agents", category: "Agent Management", description: "Create, edit, and delete AI agents" },
+  { id: "configure_tools", label: "Configure Agent Tools", category: "Agent Management", description: "Set up and modify agent tools and capabilities" },
+  { id: "access_playground", label: "Test Agents", category: "Agent Management", description: "Access playground to test agent interactions" },
+  
+  // Voice & Communications - Phone and voice features
+  { id: "manage_voices", label: "Manage Voices", category: "Communications", description: "Configure voice settings and preferences" },
+  { id: "manage_phone_numbers", label: "Manage Phone Numbers", category: "Communications", description: "Add and configure phone numbers" },
+  { id: "make_outbound_calls", label: "Outbound Calling", category: "Communications", description: "Initiate and manage outbound call campaigns" },
+  { id: "access_recordings", label: "Access Recordings", category: "Communications", description: "Listen to and download call recordings" },
+  
+  // Administration - System management
+  { id: "manage_integrations", label: "Manage Integrations", category: "Administration", description: "Configure third-party integrations" },
+  { id: "view_billing", label: "View Billing", category: "Administration", description: "Access billing and payment information" },
+  { id: "manage_settings", label: "Manage Settings", category: "Administration", description: "Modify organization settings" },
+  { id: "manage_users", label: "Manage Users", category: "Administration", description: "Add and manage user accounts (Admin only)" },
 ];
 
 // Permission presets for quick selection
 const permissionPresets = {
+  viewer: {
+    label: "Viewer",
+    description: "Read-only access to view data",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics"]
+  },
   user: {
-    label: "User",
-    description: "Standard access",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "access_recordings"]
+    label: "Basic User",
+    description: "Standard user with agent testing",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "access_playground", "access_recordings"]
   },
-  agency: {
-    label: "Agency",
-    description: "Agency management access",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "manage_voices", "access_playground", "download_reports", "access_recordings", "manage_integrations", "manage_phone_numbers", "make_outbound_calls"]
+  agent_manager: {
+    label: "Agent Manager",
+    description: "Manage AI agents and configurations",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "access_playground", "manage_voices"]
   },
-  admin: {
-    label: "Admin",
-    description: "Full access",
+  communications: {
+    label: "Communications Manager",
+    description: "Manage all voice and phone features",
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_voices", "manage_phone_numbers", "make_outbound_calls", "access_recordings", "access_playground"]
+  },
+  organization_admin: {
+    label: "Organization Admin",
+    description: "Full organization control (no user management)",
+    permissions: availablePermissions.filter(p => p.id !== "manage_users").map(p => p.id)
+  },
+  full_admin: {
+    label: "System Admin",
+    description: "Complete system access",
     permissions: availablePermissions.map(p => p.id)
   }
 };
@@ -343,7 +364,7 @@ export function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Permissions</Label>
                 <div className="border rounded-lg p-4 space-y-4">
-                  {["General", "Agents", "Content", "Communications", "Administration"].map(category => {
+                  {["Core Access", "Agent Management", "Communications", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
                     return (
@@ -351,7 +372,7 @@ export function UserManagementPage() {
                         <div className="font-medium text-sm text-muted-foreground">{category}</div>
                         <div className="space-y-2">
                           {categoryPermissions.map(permission => (
-                            <div key={permission.id} className="flex items-center space-x-2">
+                            <div key={permission.id} className="flex items-start space-x-2">
                               <input
                                 type="checkbox"
                                 id={permission.id}
@@ -363,11 +384,16 @@ export function UserManagementPage() {
                                     setSelectedPermissions(selectedPermissions.filter(p => p !== permission.id));
                                   }
                                 }}
-                                className="rounded border-gray-300"
+                                className="rounded border-gray-300 mt-0.5"
                               />
-                              <Label htmlFor={permission.id} className="text-sm font-normal cursor-pointer">
-                                {permission.label}
-                              </Label>
+                              <div className="flex-1">
+                                <Label htmlFor={permission.id} className="text-sm font-normal cursor-pointer">
+                                  {permission.label}
+                                </Label>
+                                {permission.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{permission.description}</p>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>
@@ -783,7 +809,7 @@ export function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Permissions</Label>
                 <div className="border rounded-lg p-4 space-y-4">
-                  {["General", "Agents", "Content", "Communications", "Administration"].map(category => {
+                  {["Core Access", "Agent Management", "Communications", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
                     return (
@@ -791,7 +817,7 @@ export function UserManagementPage() {
                         <div className="font-medium text-sm text-muted-foreground">{category}</div>
                         <div className="space-y-2">
                           {categoryPermissions.map(permission => (
-                            <div key={permission.id} className="flex items-center space-x-2">
+                            <div key={permission.id} className="flex items-start space-x-2">
                               <input
                                 type="checkbox"
                                 id={`edit-${permission.id}`}
@@ -803,11 +829,16 @@ export function UserManagementPage() {
                                     setEditPermissions(editPermissions.filter(p => p !== permission.id));
                                   }
                                 }}
-                                className="rounded border-gray-300"
+                                className="rounded border-gray-300 mt-0.5"
                               />
-                              <Label htmlFor={`edit-${permission.id}`} className="text-sm font-normal cursor-pointer">
-                                {permission.label}
-                              </Label>
+                              <div className="flex-1">
+                                <Label htmlFor={`edit-${permission.id}`} className="text-sm font-normal cursor-pointer">
+                                  {permission.label}
+                                </Label>
+                                {permission.description && (
+                                  <p className="text-xs text-muted-foreground mt-0.5">{permission.description}</p>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

@@ -67,11 +67,16 @@ export function UserBulkOperations({
     { id: "view_call_history", label: "View Call History" },
     { id: "view_analytics", label: "View Analytics" },
     { id: "manage_agents", label: "Manage Agents" },
-    { id: "configure_tools", label: "Configure Tools" },
+    { id: "configure_tools", label: "Configure Agent Tools" },
+    { id: "access_playground", label: "Test Agents" },
+    { id: "manage_voices", label: "Manage Voices" },
+    { id: "manage_phone_numbers", label: "Manage Phone Numbers" },
+    { id: "make_outbound_calls", label: "Outbound Calling" },
     { id: "access_recordings", label: "Access Recordings" },
+    { id: "manage_integrations", label: "Manage Integrations" },
     { id: "view_billing", label: "View Billing" },
-    { id: "manage_users", label: "Manage Users" },
-    { id: "download_reports", label: "Download Reports" }
+    { id: "manage_settings", label: "Manage Settings" },
+    { id: "manage_users", label: "Manage Users" }
   ];
   
   // Export users
