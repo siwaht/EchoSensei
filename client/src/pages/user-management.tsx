@@ -79,9 +79,8 @@ interface ActivityLog {
 // Available permissions with clear descriptions
 const availablePermissions = [
   // Core Access - Basic viewing rights
-  { id: "view_dashboard", label: "View Dashboard", category: "Core Access", description: "Access to main dashboard and metrics" },
+  { id: "view_analytics", label: "View Dashboard & Analytics", category: "Core Access", description: "Access to dashboard metrics and analytics data" },
   { id: "view_call_history", label: "View Call History", category: "Core Access", description: "View call logs and conversation history" },
-  { id: "view_analytics", label: "View Analytics", category: "Core Access", description: "Access analytics and reporting dashboards" },
   
   // Agent Management - Managing AI agents
   { id: "manage_agents", label: "Manage Agents", category: "Agent Management", description: "Create, edit, and delete AI agents" },
@@ -106,22 +105,22 @@ const permissionPresets = {
   viewer: {
     label: "Viewer",
     description: "Read-only access to view data",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics"]
+    permissions: ["view_analytics", "view_call_history"]
   },
   user: {
     label: "Basic User",
     description: "Standard user with agent testing",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "access_playground", "access_recordings"]
+    permissions: ["view_analytics", "view_call_history", "access_playground", "access_recordings"]
   },
   agent_manager: {
     label: "Agent Manager",
     description: "Manage AI agents and configurations",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "access_playground", "manage_voices"]
+    permissions: ["view_analytics", "view_call_history", "manage_agents", "configure_tools", "access_playground", "manage_voices"]
   },
   communications: {
     label: "Communications Manager",
     description: "Manage all voice and phone features",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_voices", "manage_phone_numbers", "make_outbound_calls", "access_recordings", "access_playground"]
+    permissions: ["view_analytics", "view_call_history", "manage_voices", "manage_phone_numbers", "make_outbound_calls", "access_recordings", "access_playground"]
   },
   organization_admin: {
     label: "Organization Admin",

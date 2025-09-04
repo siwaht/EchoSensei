@@ -63,9 +63,8 @@ export function UserBulkOperations({
   });
   
   const availablePermissions = [
-    { id: "view_dashboard", label: "View Dashboard" },
+    { id: "view_analytics", label: "View Dashboard & Analytics" },
     { id: "view_call_history", label: "View Call History" },
-    { id: "view_analytics", label: "View Analytics" },
     { id: "manage_agents", label: "Manage Agents" },
     { id: "configure_tools", label: "Configure Agent Tools" },
     { id: "access_playground", label: "Test Agents" },
