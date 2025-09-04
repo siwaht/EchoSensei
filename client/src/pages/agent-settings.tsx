@@ -126,7 +126,7 @@ export default function AgentSettings() {
     onSuccess: () => {
       toast({
         title: "Success",
-        description: "Agent settings synced with ElevenLabs successfully",
+        description: "Agent settings synced successfully",
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
@@ -134,7 +134,7 @@ export default function AgentSettings() {
     onError: (error: any) => {
       toast({
         title: "Error",
-        description: error.message || "Failed to sync settings with ElevenLabs",
+        description: error.message || "Failed to sync settings",
         variant: "destructive",
       });
     },
@@ -279,17 +279,17 @@ Always maintain a professional yet conversational tone, and ensure all responses
         </div>
       </div>
 
-      {/* Warning about ElevenLabs sync */}
+      {/* Warning about sync status */}
       {agent.elevenLabsAgentId ? (
         <Card className="p-4 mb-6 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
           <p className="text-sm text-blue-700 dark:text-blue-300">
-            ✓ This agent is synced with ElevenLabs. All changes will be updated in real-time.
+            ✓ This agent is synced with the voice service. All changes will be updated in real-time.
           </p>
         </Card>
       ) : (
         <Card className="p-4 mb-6 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800">
           <p className="text-sm text-yellow-700 dark:text-yellow-300">
-            ⚠️ This agent is not synced with ElevenLabs. Run sync from the Agents page first.
+            ⚠️ This agent is not synced with the voice service. Run sync from the Agents page first.
           </p>
         </Card>
       )}
@@ -545,8 +545,8 @@ Always maintain a professional yet conversational tone, and ensure all responses
                     <SelectItem value="claude-3.7-sonnet">Claude 3.7 Sonnet</SelectItem>
                     <SelectItem value="claude-3.0-haiku">Claude 3.0 Haiku</SelectItem>
                     
-                    {/* ElevenLabs Experimental Models */}
-                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">ElevenLabs (Experimental)</div>
+                    {/* Experimental Models */}
+                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Experimental Models</div>
                     <SelectItem value="gpt-oss-20b">GPT-OSS-20B</SelectItem>
                     <SelectItem value="gpt-oss-120b">GPT-OSS-120B</SelectItem>
                     <SelectItem value="qwen3-30b-a3b">Qwen3-30B-A3B</SelectItem>

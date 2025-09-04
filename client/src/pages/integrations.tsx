@@ -150,7 +150,7 @@ export default function Integrations() {
           API Configuration
         </h2>
         <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400" data-testid="text-page-description">
-          Connect your ElevenLabs account to manage voice agents
+          Connect your voice AI service to manage voice agents
         </p>
       </div>
       
@@ -162,7 +162,7 @@ export default function Integrations() {
             Integration Pending Approval
           </h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Your ElevenLabs integration has been submitted and is waiting for administrator approval.
+            Your voice AI integration has been submitted and is waiting for administrator approval.
           </p>
           <div className="text-sm text-muted-foreground space-y-2">
             <p>Once approved by the administrator, you will be able to:</p>
@@ -187,13 +187,13 @@ export default function Integrations() {
             Connection Lost - Reconnection Required
           </h3>
           <p className="text-sm text-muted-foreground mb-3">
-            Your connection to ElevenLabs has been lost. This could be due to:
+            Your connection to the voice service has been lost. This could be due to:
           </p>
           <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-4">
             <li>Invalid or expired API key</li>
             <li>API key permissions changed</li>
             <li>Network connectivity issues</li>
-            <li>ElevenLabs service interruption</li>
+            <li>Voice service interruption</li>
           </ul>
           <div className="flex gap-2">
             <Button
@@ -230,17 +230,17 @@ export default function Integrations() {
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center font-semibold">1</div>
               <div className="flex-1">
-                <p className="text-sm font-medium">Get your ElevenLabs API Key</p>
+                <p className="text-sm font-medium">Get your Voice AI API Key</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Sign up at ElevenLabs and find your API key in Profile Settings
+                  Get your API key from your voice service provider
                 </p>
                 <a 
-                  href="https://elevenlabs.io" 
+                  href="#" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-xs text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 mt-1"
                 >
-                  Go to ElevenLabs <ExternalLink className="h-3 w-3" />
+                  Get API Key <ExternalLink className="h-3 w-3" />
                 </a>
               </div>
             </div>
@@ -324,13 +324,13 @@ export default function Integrations() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
-                    ElevenLabs API Key
+                    Voice AI API Key
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <HelpCircle className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>Your API key from ElevenLabs Profile → API Keys</p>
+                        <p>Your API key from the voice service provider</p>
                       </TooltipContent>
                     </Tooltip>
                   </FormLabel>
@@ -388,7 +388,7 @@ export default function Integrations() {
 
       {/* Webhook Configuration */}
       <Card className="p-4 sm:p-6 border border-gray-200 dark:border-gray-700">
-        <h3 className="text-base sm:text-lg font-semibold mb-4" data-testid="text-webhook-config-title">ElevenLabs Webhook Configuration</h3>
+        <h3 className="text-base sm:text-lg font-semibold mb-4" data-testid="text-webhook-config-title">Webhook Configuration</h3>
         <div className="space-y-4">
           <div>
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -411,7 +411,7 @@ export default function Integrations() {
               </Button>
             </div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-              <strong>Essential for call tracking:</strong> Add this webhook URL to your ElevenLabs agent settings to automatically receive call transcripts, duration, costs, and audio recordings in real-time. Without this webhook, your dashboard won't receive new call data.
+              <strong>Essential for call tracking:</strong> Add this webhook URL to your voice agent settings to automatically receive call transcripts, duration, costs, and audio recordings in real-time. Without this webhook, your dashboard won't receive new call data.
             </p>
           </div>
         </div>

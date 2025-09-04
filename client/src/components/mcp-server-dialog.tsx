@@ -110,7 +110,7 @@ export function MCPServerDialog({ isOpen, onClose, onSave, tool }: MCPServerDial
         <DialogHeader>
           <DialogTitle>{tool ? "Edit" : "New"} Server Tool</DialogTitle>
           <DialogDescription>
-            Configure webhook-based Server Tools for ElevenLabs agents. These will be added as "Webhook" tools in your agent settings.
+            Configure webhook-based Server Tools for voice agents. These will be added as "Webhook" tools in your agent settings.
           </DialogDescription>
         </DialogHeader>
 
@@ -119,7 +119,7 @@ export function MCPServerDialog({ isOpen, onClose, onSave, tool }: MCPServerDial
           <div className="space-y-4">
             <h3 className="text-sm font-medium">Basic Information</h3>
             <p className="text-xs text-muted-foreground">
-              Identify your webhook tool with a clear name and description for ElevenLabs Server Tools.
+              Identify your webhook tool with a clear name and description for voice agent Server Tools.
             </p>
             
             <div className="space-y-2">
@@ -148,7 +148,7 @@ export function MCPServerDialog({ isOpen, onClose, onSave, tool }: MCPServerDial
           <div className="space-y-4">
             <h3 className="text-sm font-medium">Server Configuration</h3>
             <p className="text-xs text-muted-foreground">
-              Specify the HTTP endpoint for your webhook tool. Configure this as a "Webhook" tool in your ElevenLabs agent settings.
+              Specify the HTTP endpoint for your webhook tool. Configure this as a "Webhook" tool in your voice agent settings.
             </p>
 
             <div className="space-y-2">
@@ -310,7 +310,7 @@ export function MCPServerDialog({ isOpen, onClose, onSave, tool }: MCPServerDial
           <div className="space-y-4 border-t pt-4">
             <h3 className="text-sm font-medium">Confirmation</h3>
             <p className="text-xs text-muted-foreground">
-              Custom webhook tools are not verified by ElevenLabs
+              Custom webhook tools are not verified by the voice service provider
             </p>
             
             <div className="flex items-center space-x-2">

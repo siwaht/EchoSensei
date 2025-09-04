@@ -90,7 +90,7 @@ export default function OutboundCalling() {
       queryClient.invalidateQueries({ queryKey: ["/api/batch-calls"] });
       toast({
         title: "Batch call submitted",
-        description: "Your batch call has been submitted to ElevenLabs.",
+        description: "Your batch call has been submitted to the voice service.",
       });
     },
     onError: (error: any) => {
@@ -471,7 +471,7 @@ export default function OutboundCalling() {
               <Label htmlFor="voice">Voice ID (Optional)</Label>
               <Input
                 id="voice"
-                placeholder="Enter ElevenLabs voice ID (e.g., kdmDKE6EkgrWrrykO9Qt)"
+                placeholder="Enter voice ID (e.g., kdmDKE6EkgrWrrykO9Qt)"
                 value={formData.voiceId}
                 onChange={(e) => setFormData({ ...formData, voiceId: e.target.value })}
                 data-testid="input-voice-id"

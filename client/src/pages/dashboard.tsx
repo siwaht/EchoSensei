@@ -301,7 +301,7 @@ function RecentActivity() {
           type: 'sync',
           timestamp: agent.lastSync,
           title: `Agent synchronized: ${agent.name}`,
-          description: `ElevenLabs agent data updated`,
+          description: `Voice agent data updated`,
           status: 'completed',
           icon: MessageSquare,
           color: 'text-blue-500'
@@ -788,7 +788,7 @@ export default function Dashboard() {
       setLastSyncTime(new Date());
       toast({
         title: "Sync Successful",
-        description: data.message || "Data has been synced with ElevenLabs",
+        description: data.message || "Data has been synced with the voice service",
       });
       // Refresh all data after sync
       refetchStats();
@@ -798,7 +798,7 @@ export default function Dashboard() {
     onError: (error) => {
       toast({
         title: "Sync Failed",
-        description: error.message || "Failed to sync with ElevenLabs",
+        description: error.message || "Failed to sync with the voice service",
         variant: "destructive",
       });
     },
@@ -871,7 +871,7 @@ export default function Dashboard() {
             data-testid="button-sync-data"
           >
             <RefreshCw className={`h-4 w-4 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{syncMutation.isPending ? 'Syncing...' : 'Sync with ElevenLabs'}</span>
+            <span className="hidden sm:inline">{syncMutation.isPending ? 'Syncing...' : 'Sync Data'}</span>
             <span className="sm:hidden">{syncMutation.isPending ? 'Syncing' : 'Sync'}</span>
           </Button>
         </div>
@@ -887,7 +887,7 @@ export default function Dashboard() {
                 Data Not Yet Synced
               </p>
               <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                Click the "Sync with ElevenLabs" button above to fetch your latest call data and ensure all metrics are accurate.
+                Click the "Sync Data" button above to fetch your latest call data and ensure all metrics are accurate.
               </p>
             </div>
           </div>
@@ -966,7 +966,7 @@ export default function Dashboard() {
         </Card>
       )}
       
-      {/* ElevenLabs-style Stats Cards */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4 fade-in">
         {/* Total calls */}
         <Card className="p-2 sm:p-3 lg:p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 border-blue-500/20 dark:border-blue-400/30 backdrop-blur hover:from-blue-500/15 hover:to-blue-600/15 transition-all card-hover group">

@@ -99,7 +99,7 @@ export default function Agents() {
     onError: (error) => {
       toast({
         title: "Sync Failed",
-        description: error.message || "Could not sync agents with ElevenLabs",
+        description: error.message || "Could not sync agents with the voice service",
         variant: "destructive",
       });
     },
@@ -139,7 +139,7 @@ export default function Agents() {
             Voice Agents
           </h2>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400" data-testid="text-page-description">
-            Manage your ElevenLabs conversational AI agents
+            Manage your conversational voice AI agents
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2">
@@ -151,7 +151,7 @@ export default function Agents() {
             data-testid="button-sync-agents"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
-            {syncMutation.isPending ? 'Syncing...' : 'Sync with ElevenLabs'}
+            {syncMutation.isPending ? 'Syncing...' : 'Sync Agents'}
           </Button>
           <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto" data-testid="button-add-agent">
             <Plus className="w-4 h-4 mr-2" />
@@ -172,7 +172,7 @@ export default function Agents() {
                 No agents configured yet
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto" data-testid="text-no-agents-description">
-                Connect your ElevenLabs voice agents to monitor conversations, manage settings, and track performance.
+                Connect your voice agents to monitor conversations, manage settings, and track performance.
               </p>
               
               {/* Quick Setup Steps */}
@@ -180,16 +180,8 @@ export default function Agents() {
                 <div className="flex items-start gap-3">
                   <div className="flex-shrink-0 w-6 h-6 rounded-full bg-purple-600 text-white text-xs flex items-center justify-center font-semibold">1</div>
                   <div className="flex-1">
-                    <p className="text-sm font-medium">Create an agent in ElevenLabs</p>
-                    <p className="text-xs text-muted-foreground">Set up your conversational AI in ElevenLabs</p>
-                    <a 
-                      href="https://elevenlabs.io/conversational-ai" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-purple-600 dark:text-purple-400 hover:underline inline-flex items-center gap-1 mt-1"
-                    >
-                      Go to ElevenLabs <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <p className="text-sm font-medium">Create an agent in your voice platform</p>
+                    <p className="text-xs text-muted-foreground">Set up your conversational AI in your voice platform</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -248,7 +240,7 @@ export default function Agents() {
                 
                 <div className="space-y-3 text-sm">
                 <div className="flex flex-col space-y-1 min-w-0">
-                  <span className="text-gray-600 dark:text-gray-400 text-xs">ElevenLabs ID:</span>
+                  <span className="text-gray-600 dark:text-gray-400 text-xs">Agent ID:</span>
                   <div className="font-medium font-mono text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded overflow-hidden" data-testid={`text-agent-id-${agent.id}`}>
                     <span className="block truncate">{agent.elevenLabsAgentId}</span>
                   </div>

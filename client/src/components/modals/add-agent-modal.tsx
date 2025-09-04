@@ -15,7 +15,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { Bot, Upload, Sparkles, Wand2 } from "lucide-react";
 
 const importAgentSchema = z.object({
-  elevenLabsAgentId: z.string().min(1, "ElevenLabs Agent ID is required"),
+  elevenLabsAgentId: z.string().min(1, "Voice Agent ID is required"),
   name: z.string().optional(),
 });
 
@@ -188,7 +188,7 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
     if (!elevenLabsAgentId) {
       toast({
         title: "Error",
-        description: "Please enter an ElevenLabs Agent ID",
+        description: "Please enter a Voice Agent ID",
         variant: "destructive",
       });
       return;
@@ -239,12 +239,12 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
                   name="elevenLabsAgentId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>ElevenLabs Agent ID</FormLabel>
+                      <FormLabel>Voice Agent ID</FormLabel>
                       <FormControl>
                         <div className="flex space-x-2">
                           <Input
                             {...field}
-                            placeholder="Enter ElevenLabs Agent ID"
+                            placeholder="Enter Voice Agent ID"
                             disabled={isValidating || importAgentMutation.isPending}
                             data-testid="input-agent-id"
                           />
@@ -260,7 +260,7 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
                         </div>
                       </FormControl>
                       <FormDescription>
-                        You can find this in your ElevenLabs dashboard
+                        You can find this in your voice service dashboard
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -396,7 +396,7 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
                         </p>
                         <div className="flex gap-2">
                           <Input
-                            placeholder="e.g., a customer support agent for ElevenLabs"
+                            placeholder="e.g., a customer support agent for your business"
                             value={promptDescription}
                             onChange={(e) => setPromptDescription(e.target.value)}
                             disabled={isGeneratingPrompt || createAgentMutation.isPending}

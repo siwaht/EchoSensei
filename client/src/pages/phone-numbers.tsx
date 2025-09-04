@@ -103,7 +103,7 @@ export default function PhoneNumbers() {
     },
   });
 
-  // Resync phone number with ElevenLabs
+  // Resync phone number with voice service
   const resyncPhoneNumber = useMutation({
     mutationFn: async (phoneNumberId: string) => {
       return await apiRequest("POST", `/api/phone-numbers/${phoneNumberId}/resync`);
@@ -113,14 +113,14 @@ export default function PhoneNumbers() {
       setSyncingPhoneId(null);
       toast({
         title: "Phone number synced",
-        description: data?.message || "Phone number has been re-synced with ElevenLabs.",
+        description: data?.message || "Phone number has been re-synced with the voice service.",
       });
     },
     onError: (error: any) => {
       setSyncingPhoneId(null);
       toast({
         title: "Sync failed",
-        description: error.message || "Failed to sync phone number with ElevenLabs",
+        description: error.message || "Failed to sync phone number with the voice service",
         variant: "destructive",
       });
     },
@@ -609,7 +609,7 @@ export default function PhoneNumbers() {
                     data-testid="input-twilio-token"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Required for connecting to ElevenLabs. Find it in your Twilio Console.
+                    Required for connecting to the voice service. Find it in your Twilio Console.
                   </p>
                 </div>
               </>

@@ -84,8 +84,8 @@ export function CallDetailModal({ callLog, open, onOpenChange }: CallDetailModal
             </div>
             {callLog.elevenLabsCallId && (
               <div>
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">ElevenLabs Call ID:</span>
-                <p className="text-sm text-gray-900 dark:text-white font-mono" data-testid="text-elevenlabs-call-id">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Call ID:</span>
+                <p className="text-sm text-gray-900 dark:text-white font-mono" data-testid="text-call-id">
                   {callLog.elevenLabsCallId}
                 </p>
               </div>
@@ -197,7 +197,7 @@ export function CallDetailModal({ callLog, open, onOpenChange }: CallDetailModal
                     // Sort by timestamp to maintain conversation order
                     conversationTurns.sort((a: any, b: any) => (a.time_in_call_secs || 0) - (b.time_in_call_secs || 0));
                     
-                    // Render professional ElevenLabs-style conversation
+                    // Render professional conversation
                     if (conversationTurns.length > 0) {
                       return (
                         <div className="space-y-3 sm:space-y-4">

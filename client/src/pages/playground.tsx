@@ -194,19 +194,19 @@ export default function Playground() {
 
       const { signedUrl, conversationToken, connectionType: responseConnectionType } = data;
 
-      // Handle WebRTC connection (2025 ElevenLabs feature)
+      // Handle WebRTC connection (2025 feature)
       if (responseConnectionType === 'webrtc' && conversationToken) {
         // For now, show message that WebRTC is prepared but fall back to WebSocket
-        // Full WebRTC implementation requires the ElevenLabs React SDK
+        // Full WebRTC implementation requires the voice AI React SDK
         // WebRTC token received
         toast({
           title: "WebRTC Ready",
           description: "Using enhanced WebRTC connection for better audio quality",
         });
         
-        // TODO: Implement full WebRTC connection with ElevenLabs SDK
+        // TODO: Implement full WebRTC connection with voice AI SDK
         // For now, we'll prepare for WebRTC but need the proper SDK integration
-        throw new Error('WebRTC connection requires ElevenLabs React SDK. Please use WebSocket for now.');
+        throw new Error('WebRTC connection requires voice AI React SDK. Please use WebSocket for now.');
       }
       
       // Connect to VoiceAI WebSocket (legacy support)
@@ -221,7 +221,7 @@ export default function Playground() {
         // WebSocket connected, sending initialization message
         
         // Send a simple initialization message without overrides
-        // Overrides often fail due to agent security settings in ElevenLabs
+        // Overrides often fail due to agent security settings in voice platform
         const initMessage = {
           type: "conversation_initiation_client_data"
         };
@@ -288,7 +288,7 @@ export default function Playground() {
               queueAudio(data.audio_base_64);
             }
           } else if (data.user_transcription_event) {
-            // Handle user transcript - ElevenLabs sends user_transcript field
+            // Handle user transcript - voice API sends user_transcript field
             const userTranscript = data.user_transcription_event.user_transcript;
             if (userTranscript) {
               // User transcript received
@@ -299,7 +299,7 @@ export default function Playground() {
               }]);
             }
           } else if (data.agent_response_event) {
-            // Handle agent response - ElevenLabs sends agent_response field
+            // Handle agent response - voice API sends agent_response field
             const agentResponse = data.agent_response_event.agent_response;
             if (agentResponse) {
               // Agent response received
@@ -327,7 +327,7 @@ export default function Playground() {
             // Sent pong response
           } else if (data.error || data.error_event) {
             const errorInfo = data.error || data.error_event;
-            console.error('ElevenLabs error:', errorInfo);
+            console.error('Voice service error:', errorInfo);
             toast({
               title: "Agent Error",
               description: errorInfo.message || errorInfo.error || "Connection error occurred",
@@ -512,7 +512,7 @@ export default function Playground() {
   const startAudioStreaming = (stream: MediaStream, ws: WebSocket) => {
     // Starting audio streaming to WebSocket
     
-    // Create audio context at 16kHz as required by ElevenLabs
+    // Create audio context at 16kHz as required by voice service
     const audioContext = new AudioContext({ sampleRate: 16000 });
     const source = audioContext.createMediaStreamSource(stream);
     const processor = audioContext.createScriptProcessor(4096, 1, 1); // Larger buffer for better performance
@@ -532,7 +532,7 @@ export default function Playground() {
           audioBuffer.push(sample);
         }
         
-        // Send chunks every 250ms as recommended by ElevenLabs
+        // Send chunks every 250ms as recommended by voice service
         const now = Date.now();
         if (now - lastSendTime >= 250 && audioBuffer.length > 0) {
           // Convert buffer to Int16Array

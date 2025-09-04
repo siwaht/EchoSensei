@@ -155,7 +155,7 @@ export function AgentDetailModal({ agent, open, onOpenChange }: AgentDetailModal
                   </div>
                 )}
                 <div>
-                  <p className="text-sm text-muted-foreground">ElevenLabs Agent ID</p>
+                  <p className="text-sm text-muted-foreground">Voice Agent ID</p>
                   <p className="font-mono text-sm bg-muted p-2 rounded">{agent.elevenLabsAgentId}</p>
                 </div>
               </div>
@@ -196,10 +196,10 @@ export function AgentDetailModal({ agent, open, onOpenChange }: AgentDetailModal
               
               <div className="space-y-4">
                 <div className="bg-muted/50 p-4 rounded-lg">
-                  <p className="text-sm font-medium mb-2">Configure in ElevenLabs Console</p>
+                  <p className="text-sm font-medium mb-2">Configure in Voice AI Console</p>
                   <p className="text-sm text-muted-foreground mb-4">
                     To modify agent prompts, voice settings, tools, and other advanced configurations, 
-                    you need to access the ElevenLabs console directly.
+                    you need to access the voice AI console directly.
                   </p>
                   
                   <div className="space-y-3">
@@ -224,16 +224,16 @@ export function AgentDetailModal({ agent, open, onOpenChange }: AgentDetailModal
                   <Button 
                     variant="outline" 
                     className="w-full mt-4"
-                    onClick={() => window.open('https://elevenlabs.io/app/conversational-ai', '_blank')}
+                    onClick={() => alert('Please access your voice AI platform console to configure agent settings.')}
                   >
-                    Open ElevenLabs Console
+                    Open Voice AI Console
                   </Button>
                 </div>
                 
                 <div className="border-t pt-4">
                   <p className="text-xs text-muted-foreground">
-                    Note: Changes made in the ElevenLabs console will automatically sync with this dashboard.
-                    Use the "Sync with ElevenLabs" button on the agents page to update the latest configuration.
+                    Note: Changes made in the voice AI console will automatically sync with this dashboard.
+                    Use the "Sync Agents" button on the agents page to update the latest configuration.
                   </p>
                 </div>
               </div>

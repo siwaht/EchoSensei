@@ -899,7 +899,7 @@ export default function Tools() {
                 <Alert className="mb-4 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
                   <Info className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                   <AlertDescription className="text-sm text-amber-800 dark:text-amber-200">
-                    <strong>Important:</strong> Webhooks are only synced to ElevenLabs when you click "Save" at the top of the page. 
+                    <strong>Important:</strong> Webhooks are only synced to your voice agents when you click "Save" at the top of the page. 
                     Make sure to save your changes to activate the webhooks in your voice agent.
                   </AlertDescription>
                 </Alert>

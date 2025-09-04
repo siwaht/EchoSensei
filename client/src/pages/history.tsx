@@ -53,7 +53,7 @@ export default function History() {
     onError: () => {
       toast({
         title: "Sync Failed",
-        description: "Failed to sync call logs from ElevenLabs",
+        description: "Failed to sync call logs from voice service",
         variant: "destructive",
       });
     },

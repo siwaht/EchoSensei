@@ -224,7 +224,7 @@ export default function ApiSync() {
         <div>
           <h1 className="text-3xl font-bold">API Synchronization</h1>
           <p className="text-muted-foreground mt-1">
-            Keep your integration synchronized with the latest ElevenLabs API
+            Keep your integration synchronized with the latest voice service API
           </p>
         </div>
         <Button

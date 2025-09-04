@@ -19,7 +19,7 @@ const steps: Step[] = [
   {
     id: "api-key",
     title: "Connect Your API",
-    description: "Add your ElevenLabs API key to enable voice agent monitoring",
+    description: "Add your voice service API key to enable voice agent monitoring",
     icon: Key,
     link: "/integrations",
     checkQuery: "/api/integrations"

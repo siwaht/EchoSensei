@@ -148,7 +148,7 @@ export default function Landing() {
               What is VoiceAI Dashboard?
             </h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto" data-testid="text-info-description">
-              A comprehensive monitoring platform for ElevenLabs voice agents with enterprise-grade security, 
+              A comprehensive monitoring platform for voice AI agents with enterprise-grade security, 
               real-time analytics, and multi-tenant support.
             </p>
 
