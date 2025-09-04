@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -76,11 +76,18 @@ export default function AgentSettings() {
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [evaluationCriteria, setEvaluationCriteria] = useState("");
   
-  const { data: agent, isLoading } = useQuery<Agent>({
+  const { data: agent, isLoading, isError } = useQuery<Agent>({
     queryKey: ["/api/agents", agentId],
     queryFn: async () => {
-      const response = await fetch(`/api/agents/${agentId}`);
-      if (!response.ok) throw new Error("Failed to fetch agent");
+      const response = await fetch(`/api/agents/${agentId}`, {
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Agent not found or access denied");
+        }
+        throw new Error("Failed to fetch agent");
+      }
       return response.json();
     },
     enabled: !!agentId,
@@ -212,19 +219,27 @@ Always maintain a professional yet conversational tone, and ensure all responses
     );
   }
 
-  if (!agent) {
+  if (isError || !agent) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-muted-foreground">Agent not found</p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={() => setLocation("/agents")}
-          >
-            Back to Agents
-          </Button>
-        </div>
+        <Card className="max-w-md w-full">
+          <CardHeader className="text-center">
+            <CardTitle>Unable to Load Agent</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              {isError ? "You don't have permission to access this agent or it doesn't exist." : "Agent not found"}
+            </p>
+            <Button 
+              variant="outline" 
+              className="w-full"
+              onClick={() => setLocation("/agents")}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Agents
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }

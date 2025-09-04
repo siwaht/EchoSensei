@@ -63,7 +63,6 @@ function Router() {
           <Route path="/agents/:id">
             <PermissionGuard><AgentSettings /></PermissionGuard>
           </Route>
-          <Route path="/agent-settings" component={AgentSettings} />
           <Route path="/agent-testing" component={AgentTesting} />
           <Route path="/voices">
             <PermissionGuard><Voices /></PermissionGuard>
