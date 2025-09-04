@@ -2394,12 +2394,14 @@ Generate the complete prompt now:`;
         return res.status(404).json({ message: "User not found" });
       }
 
+      console.log(`Fetching agents for user ${user.email} (isAdmin: ${user.isAdmin}, role: ${user.role})`);
+
           // Get agents filtered by user permissions using the new access control
       const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
       
-      // Only sync with ElevenLabs if user has access to agents
+      // Only sync with ElevenLabs if user has access to agents AND is an admin
       const integration = await storage.getIntegration(user.organizationId, "elevenlabs");
-      if (integration && integration.apiKey && userAgents.length > 0) {
+      if (integration && integration.apiKey && userAgents.length > 0 && user.isAdmin) {
         const decryptedKey = decryptApiKey(integration.apiKey);
         
         try {
@@ -2421,7 +2423,7 @@ Generate the complete prompt now:`;
             localAgents.map(a => [a.elevenLabsAgentId, a])
           );
           
-          // Sync agents from ElevenLabs
+          // Sync agents from ElevenLabs (admin only)
           const syncedAgents = [];
           
           for (const elevenLabsAgent of elevenLabsAgents) {
@@ -2491,8 +2493,8 @@ Generate the complete prompt now:`;
               // Don't overwrite existing agent data - keep local data as source of truth
               // Just add the existing agent to the synced list without updating
               syncedAgents.push(existingAgent);
-            } else {
-              // Create new agent that exists in ElevenLabs but not locally
+            } else if (user.isAdmin) {
+              // Only admins can create new agents from ElevenLabs sync
               const created = await storage.createAgent(agentData);
               syncedAgents.push(created);
             }
@@ -2509,17 +2511,20 @@ Generate the complete prompt now:`;
           
           // Return only agents the user has access to
           const allAgents = await storage.getAgentsForUser(userId, user.organizationId);
+          console.log(`Returning ${allAgents.length} agents for admin user ${user.email} after sync`);
           res.json(allAgents);
           
         } catch (syncError) {
           console.error("Error syncing with ElevenLabs:", syncError);
           // Fall back to local data if sync fails
           const agents = await storage.getAgentsForUser(userId, user.organizationId);
+          console.log(`Returning ${agents.length} agents for user ${user.email} (sync failed)`);
           res.json(agents);
         }
       } else {
         // No integration, just return local agents
         const agents = await storage.getAgentsForUser(userId, user.organizationId);
+        console.log(`Returning ${agents.length} agents for user ${user.email} (no sync)`);
         res.json(agents);
       }
     } catch (error) {
