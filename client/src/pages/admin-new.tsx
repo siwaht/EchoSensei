@@ -21,6 +21,9 @@ import type { User, Organization, BillingPackage } from "@shared/schema";
 import ApiSync from "./admin/api-sync";
 import ApprovalTasks from "./admin/approval-tasks";
 import { UserManagementPage } from "./user-management";
+import { PaymentAnalytics } from "@/components/admin/payment-analytics";
+import { PaymentHistory } from "@/components/admin/payment-history";
+import { UserBulkOperations } from "@/components/admin/user-bulk-operations";
 
 interface BillingData {
   totalUsers: number;
@@ -733,9 +736,24 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
 
-        {/* Payment Gateways Tab */}
-        <TabsContent value="payments" className="space-y-4">
-          {/* Payment Gateway Overview */}
+        {/* Payment Management Tab */}
+        <TabsContent value="payments" className="space-y-6">
+          {/* Payment Analytics */}
+          <PaymentAnalytics 
+            transactions={transactions} 
+            organizations={organizations} 
+            billingData={billingData} 
+          />
+          
+          {/* Payment History */}
+          <PaymentHistory
+            transactions={transactions}
+            organizations={organizations}
+            onRefresh={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/payments"] })}
+            isLoading={transactionsLoading}
+          />
+
+          {/* Payment Gateway Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Stripe Configuration */}
             <Card className="p-4 sm:p-6">
@@ -811,155 +829,6 @@ export default function AdminDashboard() {
               </div>
             </Card>
           </div>
-
-          {/* Payment Settings */}
-          <Card className="p-4 sm:p-6">
-            <h3 className="font-semibold text-lg mb-4">Payment Settings</h3>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Default Payment Gateway</Label>
-                  <Select defaultValue="none">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Not Configured</SelectItem>
-                      <SelectItem value="stripe">Stripe</SelectItem>
-                      <SelectItem value="paypal">PayPal</SelectItem>
-                      <SelectItem value="both">Let customer choose</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label>Payment Mode</Label>
-                  <Select defaultValue="test">
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="test">Test Mode</SelectItem>
-                      <SelectItem value="live">Live Mode</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-3 border-t pt-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Auto-charge on billing date</Label>
-                    <p className="text-sm text-muted-foreground">Automatically charge organizations on their billing date</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Send payment receipts</Label>
-                    <p className="text-sm text-muted-foreground">Email receipts to customers after successful payment</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Enable payment retry</Label>
-                    <p className="text-sm text-muted-foreground">Retry failed payments automatically</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t">
-                <Button variant="outline">Cancel</Button>
-                <Button>
-                  <Save className="w-4 h-4 mr-2" />
-                  Save Settings
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-          {/* Recent Transactions */}
-          <Card className="p-4 sm:p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-lg">Recent Transactions</h3>
-              <span className="text-sm text-muted-foreground">
-                {transactions.length} total
-              </span>
-            </div>
-            
-            {transactionsLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : transactions.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 text-sm font-medium">Organization</th>
-                      <th className="text-left py-2 text-sm font-medium">Amount</th>
-                      <th className="text-left py-2 text-sm font-medium">Gateway</th>
-                      <th className="text-left py-2 text-sm font-medium">Status</th>
-                      <th className="text-left py-2 text-sm font-medium">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {transactions.slice(0, 10).map((transaction: any) => {
-                      // Find the organization name
-                      const org = organizations.find(o => o.id === transaction.organizationId);
-                      return (
-                        <tr key={transaction.id} className="border-b">
-                          <td className="py-3 text-sm">{org?.name || 'Unknown'}</td>
-                          <td className="py-3 text-sm font-medium">
-                            ${transaction.amount?.toFixed(2) || '0.00'}
-                          </td>
-                          <td className="py-3 text-sm">
-                            <Badge variant="outline" className="text-xs capitalize">
-                              {transaction.paymentMethod || 'Unknown'}
-                            </Badge>
-                          </td>
-                          <td className="py-3">
-                            <Badge 
-                              className={`text-xs ${
-                                transaction.status === 'completed' 
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                  : transaction.status === 'failed'
-                                  ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                                  : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                              }`}
-                            >
-                              {transaction.status === 'completed' ? 'Success' : 
-                               transaction.status === 'failed' ? 'Failed' : 'Pending'}
-                            </Badge>
-                          </td>
-                          <td className="py-3 text-sm text-muted-foreground">
-                            {new Date(transaction.createdAt).toLocaleDateString()}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                
-                {transactions.length > 10 && (
-                  <div className="text-center py-4 text-muted-foreground">
-                    <p className="text-sm">Showing 10 of {transactions.length} transactions</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <DollarSign className="w-12 h-12 mx-auto mb-2 text-muted-foreground/30" />
-                <p className="text-sm">No transactions yet</p>
-                <p className="text-xs mt-1">Transactions will appear here when organizations make payments</p>
-              </div>
-            )}
-          </Card>
         </TabsContent>
 
         {/* Approval Tasks Tab */}
