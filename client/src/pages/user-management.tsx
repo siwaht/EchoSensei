@@ -820,7 +820,7 @@ export function UserManagementPage() {
               {/* Agent Assignments Section */}
               {!selectedUser.isAdmin && (
                 <div className="mt-6">
-                  <AgentAssignment userId={selectedUser.id} />
+                  <AgentAssignment key={selectedUser.id} userId={selectedUser.id} />
                 </div>
               )}
               

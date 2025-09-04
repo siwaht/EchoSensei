@@ -29,24 +29,22 @@ export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch agents with assignment status
-  const { data: agents = [], isLoading } = useQuery<Agent[]>({
+  const { data: agents = [], isLoading, refetch } = useQuery<Agent[]>({
     queryKey: [`/api/admin/users/${userId}/agents`],
     enabled: !!userId,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    staleTime: 0,
   });
 
-  // Initialize local assignments when data loads
+  // Initialize local assignments when data loads or userId changes
   useEffect(() => {
     if (agents && agents.length > 0) {
       const assigned = new Set(agents.filter(a => a.assigned).map(a => a.id));
-      // Only update if different to avoid infinite loop
-      setLocalAssignments(prevAssignments => {
-        const isDifferent = assigned.size !== prevAssignments.size || 
-          [...assigned].some(id => !prevAssignments.has(id));
-        return isDifferent ? assigned : prevAssignments;
-      });
+      setLocalAssignments(assigned);
       setHasChanges(false);
     }
-  }, [agents]);
+  }, [agents, userId]);
 
   // Mutation for assigning agent
   const assignMutation = useMutation({
@@ -110,6 +108,14 @@ export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
       for (const agentId of toUnassign) {
         await unassignMutation.mutateAsync(agentId);
       }
+
+      // Invalidate all related queries to ensure fresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${userId}/agents`] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/agents'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/users'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] })
+      ]);
 
       toast({
         title: "Success",
