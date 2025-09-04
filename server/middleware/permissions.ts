@@ -4,17 +4,18 @@ import { storage } from '../storage';
 // Map routes to required permissions
 const routePermissions: Record<string, string> = {
   '/api/agents': 'manage_agents',
-  '/api/voices': 'manage_agents',
-  '/api/phone-numbers': 'manage_agents',
-  '/api/outbound-calling': 'manage_agents',
+  '/api/voices': 'manage_voices',
+  '/api/phone-numbers': 'manage_phone_numbers',
+  '/api/outbound-calling': 'make_outbound_calls',
   '/api/tools': 'configure_tools',
-  '/api/playground': 'manage_agents',
+  '/api/playground': 'access_playground',
   '/api/call-logs': 'view_call_history',
-  '/api/integrations': 'manage_agents',
+  '/api/integrations': 'manage_integrations',
   '/api/analytics': 'view_analytics',
   '/api/recordings': 'access_recordings',
   '/api/billing': 'view_billing',
   '/api/users': 'manage_users',
+  '/api/settings': 'manage_settings',
 };
 
 // Check if user has required permission for the route

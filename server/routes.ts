@@ -1774,7 +1774,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Integration routes
-  app.post("/api/integrations", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.post("/api/integrations", isAuthenticated, checkPermission('manage_integrations'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1809,7 +1809,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Get integration by provider
-  app.get("/api/integrations/:provider", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.get("/api/integrations/:provider", isAuthenticated, checkPermission('manage_integrations'), async (req: any, res) => {
     try {
       let { provider } = req.params;
       
@@ -1846,7 +1846,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/integrations/test", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.post("/api/integrations/test", isAuthenticated, checkPermission('manage_integrations'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1902,7 +1902,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/integrations", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.get("/api/integrations", isAuthenticated, checkPermission('manage_integrations'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3350,7 +3350,7 @@ Generate the complete prompt now:`;
 
 
   // Get available VoiceAI voices - Updated with latest ElevenLabs API
-  app.get("/api/voiceai/voices", isAuthenticated, async (req: any, res) => {
+  app.get("/api/voiceai/voices", isAuthenticated, checkPermission('manage_voices'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3386,7 +3386,7 @@ Generate the complete prompt now:`;
   });
 
   // Create voice clone - Latest ElevenLabs API endpoint
-  app.post("/api/voiceai/voices/clone", isAuthenticated, async (req: any, res) => {
+  app.post("/api/voiceai/voices/clone", isAuthenticated, checkPermission('manage_voices'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3541,7 +3541,7 @@ Generate the complete prompt now:`;
   });
 
   // Phone number routes
-  app.get("/api/phone-numbers", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.get("/api/phone-numbers", isAuthenticated, checkPermission('manage_phone_numbers'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3557,7 +3557,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.post("/api/phone-numbers", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.post("/api/phone-numbers", isAuthenticated, checkPermission('manage_phone_numbers'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3688,7 +3688,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.patch("/api/phone-numbers/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.patch("/api/phone-numbers/:id", isAuthenticated, checkPermission('manage_phone_numbers'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -4021,7 +4021,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.delete("/api/phone-numbers/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.delete("/api/phone-numbers/:id", isAuthenticated, checkPermission('manage_phone_numbers'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5441,7 +5441,7 @@ Generate the complete prompt now:`;
   });
 
   // Generate WebRTC conversation token (new ElevenLabs 2025 feature)
-  app.post("/api/playground/webrtc-token", isAuthenticated, async (req: any, res) => {
+  app.post("/api/playground/webrtc-token", isAuthenticated, checkPermission('access_playground'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5493,7 +5493,7 @@ Generate the complete prompt now:`;
   });
 
   // Playground - Start ElevenLabs session (supports both WebSocket and WebRTC)
-  app.post("/api/playground/start-session", isAuthenticated, async (req: any, res) => {
+  app.post("/api/playground/start-session", isAuthenticated, checkPermission('access_playground'), async (req: any, res) => {
     try {
       const { agentId, connectionType = "webrtc" } = req.body; // Default to WebRTC (2025 standard)
       const userId = req.user.id;

@@ -83,10 +83,15 @@ const availablePermissions = [
   { id: "view_analytics", label: "View Analytics", category: "General" },
   { id: "manage_agents", label: "Manage Agents", category: "Agents" },
   { id: "configure_tools", label: "Configure Tools", category: "Agents" },
-  { id: "access_knowledge_base", label: "Access Knowledge Base", category: "Content" },
+  { id: "manage_voices", label: "Manage Voices", category: "Agents" },
+  { id: "access_playground", label: "Access Playground", category: "Agents" },
   { id: "access_recordings", label: "Access Recordings", category: "Content" },
+  { id: "manage_phone_numbers", label: "Manage Phone Numbers", category: "Communications" },
+  { id: "make_outbound_calls", label: "Make Outbound Calls", category: "Communications" },
   { id: "view_billing", label: "View Billing", category: "Administration" },
   { id: "manage_users", label: "Manage Users", category: "Administration" },
+  { id: "manage_integrations", label: "Manage Integrations", category: "Administration" },
+  { id: "manage_settings", label: "Manage Settings", category: "Administration" },
   { id: "download_reports", label: "Download Reports", category: "Administration" },
 ];
 
@@ -100,7 +105,7 @@ const permissionPresets = {
   agency: {
     label: "Agency",
     description: "Agency management access",
-    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "download_reports", "access_recordings", "manage_integrations"]
+    permissions: ["view_dashboard", "view_call_history", "view_analytics", "manage_agents", "configure_tools", "manage_voices", "access_playground", "download_reports", "access_recordings", "manage_integrations", "manage_phone_numbers", "make_outbound_calls"]
   },
   admin: {
     label: "Admin",
@@ -334,7 +339,7 @@ export function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Permissions</Label>
                 <div className="border rounded-lg p-4 space-y-4">
-                  {["General", "Agents", "Content", "Administration"].map(category => {
+                  {["General", "Agents", "Content", "Communications", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
                     return (
@@ -774,7 +779,7 @@ export function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Permissions</Label>
                 <div className="border rounded-lg p-4 space-y-4">
-                  {["General", "Agents", "Content", "Administration"].map(category => {
+                  {["General", "Agents", "Content", "Communications", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
                     return (
