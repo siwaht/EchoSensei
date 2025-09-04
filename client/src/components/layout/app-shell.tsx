@@ -28,13 +28,13 @@ import { cn } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, permission: "view_dashboard" },
-  { name: "Agents", href: "/agents", icon: Bot, permission: "manage_agents" },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard }, // Dashboard is always visible
+  { name: "Agents", href: "/agents", icon: Bot }, // Visible to all users (backend filters agents)
   { name: "Voices", href: "/voices", icon: Mic, permission: "manage_agents" },
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, permission: "manage_agents" },
   { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing, permission: "manage_agents" },
   { name: "Tools", href: "/tools", icon: Wrench, permission: "configure_tools" },
-  { name: "Playground", href: "/playground", icon: FlaskConical, permission: "manage_agents" },
+  { name: "Playground", href: "/playground", icon: FlaskConical }, // Allow users to test their assigned agents
   { name: "Call History", href: "/history", icon: History, permission: "view_call_history" },
   { name: "Integrations", href: "/integrations", icon: Plug, permission: "manage_agents" },
   { name: "Billing", href: "/billing", icon: CreditCard, permission: "view_billing" },

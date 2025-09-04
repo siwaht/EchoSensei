@@ -292,6 +292,58 @@ export function registerRoutes(app: Express): Server {
   };
 
   // Admin routes - User Management
+  
+  // User-Agent assignment routes
+  app.get('/api/admin/users/:userId/agents', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Get all agents in the organization
+      const allAgents = await storage.getAgents(user.organizationId);
+      
+      // Get assigned agents for the user
+      const assignedAgents = await storage.getAgentsForUser(userId, user.organizationId);
+      const assignedAgentIds = assignedAgents.map(a => a.id);
+      
+      // Return agents with assignment status
+      const agentsWithAssignment = allAgents.map(agent => ({
+        ...agent,
+        assigned: assignedAgentIds.includes(agent.id)
+      }));
+      
+      res.json(agentsWithAssignment);
+    } catch (error) {
+      console.error("Error fetching user agent assignments:", error);
+      res.status(500).json({ message: "Failed to fetch agent assignments" });
+    }
+  });
+  
+  app.post('/api/admin/users/:userId/agents/:agentId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId, agentId } = req.params;
+      await storage.assignAgentToUser(userId, agentId, req.user.id);
+      res.json({ message: "Agent assigned successfully" });
+    } catch (error) {
+      console.error("Error assigning agent to user:", error);
+      res.status(500).json({ message: "Failed to assign agent" });
+    }
+  });
+  
+  app.delete('/api/admin/users/:userId/agents/:agentId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId, agentId } = req.params;
+      await storage.unassignAgentFromUser(userId, agentId);
+      res.json({ message: "Agent unassigned successfully" });
+    } catch (error) {
+      console.error("Error unassigning agent from user:", error);
+      res.status(500).json({ message: "Failed to unassign agent" });
+    }
+  });
+  
   app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const users = await storage.getAllUsers();
@@ -2334,7 +2386,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.get("/api/agents", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.get("/api/agents", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5365,7 +5417,7 @@ Generate the complete prompt now:`;
   });
 
   // Generate WebRTC conversation token (new ElevenLabs 2025 feature)
-  app.post("/api/playground/webrtc-token", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.post("/api/playground/webrtc-token", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5417,7 +5469,7 @@ Generate the complete prompt now:`;
   });
 
   // Playground - Start ElevenLabs session (supports both WebSocket and WebRTC)
-  app.post("/api/playground/start-session", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.post("/api/playground/start-session", isAuthenticated, async (req: any, res) => {
     try {
       const { agentId, connectionType = "webrtc" } = req.body; // Default to WebRTC (2025 standard)
       const userId = req.user.id;

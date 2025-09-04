@@ -12,12 +12,12 @@ interface PermissionGuardProps {
 
 // Map routes to required permissions
 const routePermissions: Record<string, string> = {
-  '/agents': 'manage_agents',
+  // '/agents': 'manage_agents', // Remove restriction - users can see their assigned agents
   '/voices': 'manage_agents',
   '/phone-numbers': 'manage_agents',
   '/outbound-calling': 'manage_agents',
   '/tools': 'configure_tools',
-  '/playground': 'manage_agents',
+  // '/playground': 'manage_agents', // Remove restriction - users can test their assigned agents
   '/history': 'view_call_history',
   '/integrations': 'manage_agents',
   '/billing': 'view_billing',

@@ -34,10 +34,12 @@ import {
   UserX,
   SendHorizontal,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Bot
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
+import { AgentAssignment } from "@/components/admin/agent-assignment";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -809,6 +811,14 @@ export function UserManagementPage() {
               <div className="text-sm text-muted-foreground">
                 Selected permissions: {editPermissions.length} of {availablePermissions.length}
               </div>
+              
+              {/* Agent Assignments Section */}
+              {!selectedUser.isAdmin && (
+                <div className="mt-6">
+                  <AgentAssignment userId={selectedUser.id} />
+                </div>
+              )}
+              
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select 
