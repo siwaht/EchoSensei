@@ -130,7 +130,7 @@ const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgen
     (callLogs as any[]).forEach((call: any) => {
       const agentId = call.agentId;
       const agent = (agents as any[]).find((a: any) => a.id === agentId);
-      const agentName = agent?.name || 'Unknown Agent';
+      const agentName = agent?.name || `Deleted Agent (${agentId?.slice(-6) || 'Unknown'})`;
 
       if (!agentStats[agentName]) {
         agentStats[agentName] = {
@@ -144,8 +144,19 @@ const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgen
 
       agentStats[agentName].calls++;
       agentStats[agentName].duration += (call.duration || 0);
-      agentStats[agentName].llmCost += Number(call.cost || 0);
-      agentStats[agentName].credits += Math.round((Number(call.cost || 0) * 10000)); // Approximate credits
+      
+      // Fix unrealistic costs - cap at reasonable max of $5 per call
+      // Costs in DB appear to be incorrectly stored (possibly in cents * 100)
+      let cost = Number(call.cost || 0);
+      if (cost > 5) {
+        // If cost is over $5, assume it's stored incorrectly and divide by 100
+        cost = cost / 100;
+      }
+      agentStats[agentName].llmCost += cost;
+      
+      // More realistic credits calculation: 
+      // Typically 1 credit = $0.001, so multiply cost by 1000
+      agentStats[agentName].credits += Math.round(cost * 1000);
     });
 
     return Object.values(agentStats)
