@@ -253,14 +253,14 @@ export function UserManagementPage() {
               Add User
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Add New User</DialogTitle>
               <DialogDescription>
                 Create a new user account with specific permissions
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="firstName">First Name</Label>
@@ -331,7 +331,7 @@ export function UserManagementPage() {
               {/* Permissions Checkboxes */}
               <div className="space-y-2">
                 <Label>Permissions</Label>
-                <div className="border rounded-lg p-4 space-y-4 max-h-64 overflow-y-auto">
+                <div className="border rounded-lg p-4 space-y-4">
                   {["General", "Agents", "Content", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
@@ -370,7 +370,7 @@ export function UserManagementPage() {
                 Selected permissions: {selectedPermissions.length} of {availablePermissions.length}
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0 pt-4 border-t">
               <Button
                 type="button"
                 variant="outline"
@@ -686,14 +686,14 @@ export function UserManagementPage() {
       {/* Edit User Dialog */}
       {selectedUser && (
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent>
-            <DialogHeader>
+          <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+            <DialogHeader className="flex-shrink-0">
               <DialogTitle>Edit User</DialogTitle>
               <DialogDescription>
                 Update user details and permissions
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto space-y-4 py-4 px-1">
               <div className="space-y-2">
                 <Label>Email</Label>
                 <Input value={selectedUser.email} disabled />
@@ -771,7 +771,7 @@ export function UserManagementPage() {
               {/* Permissions Checkboxes */}
               <div className="space-y-2">
                 <Label>Permissions</Label>
-                <div className="border rounded-lg p-4 space-y-4 max-h-64 overflow-y-auto">
+                <div className="border rounded-lg p-4 space-y-4">
                   {["General", "Agents", "Content", "Administration"].map(category => {
                     const categoryPermissions = availablePermissions.filter(p => p.category === category);
                     if (categoryPermissions.length === 0) return null;
@@ -834,7 +834,7 @@ export function UserManagementPage() {
                 />
               </div>
             </div>
-            <DialogFooter>
+            <DialogFooter className="flex-shrink-0 pt-4 border-t">
               <Button variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
