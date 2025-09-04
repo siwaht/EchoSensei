@@ -168,13 +168,13 @@ const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgen
             <div className="text-center">Credits spent</div>
           </div>
           {/* Desktop Rows */}
-          <div className="hidden md:block">
+          <div className="hidden md:block space-y-2">
             {agentData.map((agent: any, index: number) => (
-              <div key={index} className="grid grid-cols-5 gap-3 text-sm py-2">
-                <div className="col-span-1 truncate">{agent.name}</div>
+              <div key={index} className="grid grid-cols-5 gap-3 text-sm py-2 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                <div className="col-span-1 truncate font-medium">{agent.name}</div>
                 <div className="text-center">{agent.calls}</div>
-                <div className="text-center">{(agent.duration / 60).toFixed(3)}</div>
-                <div className="text-center">${agent.llmCost.toFixed(4)}</div>
+                <div className="text-center">{(agent.duration / 60).toFixed(1)}</div>
+                <div className="text-center">${agent.llmCost.toFixed(2)}</div>
                 <div className="text-center">{agent.credits.toLocaleString()}</div>
               </div>
             ))}
@@ -185,21 +185,21 @@ const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgen
               <div key={index} className="bg-gray-50 dark:bg-gray-800 p-3 rounded-lg space-y-2">
                 <div className="font-medium">{agent.name}</div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Calls:</span>
-                    <span className="ml-2">{agent.calls}</span>
+                    <span className="font-medium">{agent.calls}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Minutes:</span>
-                    <span className="ml-2">{(agent.duration / 60).toFixed(1)}</span>
+                    <span className="font-medium">{(agent.duration / 60).toFixed(1)}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Cost:</span>
-                    <span className="ml-2">${agent.llmCost.toFixed(2)}</span>
+                    <span className="font-medium">${agent.llmCost.toFixed(2)}</span>
                   </div>
-                  <div>
+                  <div className="flex justify-between">
                     <span className="text-gray-500 dark:text-gray-400">Credits:</span>
-                    <span className="ml-2">{agent.credits.toLocaleString()}</span>
+                    <span className="font-medium">{agent.credits.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
