@@ -114,7 +114,9 @@ export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
         queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${userId}/agents`] }),
         queryClient.invalidateQueries({ queryKey: ['/api/agents'] }),
         queryClient.invalidateQueries({ queryKey: ['/api/users'] }),
-        queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] })
+        queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/analytics/organization'] }),
+        queryClient.invalidateQueries({ queryKey: ['/api/call-logs'] })
       ]);
 
       toast({

@@ -181,12 +181,16 @@ export function UserManagementPage() {
     mutationFn: async (data: { userId: string; updates: Partial<User> & { permissions?: string[] } }) => {
       return apiRequest("PATCH", `/api/users/${data.userId}`, data.updates);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast({
         title: "User updated",
         description: "User details have been updated successfully",
       });
+      // Invalidate all related queries to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${variables.userId}/agents`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setShowEditDialog(false);
       setSelectedUser(null);
     },

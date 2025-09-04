@@ -325,7 +325,9 @@ export function registerRoutes(app: Express): Server {
   app.post('/api/admin/users/:userId/agents/:agentId', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { userId, agentId } = req.params;
+      console.log(`Assigning agent ${agentId} to user ${userId}`);
       await storage.assignAgentToUser(userId, agentId, req.user.id);
+      console.log(`Successfully assigned agent ${agentId} to user ${userId}`);
       res.json({ message: "Agent assigned successfully" });
     } catch (error) {
       console.error("Error assigning agent to user:", error);
@@ -336,7 +338,9 @@ export function registerRoutes(app: Express): Server {
   app.delete('/api/admin/users/:userId/agents/:agentId', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { userId, agentId } = req.params;
+      console.log(`Unassigning agent ${agentId} from user ${userId}`);
       await storage.unassignAgentFromUser(userId, agentId);
+      console.log(`Successfully unassigned agent ${agentId} from user ${userId}`);
       res.json({ message: "Agent unassigned successfully" });
     } catch (error) {
       console.error("Error unassigning agent from user:", error);

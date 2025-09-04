@@ -368,6 +368,8 @@ export class DatabaseStorage implements IStorage {
     const user = await this.getUser(userId);
     if (!user) return [];
     
+    console.log(`Getting agents for user ${user.email} (isAdmin: ${user.isAdmin}, role: ${user.role})`);
+    
     // Admins and agencies can see all agents in their org
     if (user.isAdmin || user.role === 'agency') {
       // For agencies, also include agents from child organizations
@@ -394,6 +396,11 @@ export class DatabaseStorage implements IStorage {
       .from(userAgents)
       .innerJoin(agents, eq(userAgents.agentId, agents.id))
       .where(eq(userAgents.userId, userId));
+    
+    console.log(`Found ${assignedAgents.length} assigned agents for user ${user.email}`);
+    assignedAgents.forEach(a => {
+      console.log(`  - ${a.agent.name} (${a.agent.id})`);
+    });
     
     return assignedAgents.map(row => row.agent);
   }
