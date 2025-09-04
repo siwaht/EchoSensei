@@ -150,13 +150,13 @@ export function CallAnalyticsCard({ callLogs, stats }: CallAnalyticsProps) {
       </Card>
 
       {/* Call Duration Distribution */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Duration Distribution</CardTitle>
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="text-sm sm:text-base truncate">Duration Distribution</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-3 sm:p-6">
           {durationData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={150}>
+            <ResponsiveContainer width="100%" height={120}>
               <PieChart>
                 <Pie
                   data={durationData}
@@ -187,20 +187,20 @@ export function CallAnalyticsCard({ callLogs, stats }: CallAnalyticsProps) {
               </PieChart>
             </ResponsiveContainer>
           ) : (
-            <div className="h-[150px] flex items-center justify-center">
-              <p className="text-sm text-muted-foreground">No data available</p>
+            <div className="h-[120px] flex items-center justify-center">
+              <p className="text-xs sm:text-sm text-muted-foreground">No data available</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Peak Hours */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Peak Call Hours</CardTitle>
+      <Card className="overflow-hidden">
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="text-sm sm:text-base truncate">Peak Call Hours</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={150}>
+        <CardContent className="p-3 sm:p-6">
+          <ResponsiveContainer width="100%" height={120}>
             <BarChart data={hourlyData.filter(h => h.calls > 0)}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 
@@ -221,17 +221,17 @@ export function CallAnalyticsCard({ callLogs, stats }: CallAnalyticsProps) {
       </Card>
 
       {/* 7-Day Trend */}
-      <Card className="md:col-span-2 lg:col-span-3">
-        <CardHeader>
-          <CardTitle className="text-base">7-Day Activity Trend</CardTitle>
+      <Card className="col-span-1 md:col-span-2 lg:col-span-3 overflow-hidden">
+        <CardHeader className="pb-2 sm:pb-3">
+          <CardTitle className="text-sm sm:text-base">7-Day Activity Trend</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={200}>
+        <CardContent className="p-3 sm:p-6">
+          <ResponsiveContainer width="100%" height={150}>
             <LineChart data={dailyTrends}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" fontSize={11} />
-              <YAxis yAxisId="left" fontSize={11} />
-              <YAxis yAxisId="right" orientation="right" fontSize={11} />
+              <XAxis dataKey="date" fontSize={9} tick={{ fontSize: 9 }} />
+              <YAxis yAxisId="left" fontSize={9} tick={{ fontSize: 9 }} />
+              <YAxis yAxisId="right" orientation="right" fontSize={9} tick={{ fontSize: 9 }} />
               <Tooltip />
               <Legend />
               <Line 
