@@ -27,7 +27,7 @@ export default function History() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const { data: callLogsResponse, isLoading } = useQuery({
+  const { data: callLogsResponse, isLoading } = useQuery<any>({
     queryKey: ["/api/call-logs"],
     staleTime: 30000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
@@ -59,7 +59,7 @@ export default function History() {
     },
   });
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null | undefined) => {
     switch (status) {
       case "completed":
         return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200";
@@ -72,14 +72,15 @@ export default function History() {
     }
   };
 
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return "N/A";
+  const formatDuration = (seconds: number | null | undefined) => {
+    if (!seconds && seconds !== 0) return "N/A";
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}m ${remainingSeconds}s`;
   };
 
-  const getAgentName = (agentId: string) => {
+  const getAgentName = (agentId: string | null | undefined) => {
+    if (!agentId) return "Unknown Agent";
     const agent = agents?.find(a => a.id === agentId);
     return agent?.name || "Unknown Agent";
   };
@@ -119,7 +120,7 @@ export default function History() {
   };
 
   // Filter call logs based on selected filters
-  const filteredCallLogs = (searchResults || callLogs)?.filter((log) => {
+  const filteredCallLogs = (searchResults || callLogs)?.filter((log: CallLog) => {
     // Filter by agent
     if (selectedAgent !== "all" && log.agentId !== selectedAgent) {
       return false;
@@ -163,11 +164,11 @@ export default function History() {
   }) || [];
 
   // Prepare export data
-  const exportData = filteredCallLogs.map((log) => ({
+  const exportData = filteredCallLogs.map((log: CallLog) => ({
     id: log.id,
     agent: getAgentName(log.agentId),
     date: log.createdAt ? new Date(log.createdAt).toLocaleString() : "Unknown",
-    duration: formatDuration(log.duration),
+    duration: formatDuration(log.duration || null),
     status: log.status || "unknown",
     cost: log.cost ? `$${Number(log.cost).toFixed(4)}` : "N/A",
     hasTranscript: !!log.transcript,
@@ -194,30 +195,35 @@ export default function History() {
             View and analyze past voice interactions
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          <Button
-            onClick={() => syncCallsMutation.mutate()}
-            disabled={syncCallsMutation.isPending}
-            className="flex items-center justify-center gap-2 w-full sm:w-auto"
-            data-testid="button-sync-calls"
-          >
-            <RefreshCw className={`w-4 h-4 ${syncCallsMutation.isPending ? 'animate-spin' : ''}`} />
-            {syncCallsMutation.isPending ? 'Syncing...' : 'Sync Calls'}
-          </Button>
-          <Select value={selectedAgent} onValueChange={setSelectedAgent}>
-            <SelectTrigger className="w-full sm:w-48" data-testid="select-agent-filter">
-              <SelectValue placeholder="All Agents" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Agents</SelectItem>
-              {agents?.map((agent) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-4">
+          {/* First Row - Sync and Agent Filter */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+            <Button
+              onClick={() => syncCallsMutation.mutate()}
+              disabled={syncCallsMutation.isPending}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto"
+              data-testid="button-sync-calls"
+            >
+              <RefreshCw className={`w-4 h-4 ${syncCallsMutation.isPending ? 'animate-spin' : ''}`} />
+              {syncCallsMutation.isPending ? 'Syncing...' : 'Sync Calls'}
+            </Button>
+            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+              <SelectTrigger className="w-full sm:w-48" data-testid="select-agent-filter">
+                <SelectValue placeholder="All Agents" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Agents</SelectItem>
+                {agents?.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {/* Second Row - Date Range */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
             <Input
               type="date"
               value={startDate}
@@ -227,7 +233,7 @@ export default function History() {
               placeholder="Start date"
               data-testid="input-start-date"
             />
-            <span className="text-gray-500 dark:text-gray-400 text-sm">to</span>
+            <span className="text-gray-500 dark:text-gray-400 text-sm hidden sm:inline">to</span>
             <Input
               type="date"
               value={endDate}
@@ -370,7 +376,7 @@ export default function History() {
           <>
             {/* Mobile Card View */}
             <div className="block md:hidden space-y-4 p-4">
-              {filteredCallLogs.map((callLog) => (
+              {filteredCallLogs.map((callLog: CallLog) => (
                 <Card key={callLog.id} className="p-4 space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
@@ -401,7 +407,7 @@ export default function History() {
                     <div className="flex justify-between">
                       <span className="text-gray-600 dark:text-gray-400">Duration:</span>
                       <span className="text-gray-900 dark:text-white" data-testid={`text-duration-${callLog.id}`}>
-                        {formatDuration(callLog.duration)}
+                        {formatDuration(callLog.duration || null)}
                       </span>
                     </div>
                   </div>
@@ -478,7 +484,7 @@ export default function History() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredCallLogs.map((callLog) => (
+                  {filteredCallLogs.map((callLog: CallLog) => (
                     <tr key={callLog.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="px-6 py-4">
                         <div>
@@ -505,7 +511,7 @@ export default function History() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900 dark:text-white" data-testid={`text-duration-${callLog.id}`}>
-                        {formatDuration(callLog.duration)}
+                        {formatDuration(callLog.duration || null)}
                       </td>
                       <td className="px-6 py-4">
                         {callLog.audioUrl ? (

@@ -214,9 +214,9 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] flex flex-col">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[85vh] flex flex-col">
         <DialogHeader className="flex-shrink-0">
-          <DialogTitle data-testid="text-modal-title">Add New Agent</DialogTitle>
+          <DialogTitle data-testid="text-modal-title" className="text-base sm:text-lg">Add New Agent</DialogTitle>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col flex-1 overflow-hidden">
@@ -231,7 +231,7 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="import" className="space-y-4 overflow-y-auto max-h-[calc(85vh-200px)] px-1">
+          <TabsContent value="import" className="space-y-4 overflow-y-auto max-h-[calc(85vh-200px)] px-1 pb-4">
             <Form {...importForm}>
               <form onSubmit={importForm.handleSubmit(onImportSubmit)} className="space-y-4">
                 <FormField
@@ -326,7 +326,7 @@ export function AddAgentModal({ open, onOpenChange }: AddAgentModalProps) {
             </Form>
           </TabsContent>
           
-          <TabsContent value="create" className="space-y-4 overflow-y-auto max-h-[calc(85vh-200px)] px-1">
+          <TabsContent value="create" className="space-y-4 overflow-y-auto max-h-[calc(85vh-200px)] px-1 pb-4">
             <Form {...createForm}>
               <form onSubmit={createForm.handleSubmit(onCreateSubmit)} className="space-y-4">
                 <FormField

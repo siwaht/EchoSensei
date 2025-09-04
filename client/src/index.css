@@ -122,6 +122,11 @@
   .hide-desktop { display: none !important; }
 }
 
+/* Extra small screen breakpoint for grid columns */
+@media (min-width: 475px) {
+  .xs\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* Smooth scrolling */
 html { scroll-behavior: smooth; }
 

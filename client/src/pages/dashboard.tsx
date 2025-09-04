@@ -834,7 +834,7 @@ export default function Dashboard() {
       {/* Sync Section */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 className="text-2xl font-bold">Dashboard</h2>
+          <h2 className="text-xl sm:text-2xl font-bold">Dashboard</h2>
           <div className="flex items-center gap-2">
             <AlertCircle className="h-4 w-4 text-purple-400" />
             <span className="text-sm text-muted-foreground">
@@ -849,7 +849,7 @@ export default function Dashboard() {
         <div className="flex items-center gap-4">
           {/* Agent Selector */}
           <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-            <SelectTrigger className="w-[250px]" data-testid="select-agent-filter">
+            <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-agent-filter">
               <Bot className="w-4 h-4 mr-2" />
               <SelectValue placeholder="All Agents" />
             </SelectTrigger>
@@ -965,9 +965,9 @@ export default function Dashboard() {
       )}
       
       {/* ElevenLabs-style Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 fade-in">
+      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 fade-in">
         {/* Total calls */}
-        <Card className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 border-blue-500/20 dark:border-blue-400/30 backdrop-blur hover:from-blue-500/15 hover:to-blue-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/10 dark:from-blue-500/20 dark:to-blue-600/20 border-blue-500/20 dark:border-blue-400/30 backdrop-blur hover:from-blue-500/15 hover:to-blue-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-blue-500/20 dark:bg-blue-400/20 group-hover:scale-110 transition-transform">
@@ -975,13 +975,13 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Total Calls</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.totalCalls || 0}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.totalCalls || 0}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">All voice conversations</p>
           </div>
         </Card>
 
         {/* Total duration */}
-        <Card className="p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 border-emerald-500/20 dark:border-emerald-400/30 backdrop-blur hover:from-emerald-500/15 hover:to-emerald-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-emerald-500/10 to-emerald-600/10 dark:from-emerald-500/20 dark:to-emerald-600/20 border-emerald-500/20 dark:border-emerald-400/30 backdrop-blur hover:from-emerald-500/15 hover:to-emerald-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-emerald-500/20 dark:bg-emerald-400/20 group-hover:scale-110 transition-transform">
@@ -989,13 +989,13 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Total Duration</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.totalMinutes || 0} min</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.totalMinutes || 0} min</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Total talk time</p>
           </div>
         </Card>
 
         {/* Total spending */}
-        <Card className="p-4 bg-gradient-to-br from-amber-500/10 to-amber-600/10 dark:from-amber-500/20 dark:to-amber-600/20 border-amber-500/20 dark:border-amber-400/30 backdrop-blur hover:from-amber-500/15 hover:to-amber-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-amber-500/10 to-amber-600/10 dark:from-amber-500/20 dark:to-amber-600/20 border-amber-500/20 dark:border-amber-400/30 backdrop-blur hover:from-amber-500/15 hover:to-amber-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-amber-500/20 dark:bg-amber-400/20 group-hover:scale-110 transition-transform">
@@ -1003,13 +1003,13 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Total Spending</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">${(stats as any)?.estimatedCost?.toFixed(2) || '0.00'}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">${(stats as any)?.estimatedCost?.toFixed(2) || '0.00'}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">All-time cost in USD</p>
           </div>
         </Card>
 
         {/* Average cost per call */}
-        <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/10 dark:from-orange-500/20 dark:to-orange-600/20 border-orange-500/20 dark:border-orange-400/30 backdrop-blur hover:from-orange-500/15 hover:to-orange-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/10 dark:from-orange-500/20 dark:to-orange-600/20 border-orange-500/20 dark:border-orange-400/30 backdrop-blur hover:from-orange-500/15 hover:to-orange-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-orange-500/20 dark:bg-orange-400/20 group-hover:scale-110 transition-transform">
@@ -1017,13 +1017,13 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Avg Cost per Call</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">${avgCostPerCall}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">${avgCostPerCall}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Average spending per call</p>
           </div>
         </Card>
 
         {/* Average duration */}
-        <Card className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-500/20 dark:to-purple-600/20 border-purple-500/20 dark:border-purple-400/30 backdrop-blur hover:from-purple-500/15 hover:to-purple-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/10 dark:from-purple-500/20 dark:to-purple-600/20 border-purple-500/20 dark:border-purple-400/30 backdrop-blur hover:from-purple-500/15 hover:to-purple-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-purple-500/20 dark:bg-purple-400/20 group-hover:scale-110 transition-transform">
@@ -1031,13 +1031,13 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Avg Call Duration</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{avgMinutes}:{String(avgSeconds).padStart(2, '0')}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{avgMinutes}:{String(avgSeconds).padStart(2, '0')}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Average talk time</p>
           </div>
         </Card>
 
         {/* Active agents */}
-        <Card className="p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 dark:from-cyan-500/20 dark:to-cyan-600/20 border-cyan-500/20 dark:border-cyan-400/30 backdrop-blur hover:from-cyan-500/15 hover:to-cyan-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-cyan-500/10 to-cyan-600/10 dark:from-cyan-500/20 dark:to-cyan-600/20 border-cyan-500/20 dark:border-cyan-400/30 backdrop-blur hover:from-cyan-500/15 hover:to-cyan-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-cyan-500/20 dark:bg-cyan-400/20 group-hover:scale-110 transition-transform">
@@ -1045,13 +1045,13 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Active Agents</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.activeAgents || 0}</p>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{(stats as any)?.activeAgents || 0}</p>
             <p className="text-xs text-slate-500 dark:text-slate-400">Connected voice agents</p>
           </div>
         </Card>
 
         {/* Success rate */}
-        <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-500/20 dark:to-green-600/20 border-green-500/20 dark:border-green-400/30 backdrop-blur hover:from-green-500/15 hover:to-green-600/15 transition-all card-hover group">
+        <Card className="p-3 sm:p-4 bg-gradient-to-br from-green-500/10 to-green-600/10 dark:from-green-500/20 dark:to-green-600/20 border-green-500/20 dark:border-green-400/30 backdrop-blur hover:from-green-500/15 hover:to-green-600/15 transition-all card-hover group">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <div className="p-1.5 rounded-lg bg-green-500/20 dark:bg-green-400/20 group-hover:scale-110 transition-transform">
@@ -1059,7 +1059,7 @@ export default function Dashboard() {
               </div>
               <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Success Rate</p>
             </div>
-            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
               {(() => {
                 const logs = Array.isArray(callLogs) ? callLogs : [];
                 const completed = logs.filter((l: any) => l.status === 'completed').length;
@@ -1073,13 +1073,13 @@ export default function Dashboard() {
       </div>
 
       {/* User Plan Card */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-4">
         <div className="lg:col-span-1">
           <UserPlanCard />
         </div>
         <div className="lg:col-span-3">
           {/* Call Volume Line Chart */}
-          <Card className="p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur shadow-xl border-0 h-full">
+          <Card className="p-4 sm:p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur shadow-xl border-0 h-full">
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={(() => {
@@ -1117,11 +1117,11 @@ export default function Dashboard() {
       <CallAnalyticsCard callLogs={callLogs} stats={stats} />
 
       {/* Overall Success Rate with Agent Table and Language */}
-      <Card className="p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur">
+      <Card className="p-4 sm:p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur">
         <div className="space-y-6">
           {/* Success Rate Chart */}
           <div>
-            <h3 className="text-lg font-semibold mb-4 text-card-foreground flex items-center gap-2">
+            <h3 className="text-base sm:text-lg font-semibold mb-4 text-card-foreground flex items-center gap-2">
               <div className="w-3 h-3 rounded-full bg-gradient-to-r from-green-400 to-emerald-500"></div>
               Overall success rate
             </h3>
@@ -1132,10 +1132,10 @@ export default function Dashboard() {
           <div className="border-t"></div>
 
           {/* Most Called Agents and Language Side by Side */}
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
             <div className="lg:col-span-2">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-card-foreground">Most called agents</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-card-foreground">Most called agents</h3>
                 <button 
                   onClick={() => setLocation('/agents')}
                   className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-500 dark:hover:text-purple-300 transition-colors font-medium"
@@ -1147,7 +1147,7 @@ export default function Dashboard() {
             </div>
             
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-card-foreground">Language</h3>
+              <h3 className="text-base sm:text-lg font-semibold mb-4 text-card-foreground">Language</h3>
               <LanguageStats />
             </div>
           </div>

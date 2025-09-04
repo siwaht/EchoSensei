@@ -204,24 +204,25 @@ export default function AppShell({ children }: AppShellProps) {
             >
               <Menu className="w-5 h-5" />
             </Button>
-            <h1 className="ml-4 lg:ml-0 text-2xl font-semibold text-gray-900 dark:text-gray-100" data-testid="text-page-title">
+            <h1 className="ml-4 lg:ml-0 text-lg sm:text-xl lg:text-2xl font-semibold text-gray-900 dark:text-gray-100 truncate" data-testid="text-page-title">
               {getPageTitle()}
             </h1>
           </div>
           
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               data-testid="button-theme-toggle"
+              className="hidden sm:flex"
             >
               {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </Button>
             
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 gradient-purple rounded-full flex items-center justify-center shadow-md ring-2 ring-primary/20">
-                <span className="text-white text-sm font-medium" data-testid="text-user-initials">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 gradient-purple rounded-full flex items-center justify-center shadow-md ring-2 ring-primary/20">
+                <span className="text-white text-xs sm:text-sm font-medium" data-testid="text-user-initials">
                   {(user as any)?.firstName?.[0]}{(user as any)?.lastName?.[0]}
                 </span>
               </div>
