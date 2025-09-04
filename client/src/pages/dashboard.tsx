@@ -14,6 +14,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SentimentIndicator } from "@/components/analytics/sentiment-indicator";
+import { UserPlanCard } from "@/components/dashboard/user-plan-card";
+import { CallAnalyticsCard } from "@/components/dashboard/call-analytics-card";
 
 // Success Rate Chart Component
 const SuccessRateChart = memo(function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
@@ -1056,8 +1058,14 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Call Volume Line Chart */}
-      <Card className="p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur shadow-xl border-0">
+      {/* User Plan Card */}
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="lg:col-span-1">
+          <UserPlanCard />
+        </div>
+        <div className="lg:col-span-3">
+          {/* Call Volume Line Chart */}
+          <Card className="p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur shadow-xl border-0 h-full">
         <div className="h-48">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={(() => {
@@ -1088,6 +1096,11 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
       </Card>
+        </div>
+      </div>
+
+      {/* Detailed Call Analytics */}
+      <CallAnalyticsCard callLogs={callLogs} stats={stats} />
 
       {/* Overall Success Rate with Agent Table and Language */}
       <Card className="p-6 dark:bg-slate-800/50 dark:border-slate-700/50 backdrop-blur">

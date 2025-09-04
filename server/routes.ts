@@ -2394,7 +2394,7 @@ Generate the complete prompt now:`;
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Get agents filtered by user permissions using the new access control
+          // Get agents filtered by user permissions using the new access control
       const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
       
       // Only sync with ElevenLabs if user has access to agents
@@ -5286,6 +5286,27 @@ Generate the complete prompt now:`;
     } catch (error) {
       console.error("Error fetching audio:", error);
       res.status(500).json({ message: "Failed to fetch audio" });
+    }
+  });
+
+  // Get current organization details for user
+  app.get("/api/organization/current", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const organization = await storage.getOrganization(user.organizationId);
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+
+      res.json(organization);
+    } catch (error) {
+      console.error("Error fetching organization:", error);
+      res.status(500).json({ message: "Failed to fetch organization data" });
     }
   });
 

@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Bot, Calendar, RefreshCw, Play, Pause, Download, Filter, FileDown } from "lucide-react";
+import { Bot, Calendar, RefreshCw, Play, Pause, Download, Filter, FileDown, FileText } from "lucide-react";
 import { CallDetailModal } from "@/components/modals/call-detail-modal";
 import { TranscriptSearch } from "@/components/call-history/transcript-search";
 import { AnalyticsExport } from "@/components/analytics/analytics-export";
+import { TranscriptViewer } from "@/components/call/transcript-viewer";
 import type { CallLog, Agent } from "@shared/schema";
 
 export default function History() {
@@ -18,6 +19,7 @@ export default function History() {
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [selectedCallLog, setSelectedCallLog] = useState<CallLog | null>(null);
+  const [selectedTranscript, setSelectedTranscript] = useState<CallLog | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [durationFilter, setDurationFilter] = useState<string>("all");
@@ -447,6 +449,18 @@ export default function History() {
                     >
                       View Details
                     </Button>
+                    {callLog.transcript && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setSelectedTranscript(callLog)}
+                        data-testid={`button-view-transcript-${callLog.id}`}
+                      >
+                        <FileText className="w-4 h-4 mr-1" />
+                        Transcript
+                      </Button>
+                    )}
                   </div>
                 </Card>
               ))}
@@ -545,14 +559,27 @@ export default function History() {
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedCallLog(callLog)}
-                          data-testid={`button-view-details-${callLog.id}`}
-                        >
-                          View Details
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSelectedCallLog(callLog)}
+                            data-testid={`button-view-details-${callLog.id}`}
+                          >
+                            View Details
+                          </Button>
+                          {callLog.transcript && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setSelectedTranscript(callLog)}
+                              data-testid={`button-view-transcript-${callLog.id}`}
+                            >
+                              <FileText className="w-4 h-4 mr-1" />
+                              Transcript
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -587,6 +614,14 @@ export default function History() {
         open={!!selectedCallLog}
         onOpenChange={(open) => !open && setSelectedCallLog(null)}
       />
+
+      {selectedTranscript && (
+        <TranscriptViewer
+          transcript={selectedTranscript.transcript || ""}
+          callId={selectedTranscript.id}
+          onClose={() => setSelectedTranscript(null)}
+        />
+      )}
     </div>
   );
 }
