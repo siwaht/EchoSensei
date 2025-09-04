@@ -13,6 +13,8 @@ import { Input } from "@/components/ui/input";
 interface AgentAssignmentProps {
   userId: string;
   onClose?: () => void;
+  hideActions?: boolean;  // Hide save/cancel buttons when embedded
+  onAssignmentsChange?: (assignedAgentIds: string[]) => void;  // Callback for parent to track changes
 }
 
 interface Agent {
@@ -22,7 +24,7 @@ interface Agent {
   assigned?: boolean;
 }
 
-export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
+export function AgentAssignment({ userId, onClose, hideActions = false, onAssignmentsChange }: AgentAssignmentProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [localAssignments, setLocalAssignments] = useState<Set<string>>(new Set());
@@ -91,6 +93,11 @@ export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
     }
     setLocalAssignments(newAssignments);
     setHasChanges(true);
+    
+    // Notify parent of changes if callback provided
+    if (onAssignmentsChange) {
+      onAssignmentsChange(Array.from(newAssignments));
+    }
   };
 
   const handleSave = async () => {
@@ -211,27 +218,29 @@ export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
             {localAssignments.size} of {agents.length} agents selected
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
-            {onClose && (
-              <Button variant="outline" onClick={onClose}>
-                Cancel
-              </Button>
-            )}
-            <Button
-              onClick={handleSave}
-              disabled={!hasChanges || assignMutation.isPending || unassignMutation.isPending}
-            >
-              {assignMutation.isPending || unassignMutation.isPending ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Assignments"
+          {/* Actions - only show if not hidden */}
+          {!hideActions && (
+            <div className="flex justify-end gap-2">
+              {onClose && (
+                <Button variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
               )}
-            </Button>
-          </div>
+              <Button
+                onClick={handleSave}
+                disabled={!hasChanges || assignMutation.isPending || unassignMutation.isPending}
+              >
+                {assignMutation.isPending || unassignMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Assignments"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

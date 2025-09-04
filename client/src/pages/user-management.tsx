@@ -824,7 +824,11 @@ export function UserManagementPage() {
               {/* Agent Assignments Section */}
               {!selectedUser.isAdmin && (
                 <div className="mt-6">
-                  <AgentAssignment key={selectedUser.id} userId={selectedUser.id} />
+                  <AgentAssignment 
+                    key={selectedUser.id} 
+                    userId={selectedUser.id}
+                    hideActions={true}  // Hide internal save buttons since dialog has its own
+                  />
                 </div>
               )}
               
