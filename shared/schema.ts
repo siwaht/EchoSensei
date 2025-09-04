@@ -402,6 +402,7 @@ export const callLogs = pgTable("call_logs", {
   organizationId: varchar("organization_id").notNull(),
   agentId: varchar("agent_id"),
   elevenLabsCallId: varchar("eleven_labs_call_id"),
+  phoneNumber: varchar("phone_number"), // Caller's phone number for real calls
   duration: integer("duration"), // in seconds
   transcript: json("transcript"),
   audioUrl: varchar("audio_url"),

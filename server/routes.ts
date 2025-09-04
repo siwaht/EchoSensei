@@ -4907,6 +4907,7 @@ Generate the complete prompt now:`;
             conversationId: conversation_id,
             agentId: agent.id,
             elevenLabsCallId: conversation_id,
+            phoneNumber: data.customer_phone_number || data.phone_number || conversation_metadata?.phone_number || null,
             duration: duration_seconds || 0,
             transcript: transcript,
             audioUrl: "", // Will be populated from audio webhook if available
@@ -4966,6 +4967,7 @@ Generate the complete prompt now:`;
             conversationId: conversation_id,
             agentId: agent.id,
             elevenLabsCallId: conversation_id,
+            phoneNumber: data.customer_phone_number || data.phone_number || conversation_metadata?.phone_number || null,
             duration: duration_seconds || 0,
             transcript: transcript,
             audioUrl: "", // Will be populated from audio webhook if available
@@ -5195,6 +5197,7 @@ Generate the complete prompt now:`;
                 agentId: agent.id,
                 conversationId: conversation.conversation_id, // Add missing conversationId field
                 elevenLabsCallId: conversation.conversation_id,
+                phoneNumber: details.customer_phone_number || details.phone_number || conversation.customer_phone_number || conversation.phone_number || null,
                 duration: details.call_duration_secs || conversation.call_duration_secs || 0,
                 transcript: JSON.parse(JSON.stringify(transcriptJson)), // Ensure proper JSON serialization
                 audioUrl: audioUrl || "",

@@ -379,7 +379,7 @@ export default function History() {
                       </div>
                       <div>
                         <div className="font-semibold text-gray-900 dark:text-white" data-testid={`text-call-id-${callLog.id}`}>
-                          Call #{callLog.id.slice(-6)}
+                          {callLog.phoneNumber ? callLog.phoneNumber : `Call #${callLog.id.slice(-6)}`}
                         </div>
                         <div className="text-sm text-gray-500 dark:text-gray-400" data-testid={`text-agent-name-${callLog.id}`}>
                           {getAgentName(callLog.agentId)}
@@ -483,7 +483,11 @@ export default function History() {
                       <td className="px-6 py-4">
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white" data-testid={`text-call-id-${callLog.id}`}>
-                            Call #{callLog.id.slice(-6)}
+                            {callLog.phoneNumber ? (
+                              <span className="font-semibold">{callLog.phoneNumber}</span>
+                            ) : (
+                              <span>Call #{callLog.id.slice(-6)}</span>
+                            )}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400" data-testid={`text-call-time-${callLog.id}`}>
                             {callLog.createdAt ? new Date(callLog.createdAt).toLocaleString() : "Unknown"}
