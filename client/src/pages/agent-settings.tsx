@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,10 +33,11 @@ export default function AgentSettings() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const params = useParams();
   
-  // Get agentId from URL query params
-  const params = new URLSearchParams(window.location.search);
-  const agentId = params.get("agentId");
+  // Get agentId from URL params or query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const agentId = params.id || urlParams.get("agentId");
   
   const [activeTab, setActiveTab] = useState("chat");
   const [hasChanges, setHasChanges] = useState(false);

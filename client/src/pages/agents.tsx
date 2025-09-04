@@ -270,7 +270,7 @@ export default function Agents() {
                   className="w-full hover:bg-primary/10 hover:text-primary hover:border-primary transition-all"
                   onClick={(e) => {
                     e.stopPropagation();
-                    setLocation(`/agent-settings?agentId=${agent.id}`);
+                    setLocation(`/agents/${agent.id}`);
                   }}
                   data-testid={`button-settings-${agent.id}`}
                 >

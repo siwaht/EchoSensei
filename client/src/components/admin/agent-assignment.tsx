@@ -36,9 +36,14 @@ export function AgentAssignment({ userId, onClose }: AgentAssignmentProps) {
 
   // Initialize local assignments when data loads
   useEffect(() => {
-    if (agents) {
+    if (agents && agents.length > 0) {
       const assigned = new Set(agents.filter(a => a.assigned).map(a => a.id));
-      setLocalAssignments(assigned);
+      // Only update if different to avoid infinite loop
+      setLocalAssignments(prevAssignments => {
+        const isDifferent = assigned.size !== prevAssignments.size || 
+          [...assigned].some(id => !prevAssignments.has(id));
+        return isDifferent ? assigned : prevAssignments;
+      });
       setHasChanges(false);
     }
   }, [agents]);
