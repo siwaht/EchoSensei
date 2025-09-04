@@ -115,6 +115,7 @@ export function UserManagementPage() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editPassword, setEditPassword] = useState("");
+  const [editPermissions, setEditPermissions] = useState<string[]>([]);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserFirstName, setNewUserFirstName] = useState("");
@@ -170,7 +171,7 @@ export function UserManagementPage() {
 
   // Update user mutation
   const updateUserMutation = useMutation({
-    mutationFn: async (data: { userId: string; updates: Partial<User> }) => {
+    mutationFn: async (data: { userId: string; updates: Partial<User> & { permissions?: string[] } }) => {
       return apiRequest("PATCH", `/api/users/${data.userId}`, data.updates);
     },
     onSuccess: () => {
@@ -605,6 +606,7 @@ export function UserManagementPage() {
                                   onClick={() => {
                                     setSelectedUser(user);
                                     setEditPassword("");
+                                    setEditPermissions(user.permissions || []);
                                     setShowEditDialog(true);
                                   }}
                                 >
@@ -716,7 +718,13 @@ export function UserManagementPage() {
                 <Label>Role</Label>
                 <Select 
                   value={selectedUser.role} 
-                  onValueChange={(value) => setSelectedUser({...selectedUser, role: value as any})}
+                  onValueChange={(value) => {
+                    setSelectedUser({...selectedUser, role: value as any});
+                    // Update permissions when role preset is selected
+                    if (permissionPresets[value as keyof typeof permissionPresets]) {
+                      setEditPermissions(permissionPresets[value as keyof typeof permissionPresets].permissions);
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -729,6 +737,77 @@ export function UserManagementPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              
+              {/* Permission Quick Templates */}
+              <div className="space-y-2">
+                <Label>Quick Templates</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {Object.entries(permissionPresets).map(([key, preset]) => (
+                    <Button
+                      key={key}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditPermissions(preset.permissions);
+                        setSelectedUser({...selectedUser, role: key as any});
+                      }}
+                      className="text-xs"
+                    >
+                      {preset.label}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditPermissions([])}
+                    className="text-xs"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Permissions Checkboxes */}
+              <div className="space-y-2">
+                <Label>Permissions</Label>
+                <div className="border rounded-lg p-4 space-y-4 max-h-64 overflow-y-auto">
+                  {["General", "Agents", "Content", "Administration"].map(category => {
+                    const categoryPermissions = availablePermissions.filter(p => p.category === category);
+                    if (categoryPermissions.length === 0) return null;
+                    return (
+                      <div key={category} className="space-y-2">
+                        <div className="font-medium text-sm text-muted-foreground">{category}</div>
+                        <div className="space-y-2">
+                          {categoryPermissions.map(permission => (
+                            <div key={permission.id} className="flex items-center space-x-2">
+                              <input
+                                type="checkbox"
+                                id={`edit-${permission.id}`}
+                                checked={editPermissions.includes(permission.id)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setEditPermissions([...editPermissions, permission.id]);
+                                  } else {
+                                    setEditPermissions(editPermissions.filter(p => p !== permission.id));
+                                  }
+                                }}
+                                className="rounded border-gray-300"
+                              />
+                              <Label htmlFor={`edit-${permission.id}`} className="text-sm font-normal cursor-pointer">
+                                {permission.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+              
+              <div className="text-sm text-muted-foreground">
+                Selected permissions: {editPermissions.length} of {availablePermissions.length}
               </div>
               <div className="space-y-2">
                 <Label>Status</Label>
@@ -766,6 +845,7 @@ export function UserManagementPage() {
                     lastName: selectedUser.lastName,
                     role: selectedUser.role,
                     status: selectedUser.status,
+                    permissions: editPermissions,
                   };
                   if (editPassword) {
                     updates.password = editPassword;
