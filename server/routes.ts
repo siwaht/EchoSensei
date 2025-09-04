@@ -7,6 +7,7 @@ import { z } from "zod";
 import crypto from "crypto";
 import type { RequestHandler } from "express";
 import { seedAdminUser } from "./seedAdmin";
+import { checkPermission, checkRoutePermission } from "./middleware/permissions";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -1721,7 +1722,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Integration routes
-  app.post("/api/integrations", isAuthenticated, async (req: any, res) => {
+  app.post("/api/integrations", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1756,7 +1757,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Get integration by provider
-  app.get("/api/integrations/:provider", isAuthenticated, async (req: any, res) => {
+  app.get("/api/integrations/:provider", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       let { provider } = req.params;
       
@@ -1793,7 +1794,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post("/api/integrations/test", isAuthenticated, async (req: any, res) => {
+  app.post("/api/integrations/test", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1849,7 +1850,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.get("/api/integrations", isAuthenticated, async (req: any, res) => {
+  app.get("/api/integrations", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1875,7 +1876,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Agent routes
-  app.post("/api/agents/validate", isAuthenticated, async (req: any, res) => {
+  app.post("/api/agents/validate", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -1918,7 +1919,7 @@ export function registerRoutes(app: Express): Server {
   });
 
   // Generate AI-powered system prompt from description
-  app.post("/api/agents/generate-prompt", isAuthenticated, async (req: any, res) => {
+  app.post("/api/agents/generate-prompt", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -2023,7 +2024,7 @@ Generate the complete prompt now:`;
   });
 
   // Create a new agent on ElevenLabs
-  app.post("/api/agents/create", isAuthenticated, async (req: any, res) => {
+  app.post("/api/agents/create", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -2230,7 +2231,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.post("/api/agents", isAuthenticated, async (req: any, res) => {
+  app.post("/api/agents", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -2333,7 +2334,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.get("/api/agents", isAuthenticated, async (req: any, res) => {
+  app.get("/api/agents", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -2476,7 +2477,7 @@ Generate the complete prompt now:`;
   });
 
   // Get a single agent with ElevenLabs sync
-  app.get("/api/agents/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/agents/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -2504,7 +2505,7 @@ Generate the complete prompt now:`;
   });
 
   // Update agent and sync with ElevenLabs
-  app.patch("/api/agents/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/agents/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -2973,7 +2974,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.delete("/api/agents/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/agents/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3032,7 +3033,7 @@ Generate the complete prompt now:`;
   });
 
   // Manual sync agents with ElevenLabs
-  app.post("/api/agents/sync", isAuthenticated, async (req: any, res) => {
+  app.post("/api/agents/sync", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3488,7 +3489,7 @@ Generate the complete prompt now:`;
   });
 
   // Phone number routes
-  app.get("/api/phone-numbers", isAuthenticated, async (req: any, res) => {
+  app.get("/api/phone-numbers", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3504,7 +3505,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.post("/api/phone-numbers", isAuthenticated, async (req: any, res) => {
+  app.post("/api/phone-numbers", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3635,7 +3636,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.patch("/api/phone-numbers/:id", isAuthenticated, async (req: any, res) => {
+  app.patch("/api/phone-numbers/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3968,7 +3969,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.delete("/api/phone-numbers/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/phone-numbers/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -4368,7 +4369,7 @@ Generate the complete prompt now:`;
   });
 
   // Call logs routes
-  app.get("/api/call-logs", isAuthenticated, async (req: any, res) => {
+  app.get("/api/call-logs", isAuthenticated, checkPermission('view_call_history'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -4408,7 +4409,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.get("/api/call-logs/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/call-logs/:id", isAuthenticated, checkPermission('view_call_history'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5237,7 +5238,7 @@ Generate the complete prompt now:`;
   });
 
   // Analytics routes
-  app.get("/api/analytics/organization", isAuthenticated, async (req: any, res) => {
+  app.get("/api/analytics/organization", isAuthenticated, checkPermission('view_analytics'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5364,7 +5365,7 @@ Generate the complete prompt now:`;
   });
 
   // Generate WebRTC conversation token (new ElevenLabs 2025 feature)
-  app.post("/api/playground/webrtc-token", isAuthenticated, async (req: any, res) => {
+  app.post("/api/playground/webrtc-token", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -5416,7 +5417,7 @@ Generate the complete prompt now:`;
   });
 
   // Playground - Start ElevenLabs session (supports both WebSocket and WebRTC)
-  app.post("/api/playground/start-session", isAuthenticated, async (req: any, res) => {
+  app.post("/api/playground/start-session", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const { agentId, connectionType = "webrtc" } = req.body; // Default to WebRTC (2025 standard)
       const userId = req.user.id;
@@ -6726,7 +6727,7 @@ Generate the complete prompt now:`;
   // ==========================================
 
   // Batch calling routes
-  app.get("/api/batch-calls", isAuthenticated, async (req: any, res) => {
+  app.get("/api/batch-calls", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const organizationId = req.user.organizationId;
       const batchCalls = await storage.getBatchCalls(organizationId);
@@ -6737,7 +6738,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.post("/api/batch-calls", isAuthenticated, async (req: any, res) => {
+  app.post("/api/batch-calls", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const organizationId = req.user.organizationId;
       const userId = req.user.id;
@@ -6761,7 +6762,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.get("/api/batch-calls/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/batch-calls/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const organizationId = req.user.organizationId;
       const batchCall = await storage.getBatchCall(req.params.id, organizationId);
@@ -6971,7 +6972,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.delete("/api/batch-calls/:id", isAuthenticated, async (req: any, res) => {
+  app.delete("/api/batch-calls/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {
       const organizationId = req.user.organizationId;
       await storage.deleteBatchCall(req.params.id, organizationId);

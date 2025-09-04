@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/layout/app-shell";
+import { PermissionGuard } from "@/components/auth/permission-guard";
 
 // Eagerly load critical pages
 import Landing from "@/pages/landing";
@@ -56,20 +57,40 @@ function Router() {
       <Suspense fallback={<PageLoader />}>
         <Switch>
           <Route path="/" component={Dashboard} />
-          <Route path="/agents" component={Agents} /> {/* Voice agents */}
+          <Route path="/agents">
+            <PermissionGuard><Agents /></PermissionGuard>
+          </Route>
           <Route path="/agent-settings" component={AgentSettings} />
           <Route path="/agent-testing" component={AgentTesting} />
-          <Route path="/voices" component={Voices} />
-          <Route path="/phone-numbers" component={PhoneNumbers} />
-          <Route path="/outbound-calling" component={OutboundCalling} />
-          <Route path="/tools" component={Tools} />
-          <Route path="/playground" component={Playground} />
-          <Route path="/history" component={History} />
-          <Route path="/integrations" component={Integrations} />
-          <Route path="/billing" component={Billing} />
+          <Route path="/voices">
+            <PermissionGuard><Voices /></PermissionGuard>
+          </Route>
+          <Route path="/phone-numbers">
+            <PermissionGuard><PhoneNumbers /></PermissionGuard>
+          </Route>
+          <Route path="/outbound-calling">
+            <PermissionGuard><OutboundCalling /></PermissionGuard>
+          </Route>
+          <Route path="/tools">
+            <PermissionGuard><Tools /></PermissionGuard>
+          </Route>
+          <Route path="/playground">
+            <PermissionGuard><Playground /></PermissionGuard>
+          </Route>
+          <Route path="/history">
+            <PermissionGuard><History /></PermissionGuard>
+          </Route>
+          <Route path="/integrations">
+            <PermissionGuard><Integrations /></PermissionGuard>
+          </Route>
+          <Route path="/billing">
+            <PermissionGuard><Billing /></PermissionGuard>
+          </Route>
           <Route path="/checkout" component={Checkout} />
           <Route path="/settings" component={Settings} />
-          <Route path="/admin" component={Admin} />
+          <Route path="/admin">
+            <PermissionGuard permission="manage_users"><Admin /></PermissionGuard>
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </Suspense>

@@ -28,16 +28,16 @@ import { cn } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Agents", href: "/agents", icon: Bot },
-  { name: "Voices", href: "/voices", icon: Mic },
-  { name: "Phone Numbers", href: "/phone-numbers", icon: Phone },
-  { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing },
-  { name: "Tools", href: "/tools", icon: Wrench },
-  { name: "Playground", href: "/playground", icon: FlaskConical },
-  { name: "Call History", href: "/history", icon: History },
-  { name: "Integrations", href: "/integrations", icon: Plug },
-  { name: "Billing", href: "/billing", icon: CreditCard },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard, permission: "view_dashboard" },
+  { name: "Agents", href: "/agents", icon: Bot, permission: "manage_agents" },
+  { name: "Voices", href: "/voices", icon: Mic, permission: "manage_agents" },
+  { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, permission: "manage_agents" },
+  { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing, permission: "manage_agents" },
+  { name: "Tools", href: "/tools", icon: Wrench, permission: "configure_tools" },
+  { name: "Playground", href: "/playground", icon: FlaskConical, permission: "manage_agents" },
+  { name: "Call History", href: "/history", icon: History, permission: "view_call_history" },
+  { name: "Integrations", href: "/integrations", icon: Plug, permission: "manage_agents" },
+  { name: "Billing", href: "/billing", icon: CreditCard, permission: "view_billing" },
 ];
 
 const secondaryNavigation = [
@@ -53,9 +53,25 @@ export default function AppShell({ children }: AppShellProps) {
   const [location] = useLocation();
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
+  
+  // Get user permissions
+  const userPermissions = (user as any)?.permissions || [];
+  const isAdmin = (user as any)?.isAdmin || false;
+  
+  // Filter navigation based on permissions
+  const filteredNavigation = navigation.filter(item => {
+    // Admin users can see everything
+    if (isAdmin) return true;
+    
+    // Dashboard is always visible
+    if (!item.permission) return true;
+    
+    // Check if user has the required permission
+    return userPermissions.includes(item.permission);
+  });
 
   const getPageTitle = () => {
-    const currentNav = navigation.find(item => item.href === location);
+    const currentNav = filteredNavigation.find(item => item.href === location);
     if (currentNav) return currentNav.name;
     
     // Check for admin route
@@ -113,7 +129,7 @@ export default function AppShell({ children }: AppShellProps) {
 
         <nav className="flex-1 overflow-y-auto mt-6 px-3 pb-6">
           <div className="space-y-1">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon;
               const isActive = location === item.href;
               return (
