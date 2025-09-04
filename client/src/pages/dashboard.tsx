@@ -130,7 +130,11 @@ const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgen
     (callLogs as any[]).forEach((call: any) => {
       const agentId = call.agentId;
       const agent = (agents as any[]).find((a: any) => a.id === agentId);
-      const agentName = agent?.name || `Deleted Agent (${agentId?.slice(-6) || 'Unknown'})`;
+      
+      // Skip deleted agents - only show stats for currently assigned agents
+      if (!agent) return;
+
+      const agentName = agent.name;
 
       if (!agentStats[agentName]) {
         agentStats[agentName] = {
@@ -146,7 +150,6 @@ const AgentPerformanceTable = memo(function AgentPerformanceTable({ selectedAgen
       agentStats[agentName].duration += (call.duration || 0);
       
       // Fix unrealistic costs - cap at reasonable max of $5 per call
-      // Costs in DB appear to be incorrectly stored (possibly in cents * 100)
       let cost = Number(call.cost || 0);
       if (cost > 5) {
         // If cost is over $5, assume it's stored incorrectly and divide by 100
