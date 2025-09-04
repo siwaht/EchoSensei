@@ -322,6 +322,8 @@ export const agents = pgTable("agents", {
         approvalMode: 'always_ask' | 'fine_grained' | 'no_approval';
         trusted: boolean;
       };
+      // Approval status for custom tools  
+      approvalStatus?: 'pending' | 'approved' | 'rejected';
       // Webhook-specific parameter fields
       queryParameters?: Array<{
         name: string;

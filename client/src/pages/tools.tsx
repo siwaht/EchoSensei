@@ -43,6 +43,7 @@ interface WebhookConfig {
   description?: string;
   enabled?: boolean;
   type?: 'webhook';
+  approvalStatus?: 'pending' | 'approved' | 'rejected';
   webhookConfig?: {
     responseTimeout?: number;
     disableInterruptions?: boolean;
