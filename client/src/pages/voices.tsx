@@ -506,7 +506,7 @@ export default function Voices() {
                       variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setLocation(`/agents/${agent.id}/settings`);
+                        setLocation(`/agents/${agent.id}`);
                       }}
                       data-testid={`button-agent-settings-${agent.id}`}
                     >
