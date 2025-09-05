@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -149,7 +149,7 @@ export function UserManagementPage() {
   const [newUserLastName, setNewUserLastName] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
   const [pendingAgentAssignments, setPendingAgentAssignments] = useState<string[]>([]);
-  const agentAssignmentRef = useRef<any>(null);
+  const [originalAgentAssignments, setOriginalAgentAssignments] = useState<string[]>([]);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -222,6 +222,49 @@ export function UserManagementPage() {
         description: error.message,
         variant: "destructive",
       });
+    },
+  });
+
+  // Agent assignment mutations
+  const assignAgentMutation = useMutation({
+    mutationFn: async ({ userId, agentId }: { userId: string; agentId: string }) => {
+      const response = await fetch(`/api/admin/users/${userId}/agents/${agentId}`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to assign agent");
+      return response.json();
+    },
+  });
+
+  const unassignAgentMutation = useMutation({
+    mutationFn: async ({ userId, agentId }: { userId: string; agentId: string }) => {
+      const response = await fetch(`/api/admin/users/${userId}/agents/${agentId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("Failed to unassign agent");
+      return response.json();
+    },
+  });
+
+  // Get assigned agents for current user being edited
+  const { data: userAgents = [] } = useQuery({
+    queryKey: [`/api/admin/users/${selectedUser?.id}/agents`],
+    enabled: !!selectedUser?.id && showEditDialog,
+    queryFn: async () => {
+      const response = await fetch(`/api/admin/users/${selectedUser?.id}/agents`, {
+        credentials: 'include',
+      });
+      if (!response.ok) throw new Error('Failed to fetch user agents');
+      const agents = await response.json();
+      // Initialize pending assignments when data loads
+      const assignedIds = agents.filter((a: any) => a.assigned).map((a: any) => a.id);
+      setPendingAgentAssignments(assignedIds);
+      setOriginalAgentAssignments(assignedIds);
+      return agents;
     },
   });
 
@@ -861,7 +904,6 @@ export function UserManagementPage() {
                     userId={selectedUser.id}
                     hideActions={true}  // Hide internal save buttons since dialog has its own
                     onAssignmentsChange={(assignments) => setPendingAgentAssignments(assignments)}
-                    ref={agentAssignmentRef}
                   />
                 </div>
               )}
@@ -908,20 +950,37 @@ export function UserManagementPage() {
                     updates.password = editPassword;
                   }
                   
-                  // Save user details first
-                  await updateUserMutation.mutateAsync({
-                    userId: selectedUser.id,
-                    updates
-                  });
-                  
-                  // Then trigger agent assignment save if component is available
-                  if (agentAssignmentRef.current && agentAssignmentRef.current.handleSave) {
-                    await agentAssignmentRef.current.handleSave();
+                  try {
+                    // Save user details first
+                    await updateUserMutation.mutateAsync({
+                      userId: selectedUser.id,
+                      updates
+                    });
+                    
+                    // Handle agent assignments
+                    const toAssign = pendingAgentAssignments.filter(id => !originalAgentAssignments.includes(id));
+                    const toUnassign = originalAgentAssignments.filter(id => !pendingAgentAssignments.includes(id));
+                    
+                    // Process assignments
+                    for (const agentId of toAssign) {
+                      await assignAgentMutation.mutateAsync({ userId: selectedUser.id, agentId });
+                    }
+                    
+                    // Process unassignments
+                    for (const agentId of toUnassign) {
+                      await unassignAgentMutation.mutateAsync({ userId: selectedUser.id, agentId });
+                    }
+                    
+                    // Invalidate related queries
+                    await queryClient.invalidateQueries({ queryKey: [`/api/admin/users/${selectedUser.id}/agents`] });
+                    await queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
+                  } catch (error) {
+                    console.error('Error saving user changes:', error);
                   }
                 }}
-                disabled={updateUserMutation.isPending}
+                disabled={updateUserMutation.isPending || assignAgentMutation.isPending || unassignAgentMutation.isPending}
               >
-                {updateUserMutation.isPending ? "Saving..." : "Save Changes"}
+                {(updateUserMutation.isPending || assignAgentMutation.isPending || unassignAgentMutation.isPending) ? "Saving..." : "Save Changes"}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -1,4 +1,4 @@
-import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,7 +24,7 @@ interface Agent {
   assigned?: boolean;
 }
 
-export const AgentAssignment = forwardRef<any, AgentAssignmentProps>(({ userId, onClose, hideActions = false, onAssignmentsChange }, ref) => {
+export function AgentAssignment({ userId, onClose, hideActions = false, onAssignmentsChange }: AgentAssignmentProps) {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [localAssignments, setLocalAssignments] = useState<Set<string>>(new Set());
@@ -99,11 +99,6 @@ export const AgentAssignment = forwardRef<any, AgentAssignmentProps>(({ userId, 
       onAssignmentsChange(Array.from(newAssignments));
     }
   };
-
-  // Expose handleSave to parent component
-  useImperativeHandle(ref, () => ({
-    handleSave
-  }));
 
   const handleSave = async () => {
     const originalAssignments = new Set(agents.filter(a => a.assigned).map(a => a.id));
@@ -250,6 +245,4 @@ export const AgentAssignment = forwardRef<any, AgentAssignmentProps>(({ userId, 
       </CardContent>
     </Card>
   );
-});
-
-AgentAssignment.displayName = 'AgentAssignment';
+}
