@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useAgentContext } from "@/contexts/agent-context";
+import { useAuth } from "@/hooks/useAuth";
 
 interface ConversationMessage {
   role: "assistant" | "user";
@@ -36,6 +37,7 @@ interface ChatMessage {
 
 export default function Playground() {
   const { selectedAgent, setSelectedAgent, agents } = useAgentContext();
+  const { user } = useAuth();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
@@ -70,9 +72,26 @@ export default function Playground() {
   const agentsLoading = agents.length === 0;
 
   // Fetch integration to get API key status
-  const { data: integration, isLoading: integrationLoading } = useQuery<any>({
+  const { data: integration, isLoading: integrationLoading, error: integrationError } = useQuery<any>({
     queryKey: ["/api/integrations"],
     retry: 1,
+    queryFn: async () => {
+      try {
+        const response = await fetch('/api/integrations', { credentials: 'include' });
+        if (!response.ok) {
+          if (response.status === 403) {
+            // Non-admin users don't have permission to view integration status
+            // Return a special value to indicate permission denied
+            return { permissionDenied: true };
+          }
+          throw new Error('Failed to fetch integration');
+        }
+        return response.json();
+      } catch (error) {
+        console.error('Error fetching integration:', error);
+        throw error;
+      }
+    },
   });
 
   // Auto-scroll transcript - updated to work properly with ScrollArea
@@ -142,15 +161,23 @@ export default function Playground() {
 
     // Check if integration exists and is active
     if (!integration) {
+      const isAdmin = user?.isAdmin || user?.permissions?.includes('manage_integrations');
       toast({
         title: "API not configured", 
-        description: "Please add your VoiceAI API key in the Integrations tab",
+        description: isAdmin 
+          ? "Please add your VoiceAI API key in the Integrations tab"
+          : "VoiceAI API key not configured. Please contact your administrator.",
         variant: "destructive",
       });
       return;
     }
     
-    if (integration.status !== "ACTIVE") {
+    // Handle permission denied case for non-admin users
+    if (integration.permissionDenied) {
+      // For non-admin users, we can't check the integration status
+      // So we'll try to proceed with the call and let the backend handle it
+      console.log('Non-admin user, proceeding with call attempt');
+    } else if (integration.status !== "ACTIVE") {
       toast({
         title: "API integration inactive", 
         description: "Please test your API key in the Integrations tab to activate it",
@@ -851,54 +878,72 @@ export default function Playground() {
 
             {/* Visualization Area */}
             <div className="flex items-center justify-center p-8">
-              <div className="relative">
-                {/* Circular Visualization */}
-                <div className="relative w-64 h-64 rounded-full flex items-center justify-center">
-                  {/* Animated rings when active */}
-                  {isCallActive && (
-                    <>
-                      <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30" />
-                      <div className="absolute inset-4 rounded-full border-2 border-primary animate-ping animation-delay-200 opacity-20" />
-                      <div className="absolute inset-8 rounded-full border-2 border-primary animate-ping animation-delay-400 opacity-15" />
-                    </>
-                  )}
-                  
-                  {/* Static rings */}
-                  <div className="absolute inset-0 rounded-full border border-gray-300 dark:border-gray-700" />
-                  <div className="absolute inset-4 rounded-full border border-gray-300 dark:border-gray-700" />
-                  <div className="absolute inset-8 rounded-full border border-gray-300 dark:border-gray-700" />
-                  
-                  {/* Center button */}
-                  <Button
-                    size="lg"
-                    variant={isCallActive ? "destructive" : "default"}
-                    className={`relative z-10 rounded-full w-32 h-32 transition-all duration-200 hover:scale-105 shadow-2xl ${
-                      isConnecting || !selectedAgent ? "opacity-50 cursor-not-allowed" : ""
-                    } ${!isCallActive ? "gradient-purple hover:opacity-90" : ""}`}
-                    onClick={isCallActive ? endCall : startCall}
-                    disabled={isConnecting || !selectedAgent}
-                    data-testid="button-call"
-                  >
-                    {isConnecting ? (
-                      <Loader2 className="w-8 h-8 animate-spin" />
-                    ) : isCallActive ? (
-                      <PhoneOff className="w-8 h-8" />
-                    ) : (
-                      <div className="text-center">
-                        <Phone className="w-8 h-8 mx-auto mb-2" />
-                        <span className="text-sm font-medium">Try a call</span>
-                      </div>
-                    )}
-                  </Button>
+              {/* Show error state if integration is not configured and user can see it */}
+              {integrationLoading ? (
+                <div className="text-center">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  <p className="text-muted-foreground">Loading...</p>
                 </div>
-
-                {/* Audio level indicator */}
-                {isCallActive && (
-                  <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
-                    <Activity className="w-6 h-6 text-green-500" />
+              ) : (!integration || integration.error) && !integration?.permissionDenied ? (
+                <div className="text-center bg-red-50 dark:bg-red-950 p-8 rounded-lg">
+                  <AlertCircle className="w-12 h-12 text-red-600 dark:text-red-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-red-800 dark:text-red-300 mb-2">API not configured</h3>
+                  <p className="text-sm text-red-600 dark:text-red-400">
+                    {user?.isAdmin || user?.permissions?.includes('manage_integrations')
+                      ? "Please add your VoiceAI API key in the Integrations tab"
+                      : "VoiceAI API key not configured. Please contact your administrator."}
+                  </p>
+                </div>
+              ) : (
+                <div className="relative">
+                  {/* Circular Visualization */}
+                  <div className="relative w-64 h-64 rounded-full flex items-center justify-center">
+                    {/* Animated rings when active */}
+                    {isCallActive && (
+                      <>
+                        <div className="absolute inset-0 rounded-full border-2 border-primary animate-ping opacity-30" />
+                        <div className="absolute inset-4 rounded-full border-2 border-primary animate-ping animation-delay-200 opacity-20" />
+                        <div className="absolute inset-8 rounded-full border-2 border-primary animate-ping animation-delay-400 opacity-15" />
+                      </>
+                    )}
+                    
+                    {/* Static rings */}
+                    <div className="absolute inset-0 rounded-full border border-gray-300 dark:border-gray-700" />
+                    <div className="absolute inset-4 rounded-full border border-gray-300 dark:border-gray-700" />
+                    <div className="absolute inset-8 rounded-full border border-gray-300 dark:border-gray-700" />
+                    
+                    {/* Center button */}
+                    <Button
+                      size="lg"
+                      variant={isCallActive ? "destructive" : "default"}
+                      className={`relative z-10 rounded-full w-32 h-32 transition-all duration-200 hover:scale-105 shadow-2xl ${
+                        isConnecting || !selectedAgent ? "opacity-50 cursor-not-allowed" : ""
+                      } ${!isCallActive ? "gradient-purple hover:opacity-90" : ""}`}
+                      onClick={isCallActive ? endCall : startCall}
+                      disabled={isConnecting || !selectedAgent}
+                      data-testid="button-call"
+                    >
+                      {isConnecting ? (
+                        <Loader2 className="w-8 h-8 animate-spin" />
+                      ) : isCallActive ? (
+                        <PhoneOff className="w-8 h-8" />
+                      ) : (
+                        <div className="text-center">
+                          <Phone className="w-8 h-8 mx-auto mb-2" />
+                          <span className="text-sm font-medium">Try a call</span>
+                        </div>
+                      )}
+                    </Button>
                   </div>
-                )}
-              </div>
+
+                  {/* Audio level indicator */}
+                  {isCallActive && (
+                    <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2">
+                      <Activity className="w-6 h-6 text-green-500" />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Controls */}
