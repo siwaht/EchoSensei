@@ -55,7 +55,8 @@ export default function Voices() {
   // Update agent mutation
   const updateAgent = useMutation({
     mutationFn: async ({ agentId, voiceId }: { agentId: string; voiceId: string }) => {
-      return await apiRequest("PATCH", `/api/agents/${agentId}`, { voiceId });
+      const response = await apiRequest("PATCH", `/api/agents/${agentId}`, { voiceId });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/agents"] });
