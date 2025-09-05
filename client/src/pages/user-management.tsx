@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -148,6 +148,8 @@ export function UserManagementPage() {
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [pendingAgentAssignments, setPendingAgentAssignments] = useState<string[]>([]);
+  const agentAssignmentRef = useRef<any>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -858,6 +860,8 @@ export function UserManagementPage() {
                     key={selectedUser.id} 
                     userId={selectedUser.id}
                     hideActions={true}  // Hide internal save buttons since dialog has its own
+                    onAssignmentsChange={(assignments) => setPendingAgentAssignments(assignments)}
+                    ref={agentAssignmentRef}
                   />
                 </div>
               )}
@@ -892,7 +896,7 @@ export function UserManagementPage() {
                 Cancel
               </Button>
               <Button
-                onClick={() => {
+                onClick={async () => {
                   const updates: any = {
                     firstName: selectedUser.firstName,
                     lastName: selectedUser.lastName,
@@ -903,10 +907,17 @@ export function UserManagementPage() {
                   if (editPassword) {
                     updates.password = editPassword;
                   }
-                  updateUserMutation.mutate({
+                  
+                  // Save user details first
+                  await updateUserMutation.mutateAsync({
                     userId: selectedUser.id,
                     updates
                   });
+                  
+                  // Then trigger agent assignment save if component is available
+                  if (agentAssignmentRef.current && agentAssignmentRef.current.handleSave) {
+                    await agentAssignmentRef.current.handleSave();
+                  }
                 }}
                 disabled={updateUserMutation.isPending}
               >
