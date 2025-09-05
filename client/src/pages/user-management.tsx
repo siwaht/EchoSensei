@@ -86,6 +86,7 @@ const availablePermissions = [
   { id: "manage_agents", label: "Manage Agents", category: "Agent Management", description: "Create, edit, and delete AI agents" },
   { id: "configure_tools", label: "Configure Agent Tools", category: "Agent Management", description: "Set up and modify agent tools and capabilities" },
   { id: "access_playground", label: "Test Agents", category: "Agent Management", description: "Access playground to test agent interactions" },
+  { id: "advanced_agent_settings", label: "Advanced Agent Settings", category: "Agent Management", description: "Access to advanced agent configuration (turn-taking, privacy, variables)" },
   
   // Voice & Communications - Phone and voice features
   { id: "manage_voices", label: "Manage Voices", category: "Communications", description: "Configure voice settings and preferences" },
@@ -116,7 +117,7 @@ const permissionPresets = {
   agent_manager: {
     label: "Agent Manager",
     description: "Manage AI agents and configurations",
-    permissions: ["view_analytics", "view_call_history", "manage_agents", "configure_tools", "access_playground", "manage_voices"]
+    permissions: ["view_analytics", "view_call_history", "manage_agents", "configure_tools", "access_playground", "manage_voices", "advanced_agent_settings"]
   },
   communications: {
     label: "Communications Manager",

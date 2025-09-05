@@ -27,7 +27,7 @@ import {
   Variable,
   Clock
 } from "lucide-react";
-import type { Agent } from "@shared/schema";
+import type { Agent, User } from "@shared/schema";
 
 export default function AgentSettings() {
   const [, setLocation] = useLocation();
@@ -41,6 +41,12 @@ export default function AgentSettings() {
   
   const [activeTab, setActiveTab] = useState("chat");
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Get current user to check permissions
+  const { data: user } = useQuery<User>({
+    queryKey: ["/api/auth/user"],
+    retry: false,
+  });
   
   // Form states
   const [name, setName] = useState("");
@@ -81,6 +87,9 @@ export default function AgentSettings() {
   // Evaluation criteria
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [evaluationCriteria, setEvaluationCriteria] = useState("");
+  
+  // Check if user has advanced settings permission
+  const hasAdvancedSettingsPermission = user?.isAdmin || user?.permissions?.includes("advanced_agent_settings");
   
   const { data: agent, isLoading, isError } = useQuery<Agent>({
     queryKey: ["/api/agents", agentId],
@@ -319,24 +328,48 @@ Always maintain a professional yet conversational tone, and ensure all responses
             <Globe className="h-4 w-4" />
             <span className="hidden md:inline">Language</span>
           </TabsTrigger>
-          <TabsTrigger value="turntaking" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="turntaking" 
+            className="flex items-center gap-2"
+            disabled={!hasAdvancedSettingsPermission}
+            title={!hasAdvancedSettingsPermission ? "Admin approval required" : ""}
+          >
             <Clock className="h-4 w-4" />
             <span className="hidden md:inline">Turn-taking</span>
+            {!hasAdvancedSettingsPermission && <span className="text-xs">🔒</span>}
           </TabsTrigger>
         </TabsList>
         
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="privacy" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="privacy" 
+            className="flex items-center gap-2"
+            disabled={!hasAdvancedSettingsPermission}
+            title={!hasAdvancedSettingsPermission ? "Admin approval required" : ""}
+          >
             <Shield className="h-4 w-4" />
             <span className="hidden md:inline">Privacy</span>
+            {!hasAdvancedSettingsPermission && <span className="text-xs">🔒</span>}
           </TabsTrigger>
-          <TabsTrigger value="variables" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="variables" 
+            className="flex items-center gap-2"
+            disabled={!hasAdvancedSettingsPermission}
+            title={!hasAdvancedSettingsPermission ? "Admin approval required" : ""}
+          >
             <Variable className="h-4 w-4" />
             <span className="hidden md:inline">Variables</span>
+            {!hasAdvancedSettingsPermission && <span className="text-xs">🔒</span>}
           </TabsTrigger>
-          <TabsTrigger value="advanced" className="flex items-center gap-2">
+          <TabsTrigger 
+            value="advanced" 
+            className="flex items-center gap-2"
+            disabled={!hasAdvancedSettingsPermission}
+            title={!hasAdvancedSettingsPermission ? "Admin approval required" : ""}
+          >
             <Settings className="h-4 w-4" />
             <span className="hidden md:inline">Advanced</span>
+            {!hasAdvancedSettingsPermission && <span className="text-xs">🔒</span>}
           </TabsTrigger>
         </TabsList>
 
