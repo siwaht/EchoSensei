@@ -5262,7 +5262,10 @@ Generate the complete prompt now:`;
       const { agentId, connectionType = "webrtc" } = req.body; // Default to WebRTC (2025 standard)
       const userId = req.user.id;
       
-      console.log("Starting playground session with agent:", agentId, "connectionType:", connectionType);
+      console.log("Starting playground session:");
+      console.log("  User:", req.user.email);
+      console.log("  Agent ID:", agentId);
+      console.log("  Connection Type:", connectionType);
 
       if (!agentId) {
         return res.status(400).json({ message: "Agent ID is required" });
@@ -5287,14 +5290,35 @@ Generate the complete prompt now:`;
 
       const apiKey = decryptApiKey(integration.apiKey);
 
+      // First, verify the agent exists in our database and user has access
+      const agent = await storage.getAgent(agentId, user.organizationId);
+      if (!agent) {
+        console.log("Agent not found in database:", agentId);
+        return res.status(404).json({ message: "Agent not found in database" });
+      }
+
+      // Check if user has access to this agent
+      if (!user.isAdmin && user.permissions?.indexOf('manage_all_agents') === -1) {
+        const userAgentAssignments = await storage.getUserAgentAssignments(userId);
+        const assignedAgentIds = userAgentAssignments.map(a => a.agentId);
+        if (!assignedAgentIds.includes(agentId)) {
+          console.log("User does not have access to agent:", agentId);
+          return res.status(403).json({ message: "You don't have access to this agent" });
+        }
+      }
+
+      // Use the ElevenLabs agent ID from the database
+      const elevenLabsAgentId = agent.elevenLabsAgentId;
+      console.log("Using ElevenLabs agent ID:", elevenLabsAgentId);
+
       let url, expectedField;
       if (connectionType === 'webrtc') {
         // Use new WebRTC token endpoint (2025)
-        url = `https://api.elevenlabs.io/v1/convai/conversation/get-webrtc-token?agent_id=${agentId}`;
+        url = `https://api.elevenlabs.io/v1/convai/conversation/get-webrtc-token?agent_id=${elevenLabsAgentId}`;
         expectedField = 'conversation_token';
       } else {
         // Use legacy WebSocket signed URL
-        url = `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${agentId}`;
+        url = `https://api.elevenlabs.io/v1/convai/conversation/get-signed-url?agent_id=${elevenLabsAgentId}`;
         expectedField = 'signed_url';
       }
       
@@ -5311,8 +5335,10 @@ Generate the complete prompt now:`;
       const responseText = await response.text();
       
       if (!response.ok) {
-        console.error("ElevenLabs API error:", responseText);
-        console.error("Status:", response.status);
+        console.error("ElevenLabs API error:");
+        console.error("  Status:", response.status);
+        console.error("  Response:", responseText);
+        console.error("  Agent ID sent:", elevenLabsAgentId);
         
         // Parse error message
         let errorMessage = "Failed to start conversation session";

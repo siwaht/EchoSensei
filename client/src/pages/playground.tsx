@@ -205,9 +205,14 @@ export default function Playground() {
 
       if (!selectedAgent) return;
 
+      console.log('Selected agent:', selectedAgent);
+      console.log('Agent ID to send:', selectedAgent.id);
+      console.log('ElevenLabs Agent ID:', selectedAgent.elevenLabsAgentId);
+
       // Get connection details (WebRTC or WebSocket)
+      // Send the database agent ID, backend will look up the ElevenLabs agent ID
       const response = await apiRequest("POST", "/api/playground/start-session", {
-        agentId: selectedAgent.elevenLabsAgentId,
+        agentId: selectedAgent.id,  // Send database ID, not ElevenLabs ID
         connectionType: connectionType
       });
 
