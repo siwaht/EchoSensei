@@ -5299,8 +5299,11 @@ Generate the complete prompt now:`;
 
       // Check if user has access to this agent
       if (!user.isAdmin && user.permissions?.indexOf('manage_all_agents') === -1) {
-        const userAgentAssignments = await storage.getUserAgentAssignments(userId);
-        const assignedAgentIds = userAgentAssignments.map(a => a.agentId);
+        // Get agents assigned to this user
+        const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
+        const assignedAgentIds = userAgents.map(a => a.id);
+        console.log("User's assigned agent IDs:", assignedAgentIds);
+        console.log("Checking access for agent ID:", agentId);
         if (!assignedAgentIds.includes(agentId)) {
           console.log("User does not have access to agent:", agentId);
           return res.status(403).json({ message: "You don't have access to this agent" });
