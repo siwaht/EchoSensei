@@ -55,6 +55,12 @@ export default function AgentSettings() {
   const [temperature, setTemperature] = useState([0.7]);
   const [maxTokens, setMaxTokens] = useState("150");
   
+  // Enhanced prompt fields
+  const [personality, setPersonality] = useState("");
+  const [tone, setTone] = useState("");
+  const [guardrails, setGuardrails] = useState("");
+  const [responseGuidelines, setResponseGuidelines] = useState("");
+  
   // Turn-taking settings
   const [turnTimeout, setTurnTimeout] = useState([7]);
   const [silenceTimeout, setSilenceTimeout] = useState([-1]);
@@ -296,7 +302,7 @@ Always maintain a professional yet conversational tone, and ensure all responses
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-4 mb-4">
+        <TabsList className="grid w-full grid-cols-5 mb-4">
           <TabsTrigger value="chat" className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4" />
             <span className="hidden md:inline">Chat</span>
@@ -313,13 +319,13 @@ Always maintain a professional yet conversational tone, and ensure all responses
             <Globe className="h-4 w-4" />
             <span className="hidden md:inline">Language</span>
           </TabsTrigger>
-        </TabsList>
-        
-        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="turntaking" className="flex items-center gap-2">
             <Clock className="h-4 w-4" />
             <span className="hidden md:inline">Turn-taking</span>
           </TabsTrigger>
+        </TabsList>
+        
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="privacy" className="flex items-center gap-2">
             <Shield className="h-4 w-4" />
             <span className="hidden md:inline">Privacy</span>
@@ -390,6 +396,71 @@ Always maintain a professional yet conversational tone, and ensure all responses
                 />
               </div>
 
+              {/* Enhanced Prompt Fields */}
+              <div className="space-y-4 border-t pt-4">
+                <h3 className="text-sm font-medium">Structured Configuration</h3>
+                
+                {/* Personality */}
+                <div>
+                  <Label htmlFor="personality">Personality Traits</Label>
+                  <Textarea
+                    id="personality"
+                    value={personality}
+                    onChange={(e) => {
+                      setPersonality(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="e.g., Friendly, professional, empathetic, knowledgeable..."
+                    className="mt-2 min-h-[60px]"
+                  />
+                </div>
+
+                {/* Tone */}
+                <div>
+                  <Label htmlFor="tone">Communication Tone</Label>
+                  <Textarea
+                    id="tone"
+                    value={tone}
+                    onChange={(e) => {
+                      setTone(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="e.g., Warm and conversational, formal and respectful..."
+                    className="mt-2 min-h-[60px]"
+                  />
+                </div>
+
+                {/* Guardrails */}
+                <div>
+                  <Label htmlFor="guardrails">Safety Guardrails</Label>
+                  <Textarea
+                    id="guardrails"
+                    value={guardrails}
+                    onChange={(e) => {
+                      setGuardrails(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="e.g., Never share personal information, avoid medical advice..."
+                    className="mt-2 min-h-[60px]"
+                  />
+                </div>
+
+                {/* Response Guidelines */}
+                <div>
+                  <Label htmlFor="responseGuidelines">Response Guidelines</Label>
+                  <Textarea
+                    id="responseGuidelines"
+                    value={responseGuidelines}
+                    onChange={(e) => {
+                      setResponseGuidelines(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="e.g., Keep responses concise, always offer next steps..."
+                    className="mt-2 min-h-[60px]"
+                  />
+                </div>
+              </div>
+
               {/* AI Prompt Generator */}
               <div className="border rounded-lg p-4 bg-muted/50">
                 <div className="flex items-center gap-2 mb-2">
@@ -420,42 +491,50 @@ Always maintain a professional yet conversational tone, and ensure all responses
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Voice Configuration</h2>
             
-            <div className="space-y-4">
+            <div className="space-y-6">
               {/* Voice Selection */}
-              <div>
-                <Label htmlFor="voice">Voice</Label>
-                <Select 
-                  value={selectedVoice} 
-                  onValueChange={(value) => {
-                    setSelectedVoice(value);
-                    setHasChanges(true);
-                  }}
-                >
-                  <SelectTrigger id="voice" className="mt-2">
-                    <SelectValue placeholder="Select a voice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voices && Array.isArray(voices) ? (
-                      voices.map((voice: any) => (
-                        <SelectItem key={voice.voice_id} value={voice.voice_id}>
-                          {voice.name}
-                        </SelectItem>
-                      ))
-                    ) : (
-                      <SelectItem value="rachel">Rachel</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Voice Selection</h3>
+                <div>
+                  <Label htmlFor="voice">Voice</Label>
+                  <Select 
+                    value={selectedVoice} 
+                    onValueChange={(value) => {
+                      setSelectedVoice(value);
+                      setHasChanges(true);
+                    }}
+                  >
+                    <SelectTrigger id="voice" className="mt-2">
+                      <SelectValue placeholder="Select a voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {voices && Array.isArray(voices) ? (
+                        voices.map((voice: any) => (
+                          <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                            {voice.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="rachel">Rachel</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Choose from ElevenLabs' library of natural-sounding voices
+                  </p>
+                </div>
               </div>
 
               <Separator />
 
-              {/* Voice Settings */}
+              {/* Voice Quality Settings */}
               <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Voice Quality</h3>
+                
                 <div>
                   <div className="flex justify-between mb-2">
                     <Label>Stability</Label>
-                    <span className="text-sm text-muted-foreground">{stability[0]}</span>
+                    <span className="text-sm text-muted-foreground">{stability[0].toFixed(2)}</span>
                   </div>
                   <Slider
                     value={stability}
@@ -469,14 +548,14 @@ Always maintain a professional yet conversational tone, and ensure all responses
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Controls consistency between generations
+                    Higher = more consistent tone, Lower = more expressive variation
                   </p>
                 </div>
 
                 <div>
                   <div className="flex justify-between mb-2">
                     <Label>Similarity Boost</Label>
-                    <span className="text-sm text-muted-foreground">{similarityBoost[0]}</span>
+                    <span className="text-sm text-muted-foreground">{similarityBoost[0].toFixed(2)}</span>
                   </div>
                   <Slider
                     value={similarityBoost}
@@ -490,8 +569,39 @@ Always maintain a professional yet conversational tone, and ensure all responses
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    How closely to match the original voice
+                    Higher = closer to original voice character
                   </p>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Advanced Voice Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Optimization Settings</h3>
+                
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                    <div>
+                      <p className="text-sm font-medium">Latency Optimization</p>
+                      <p className="text-xs text-muted-foreground">Automatically enabled for real-time conversations</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                    <div>
+                      <p className="text-sm font-medium">Voice Quality</p>
+                      <p className="text-xs text-muted-foreground">Using optimized models for natural speech synthesis</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                    <div>
+                      <p className="text-sm font-medium">Streaming</p>
+                      <p className="text-xs text-muted-foreground">Real-time audio streaming for seamless conversations</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -520,10 +630,7 @@ Always maintain a professional yet conversational tone, and ensure all responses
                   <SelectContent>
                     {/* OpenAI Models */}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">OpenAI</div>
-                    <SelectItem value="gpt-4.1">GPT-4.1 (Latest)</SelectItem>
-                    <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
-                    <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
-                    <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                    <SelectItem value="gpt-4o">GPT-4o (Recommended)</SelectItem>
                     <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
                     <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
                     <SelectItem value="gpt-4">GPT-4</SelectItem>
@@ -531,25 +638,19 @@ Always maintain a professional yet conversational tone, and ensure all responses
                     
                     {/* Google Models */}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Google</div>
-                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
-                    <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
-                    <SelectItem value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</SelectItem>
+                    <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash (Latest)</SelectItem>
                     <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
                     <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
                     
                     {/* Anthropic Models */}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Anthropic</div>
-                    <SelectItem value="claude-4-sonnet">Claude Sonnet 4</SelectItem>
-                    <SelectItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</SelectItem>
-                    <SelectItem value="claude-3.5-sonnet-v1">Claude 3.5 Sonnet v1</SelectItem>
-                    <SelectItem value="claude-3.7-sonnet">Claude 3.7 Sonnet</SelectItem>
-                    <SelectItem value="claude-3.0-haiku">Claude 3.0 Haiku</SelectItem>
+                    <SelectItem value="claude-3-5-sonnet">Claude 3.5 Sonnet (Latest)</SelectItem>
+                    <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
+                    <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
                     
-                    {/* Experimental Models */}
-                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Experimental Models</div>
-                    <SelectItem value="gpt-oss-20b">GPT-OSS-20B</SelectItem>
-                    <SelectItem value="gpt-oss-120b">GPT-OSS-120B</SelectItem>
-                    <SelectItem value="qwen3-30b-a3b">Qwen3-30B-A3B</SelectItem>
+                    {/* Custom Models */}
+                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Other</div>
+                    <SelectItem value="custom">Custom Model (via server)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -650,73 +751,98 @@ Always maintain a professional yet conversational tone, and ensure all responses
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Turn-taking & Conversation Flow</h2>
             
-            <div className="space-y-4">
-              {/* Turn Timeout */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <Label>Turn Timeout (seconds)</Label>
-                  <span className="text-sm text-muted-foreground">{turnTimeout[0]}s</span>
+            <div className="space-y-6">
+              {/* Core Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Response Timing</h3>
+                
+                {/* Turn Timeout */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Label>Turn Timeout (seconds)</Label>
+                    <span className="text-sm text-muted-foreground">{turnTimeout[0]}s</span>
+                  </div>
+                  <Slider
+                    value={turnTimeout}
+                    onValueChange={(value) => {
+                      setTurnTimeout(value);
+                      setHasChanges(true);
+                    }}
+                    min={1}
+                    max={30}
+                    step={1}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Maximum time to wait for user response before timing out
+                  </p>
                 </div>
-                <Slider
-                  value={turnTimeout}
-                  onValueChange={(value) => {
-                    setTurnTimeout(value);
-                    setHasChanges(true);
-                  }}
-                  min={1}
-                  max={30}
-                  step={1}
-                  className="mt-2"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Maximum time to wait for user response before timing out
-                </p>
+
+                {/* Silence Timeout */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Label>Silence End Call Timeout</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {silenceTimeout[0] === -1 ? "Disabled" : `${silenceTimeout[0]}s`}
+                    </span>
+                  </div>
+                  <Slider
+                    value={silenceTimeout}
+                    onValueChange={(value) => {
+                      setSilenceTimeout(value);
+                      setHasChanges(true);
+                    }}
+                    min={-1}
+                    max={60}
+                    step={1}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    End call after X seconds of silence (-1 to disable)
+                  </p>
+                </div>
               </div>
 
-              {/* Silence Timeout */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <Label>Silence End Call Timeout</Label>
-                  <span className="text-sm text-muted-foreground">
-                    {silenceTimeout[0] === -1 ? "Disabled" : `${silenceTimeout[0]}s`}
-                  </span>
+              <Separator />
+
+              {/* Interruption Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Interruption Handling</h3>
+                
+                {/* Interruption Sensitivity */}
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <Label>Interruption Sensitivity</Label>
+                    <span className="text-sm text-muted-foreground">{interruptionSensitivity[0]}</span>
+                  </div>
+                  <Slider
+                    value={interruptionSensitivity}
+                    onValueChange={(value) => {
+                      setInterruptionSensitivity(value);
+                      setHasChanges(true);
+                    }}
+                    min={0}
+                    max={1}
+                    step={0.1}
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    How easily the agent can be interrupted (0 = hard, 1 = easy)
+                  </p>
                 </div>
-                <Slider
-                  value={silenceTimeout}
-                  onValueChange={(value) => {
-                    setSilenceTimeout(value);
-                    setHasChanges(true);
-                  }}
-                  min={-1}
-                  max={60}
-                  step={1}
-                  className="mt-2"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  End call after X seconds of silence (-1 to disable)
-                </p>
               </div>
 
-              {/* Interruption Sensitivity */}
-              <div>
-                <div className="flex justify-between mb-2">
-                  <Label>Interruption Sensitivity</Label>
-                  <span className="text-sm text-muted-foreground">{interruptionSensitivity[0]}</span>
+              <Separator />
+
+              {/* Advanced Turn-taking */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Advanced Configuration</h3>
+                
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Additional turn-taking options like backchanneling, overlap handling, and custom speech detection thresholds can be configured through the ElevenLabs API directly.
+                  </p>
                 </div>
-                <Slider
-                  value={interruptionSensitivity}
-                  onValueChange={(value) => {
-                    setInterruptionSensitivity(value);
-                    setHasChanges(true);
-                  }}
-                  min={0}
-                  max={1}
-                  step={0.1}
-                  className="mt-2"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  How easily the agent can be interrupted (0 = hard, 1 = easy)
-                </p>
               </div>
             </div>
           </Card>
@@ -727,60 +853,64 @@ Always maintain a professional yet conversational tone, and ensure all responses
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Privacy & Compliance</h2>
             
-            <div className="space-y-4">
-              {/* Record Voice */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Record Voice Conversations</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Store audio recordings of conversations
-                  </p>
+            <div className="space-y-6">
+              {/* Data Recording Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Data Recording</h3>
+                
+                {/* Record Voice */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Record Voice Conversations</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Store audio recordings of conversations for analytics
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={recordVoice}
+                    onChange={(e) => {
+                      setRecordVoice(e.target.checked);
+                      setHasChanges(true);
+                    }}
+                    className="toggle"
+                  />
                 </div>
-                <input
-                  type="checkbox"
-                  checked={recordVoice}
-                  onChange={(e) => {
-                    setRecordVoice(e.target.checked);
-                    setHasChanges(true);
-                  }}
-                  className="toggle"
-                />
-              </div>
 
-              {/* Zero Retention Mode */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Zero Retention Mode</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Delete all conversation data immediately after call ends
-                  </p>
+                {/* Zero Retention Mode */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Zero Retention Mode</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Delete all conversation data immediately after call ends
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={zeroRetention}
+                    onChange={(e) => {
+                      setZeroRetention(e.target.checked);
+                      setHasChanges(true);
+                    }}
+                    className="toggle"
+                  />
                 </div>
-                <input
-                  type="checkbox"
-                  checked={zeroRetention}
-                  onChange={(e) => {
-                    setZeroRetention(e.target.checked);
-                    setHasChanges(true);
-                  }}
-                  className="toggle"
-                />
-              </div>
 
-              {/* Retention Days */}
-              <div>
-                <Label htmlFor="retentionDays">Data Retention (days)</Label>
-                <Input
-                  id="retentionDays"
-                  type="number"
-                  value={retentionDays}
-                  onChange={(e) => {
-                    setRetentionDays(parseInt(e.target.value));
-                    setHasChanges(true);
-                  }}
-                  placeholder="-1"
-                  className="mt-2"
-                  min="-1"
-                  max="365"
+                {/* Retention Days */}
+                <div>
+                  <Label htmlFor="retentionDays">Data Retention Period (days)</Label>
+                  <Input
+                    id="retentionDays"
+                    type="number"
+                    value={retentionDays}
+                    onChange={(e) => {
+                      setRetentionDays(parseInt(e.target.value));
+                      setHasChanges(true);
+                    }}
+                    placeholder="-1"
+                    className="mt-2"
+                    min="-1"
+                    max="365"
                   disabled={zeroRetention}
                 />
                 <p className="text-xs text-muted-foreground mt-1">
