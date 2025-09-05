@@ -45,7 +45,7 @@ export default function Playground() {
   const [callDuration, setCallDuration] = useState(0);
   const [transcript, setTranscript] = useState<ConversationMessage[]>([]);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [connectionType, setConnectionType] = useState<'websocket' | 'webrtc'>('webrtc');
+  const [connectionType, setConnectionType] = useState<'websocket' | 'webrtc'>('websocket');
   
   // Chat state for RAG testing
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
