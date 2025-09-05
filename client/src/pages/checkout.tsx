@@ -13,7 +13,7 @@ export default function Checkout() {
   const { toast } = useToast();
 
   // Fetch billing packages
-  const { data: packages = [], isLoading } = useQuery({
+  const { data: packages = [], isLoading } = useQuery<any[]>({
     queryKey: ["/api/admin/billing-packages"],
   });
 
@@ -34,7 +34,7 @@ export default function Checkout() {
 
     setIsProcessing(true);
     try {
-      const selectedPkg = packages.find((p: any) => p.id === selectedPackage);
+      const selectedPkg = (packages as any[]).find((p: any) => p.id === selectedPackage);
       
       // Create payment intent
       const response = await apiRequest("POST", "/api/payments/create-intent", {
@@ -102,7 +102,7 @@ export default function Checkout() {
 
       {/* Billing Packages */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {packages.map((pkg: any) => (
+        {(packages as any[]).map((pkg: any) => (
           <Card
             key={pkg.id}
             className={`p-6 cursor-pointer transition-all ${
@@ -179,7 +179,7 @@ export default function Checkout() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">Selected Plan</span>
               <span className="font-medium">
-                {packages.find((p: any) => p.id === selectedPackage)?.displayName}
+                {(packages as any[]).find((p: any) => p.id === selectedPackage)?.displayName}
               </span>
             </div>
             <div className="flex justify-between">
@@ -189,7 +189,7 @@ export default function Checkout() {
             <div className="flex justify-between text-lg font-semibold pt-3 border-t">
               <span>Total</span>
               <span>
-                ${packages.find((p: any) => p.id === selectedPackage)?.monthlyPrice}/month
+                ${(packages as any[]).find((p: any) => p.id === selectedPackage)?.monthlyPrice}/month
               </span>
             </div>
           </div>

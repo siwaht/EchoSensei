@@ -137,8 +137,8 @@ class PerformanceMonitor extends EventEmitter {
     const now = Date.now();
     const maxAge = 3600000; // 1 hour
     
-    for (const [name, points] of this.metrics) {
-      const filtered = points.filter(p => 
+    for (const [name, points] of Array.from(this.metrics)) {
+      const filtered = points.filter((p: any) => 
         now - p.timestamp.getTime() < maxAge
       );
       this.metrics.set(name, filtered);

@@ -115,7 +115,7 @@ export class EdgeManager {
     }
     
     // Pattern matching
-    for (const [pattern, rule] of this.cacheRules) {
+    for (const [pattern, rule] of Array.from(this.cacheRules)) {
       const regex = new RegExp(pattern.replace('*', '.*'));
       if (regex.test(path)) {
         return rule;

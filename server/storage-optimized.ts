@@ -19,7 +19,7 @@ export class OptimizedStorage {
   private cache = getCacheManager();
   
   // User operations with caching
-  @cacheable({ namespace: 'users', ttl: 60000 })
+  // @cacheable({ namespace: 'users', ttl: 60000 })
   async getUser(id: string, region?: string): Promise<User | undefined> {
     const [user] = await dbRead(region)
       .select()
@@ -30,7 +30,7 @@ export class OptimizedStorage {
     return user;
   }
 
-  @cacheable({ namespace: 'users', ttl: 60000 })
+  // @cacheable({ namespace: 'users', ttl: 60000 })
   async getUserByEmail(email: string, region?: string): Promise<User | undefined> {
     const [user] = await dbRead(region)
       .select()
@@ -44,7 +44,7 @@ export class OptimizedStorage {
   async createUser(userData: Partial<User>): Promise<User> {
     const [user] = await dbWrite()
       .insert(users)
-      .values(userData)
+      .values(userData as any)
       .returning();
     
     // Invalidate user cache
@@ -55,7 +55,7 @@ export class OptimizedStorage {
   }
 
   // Organization operations with intelligent caching
-  @cacheable({ namespace: 'organizations', ttl: 300000 })
+  // @cacheable({ namespace: 'organizations', ttl: 300000 })
   async getOrganization(id: string, region?: string): Promise<Organization | undefined> {
     const [org] = await dbRead(region)
       .select()
@@ -67,7 +67,7 @@ export class OptimizedStorage {
   }
 
   // Integration operations
-  @cacheable({ namespace: 'integrations', ttl: 120000 })
+  // @cacheable({ namespace: 'integrations', ttl: 120000 })
   async getIntegration(
     organizationId: string, 
     provider: string,

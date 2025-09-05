@@ -54,7 +54,7 @@ class DatabaseConnectionManager {
       const weight = replica.weight || 1;
       this.replicaPools.push({
         pool,
-        region: replica.region,
+        region: (replica as any).region,
         weight
       });
       this.totalWeight += weight;

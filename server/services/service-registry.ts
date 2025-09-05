@@ -51,8 +51,8 @@ class ServiceRegistry extends EventEmitter {
 
   // Deregister a service instance
   deregister(serviceId: string) {
-    for (const [name, instances] of this.services.entries()) {
-      const filtered = instances.filter(s => s.id !== serviceId);
+    for (const [name, instances] of Array.from(this.services.entries())) {
+      const filtered = instances.filter((s: any) => s.id !== serviceId);
       if (filtered.length !== instances.length) {
         this.services.set(name, filtered);
         this.emit('service:deregistered', { name, id: serviceId });
@@ -118,7 +118,7 @@ class ServiceRegistry extends EventEmitter {
   // Health monitoring
   private startHealthMonitoring() {
     setInterval(async () => {
-      for (const [name, instances] of this.services.entries()) {
+      for (const [name, instances] of Array.from(this.services.entries())) {
         for (const instance of instances) {
           await this.checkHealth(instance);
         }

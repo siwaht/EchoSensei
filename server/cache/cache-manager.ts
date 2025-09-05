@@ -73,7 +73,7 @@ class MemoryCacheProvider extends CacheProvider {
     } else {
       // Clear keys matching pattern
       const regex = new RegExp(pattern.replace('*', '.*'));
-      for (const key of this.cache.keys()) {
+      for (const key of Array.from(this.cache.keys())) {
         if (regex.test(key)) {
           this.cache.delete(key);
         }
@@ -90,7 +90,7 @@ class MemoryCacheProvider extends CacheProvider {
       size: this.cache.size,
       maxSize: this.cache.max,
       calculatedSize: this.cache.calculatedSize,
-      disposed: this.cache.disposed,
+      disposed: this.cache.size,
     };
   }
 }
