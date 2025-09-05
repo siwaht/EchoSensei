@@ -918,8 +918,68 @@ Always maintain a professional yet conversational tone, and ensure all responses
                 </p>
               </div>
             </div>
-          </Card>
-        </TabsContent>
+
+            <Separator />
+
+            {/* Authentication Settings */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium text-muted-foreground">Access Control</h3>
+              
+              {/* Enable Authentication */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Require Authentication</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Only allow authorized users to interact with agent
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={enableAuth}
+                  onChange={(e) => {
+                    setEnableAuth(e.target.checked);
+                    setHasChanges(true);
+                  }}
+                  className="toggle"
+                />
+              </div>
+
+              {/* Allowed Numbers */}
+              {enableAuth && (
+                <div>
+                  <Label htmlFor="allowedNumbers">Authorized Phone Numbers</Label>
+                  <Textarea
+                    id="allowedNumbers"
+                    value={allowedNumbers}
+                    onChange={(e) => {
+                      setAllowedNumbers(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="+1234567890&#10;+0987654321&#10;One number per line"
+                    className="mt-2 min-h-[100px] font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter one phone number per line (with country code)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Compliance Information */}
+            <div className="bg-muted/50 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-2">Compliance Notes</h3>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• Ensure compliance with local privacy regulations (GDPR, CCPA, etc.)</li>
+                <li>• Inform users about data recording when applicable</li>
+                <li>• Implement appropriate consent mechanisms for your use case</li>
+                <li>• Review ElevenLabs' privacy policy and terms of service</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+      </TabsContent>
 
         {/* Dynamic Variables */}
         <TabsContent value="variables" className="space-y-6">
@@ -989,89 +1049,96 @@ Always maintain a professional yet conversational tone, and ensure all responses
         {/* Advanced Settings */}
         <TabsContent value="advanced" className="space-y-6">
           <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Authentication</h2>
+            <h2 className="text-lg font-semibold mb-4">Advanced Configuration</h2>
             
-            <div className="space-y-4">
-              {/* Enable Authentication */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Enable Authentication</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Require authentication to access this agent
-                  </p>
+            <div className="space-y-6">
+              {/* Integration Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Integration Options</h3>
+                
+                <div className="bg-muted/50 p-4 rounded-lg space-y-3">
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                    <div>
+                      <p className="text-sm font-medium">Function Calling</p>
+                      <p className="text-xs text-muted-foreground">Connect your agent to external APIs and services</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                    <div>
+                      <p className="text-sm font-medium">Custom LLM Server</p>
+                      <p className="text-xs text-muted-foreground">Use your own language model server endpoint</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5" />
+                    <div>
+                      <p className="text-sm font-medium">Webhook Events</p>
+                      <p className="text-xs text-muted-foreground">Receive real-time event notifications</p>
+                    </div>
+                  </div>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={enableAuth}
-                  onChange={(e) => {
-                    setEnableAuth(e.target.checked);
-                    setHasChanges(true);
-                  }}
-                  className="toggle"
-                />
               </div>
 
-              {/* Allowed Numbers */}
-              {enableAuth && (
-                <div>
-                  <Label htmlFor="allowedNumbers">Allowed Phone Numbers</Label>
-                  <Textarea
-                    id="allowedNumbers"
-                    value={allowedNumbers}
-                    onChange={(e) => {
-                      setAllowedNumbers(e.target.value);
-                      setHasChanges(true);
-                    }}
-                    placeholder="Enter phone numbers, one per line"
-                    className="mt-2 min-h-[100px]"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Only these numbers can access the agent
-                  </p>
-                </div>
-              )}
-            </div>
-          </Card>
+              <Separator />
 
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Evaluation Criteria</h2>
-            
-            <div className="space-y-4">
-              {/* Enable Evaluation */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Enable Evaluation</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Automatically evaluate agent performance
+              {/* Performance Tuning */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Performance Tuning</h3>
+                
+                <div className="bg-muted/50 p-4 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Advanced performance options like custom timeout settings, concurrency limits, and resource optimization can be configured through the ElevenLabs API directly or contact support for enterprise configurations.
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={evaluationEnabled}
-                  onChange={(e) => {
-                    setEvaluationEnabled(e.target.checked);
-                    setHasChanges(true);
-                  }}
-                  className="toggle"
-                />
               </div>
 
-              {/* Evaluation Criteria */}
-              {evaluationEnabled && (
-                <div>
-                  <Label htmlFor="evaluationCriteria">Evaluation Criteria</Label>
-                  <Textarea
-                    id="evaluationCriteria"
-                    value={evaluationCriteria}
+              <Separator />
+
+              {/* Evaluation Settings */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-medium text-muted-foreground">Quality Assurance</h3>
+                
+                {/* Enable Evaluation */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Enable Quality Evaluation</Label>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Track and evaluate conversation quality metrics
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={evaluationEnabled}
                     onChange={(e) => {
-                      setEvaluationCriteria(e.target.value);
+                      setEvaluationEnabled(e.target.checked);
                       setHasChanges(true);
                     }}
-                    placeholder="Enter evaluation criteria, one per line (e.g., 'Was polite', 'Answered correctly', 'Resolved issue')"
-                    className="mt-2 min-h-[150px]"
+                    className="toggle"
                   />
                 </div>
-              )}
+
+                {/* Evaluation Criteria */}
+                {evaluationEnabled && (
+                  <div>
+                    <Label htmlFor="evaluationCriteria">Evaluation Criteria</Label>
+                    <Textarea
+                      id="evaluationCriteria"
+                      value={evaluationCriteria}
+                      onChange={(e) => {
+                        setEvaluationCriteria(e.target.value);
+                        setHasChanges(true);
+                      }}
+                      placeholder="Enter evaluation criteria, one per line:&#10;• Customer satisfaction&#10;• Issue resolution&#10;• Response accuracy&#10;• Conversation flow"
+                      className="mt-2 min-h-[120px] font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Define criteria to measure agent performance
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </Card>
         </TabsContent>
