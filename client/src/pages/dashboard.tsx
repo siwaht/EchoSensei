@@ -727,8 +727,10 @@ export default function Dashboard() {
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
   const { selectedAgent, setSelectedAgent, agents } = useAgentContext();
   
-  // Use agent ID from context, defaulting to "all" if no agent selected
-  const selectedAgentId = selectedAgent?.id || "all";
+  // Use agent ID from context
+  // When there's only one agent, use its ID instead of "all"
+  const selectedAgentId = selectedAgent?.id || 
+    (agents.length === 1 ? agents[0].id : "all");
   
   // Build query parameters based on selected agent
   const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
@@ -863,7 +865,9 @@ export default function Dashboard() {
               <SelectValue placeholder="All Agents" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Agents</SelectItem>
+              {agents.length > 1 && (
+                <SelectItem value="all">All Agents</SelectItem>
+              )}
               {Array.isArray(agents) && agents.map((agent: any) => (
                 <SelectItem key={agent.id} value={agent.id}>
                   {agent.name}

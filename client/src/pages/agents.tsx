@@ -169,10 +169,13 @@ export default function Agents() {
                 <Bot className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               </div>
               <h3 className="text-xl font-semibold mb-2" data-testid="text-no-agents-title">
-                No agents configured yet
+                No agents available
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md mx-auto" data-testid="text-no-agents-description">
-                Connect your voice agents to monitor conversations, manage settings, and track performance.
+                {agents !== undefined && agents.length === 0 ? 
+                  "You don't have any agents assigned yet. Contact your administrator to get access to agents." :
+                  "Connect your voice agents to monitor conversations, manage settings, and track performance."
+                }
               </p>
               
               {/* Quick Setup Steps */}

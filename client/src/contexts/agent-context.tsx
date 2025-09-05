@@ -30,13 +30,22 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     }
   }, [agents]);
 
-  // Auto-select single agent
+  // Auto-select single agent and handle agent availability
   useEffect(() => {
-    if (agents.length === 1 && !selectedAgent) {
-      setSelectedAgentState(agents[0]);
-      localStorage.setItem("selectedAgentId", agents[0].id);
+    // If there's only one agent, always select it
+    if (agents.length === 1) {
+      // Select the single agent if nothing is selected or current selection is invalid
+      if (!selectedAgent || !agents.find(a => a.id === selectedAgent.id)) {
+        setSelectedAgentState(agents[0]);
+        localStorage.setItem("selectedAgentId", agents[0].id);
+      }
     }
-  }, [agents, selectedAgent]);
+    // Clear selection if the selected agent is no longer available
+    else if (selectedAgent && agents.length > 0 && !agents.find(a => a.id === selectedAgent.id)) {
+      setSelectedAgentState(null);
+      localStorage.removeItem("selectedAgentId");
+    }
+  }, [agents]);
 
   // Custom setter that also saves to localStorage
   const setSelectedAgent = (agent: Agent | null) => {
