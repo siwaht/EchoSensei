@@ -421,7 +421,12 @@ export default function Voices() {
                     size="sm"
                     onClick={() => {
                       setSelectedVoiceId(voice.voice_id);
-                      setShowAgentDialog(true);
+                      // If there's only one agent, assign directly without dialog
+                      if (agents.length === 1) {
+                        updateAgent.mutate({ agentId: agents[0].id, voiceId: voice.voice_id });
+                      } else {
+                        setShowAgentDialog(true);
+                      }
                     }}
                     className="gap-1"
                     data-testid={`button-use-voice-${voice.voice_id}`}
@@ -439,7 +444,12 @@ export default function Voices() {
                     className="w-full"
                     onClick={() => {
                       setSelectedVoiceId(voice.voice_id);
-                      setShowAgentDialog(true);
+                      // If there's only one agent, assign directly without dialog
+                      if (agents.length === 1) {
+                        updateAgent.mutate({ agentId: agents[0].id, voiceId: voice.voice_id });
+                      } else {
+                        setShowAgentDialog(true);
+                      }
                     }}
                     data-testid={`button-use-voice-mobile-${voice.voice_id}`}
                   >
