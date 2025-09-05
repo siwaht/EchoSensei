@@ -2566,7 +2566,7 @@ Generate the complete prompt now:`;
   });
 
   // Update agent and sync with ElevenLabs
-  app.patch("/api/agents/:id", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
+  app.patch("/api/agents/:id", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
