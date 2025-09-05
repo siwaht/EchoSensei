@@ -45,6 +45,8 @@ export default function Playground() {
   const [callDuration, setCallDuration] = useState(0);
   const [transcript, setTranscript] = useState<ConversationMessage[]>([]);
   const [audioLevel, setAudioLevel] = useState(0);
+  // Check if user has WebRTC permission
+  const hasWebRTCPermission = user?.permissions?.includes('use_webrtc') || user?.isAdmin || false;
   const [connectionType, setConnectionType] = useState<'websocket' | 'webrtc'>('websocket');
   
   // Chat state for RAG testing
@@ -738,37 +740,39 @@ export default function Playground() {
           <Card className="p-4 shadow-lg border-0">
             <h3 className="font-semibold mb-3">Select Agent</h3>
             
-            {/* Connection Type Toggle */}
-            <div className="mb-4">
-              <label className="text-sm font-medium mb-2 block">Connection Type</label>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => setConnectionType('webrtc')}
-                  variant={connectionType === 'webrtc' ? "default" : "outline"}
-                  size="sm"
-                  disabled={isCallActive}
-                  data-testid="button-webrtc-mode"
-                  className="text-xs flex-1"
-                >
-                  WebRTC
-                </Button>
-                <Button
-                  onClick={() => setConnectionType('websocket')}
-                  variant={connectionType === 'websocket' ? "default" : "outline"}
-                  size="sm"
-                  disabled={isCallActive}
-                  data-testid="button-websocket-mode"
-                  className="text-xs flex-1"
-                >
-                  WebSocket
-                </Button>
+            {/* Connection Type Toggle - Only show if user has permission */}
+            {hasWebRTCPermission && (
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">Connection Type</label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={() => setConnectionType('webrtc')}
+                    variant={connectionType === 'webrtc' ? "default" : "outline"}
+                    size="sm"
+                    disabled={isCallActive}
+                    data-testid="button-webrtc-mode"
+                    className="text-xs flex-1"
+                  >
+                    WebRTC
+                  </Button>
+                  <Button
+                    onClick={() => setConnectionType('websocket')}
+                    variant={connectionType === 'websocket' ? "default" : "outline"}
+                    size="sm"
+                    disabled={isCallActive}
+                    data-testid="button-websocket-mode"
+                    className="text-xs flex-1"
+                  >
+                    WebSocket
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {connectionType === 'webrtc' 
+                    ? 'Enhanced audio quality with WebRTC' 
+                    : 'Standard WebSocket connection'}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {connectionType === 'webrtc' 
-                  ? 'Enhanced audio quality with WebRTC (requires SDK)' 
-                  : 'Legacy WebSocket connection'}
-              </p>
-            </div>
+            )}
             
             <Select 
               value={selectedAgent?.id || ""} 

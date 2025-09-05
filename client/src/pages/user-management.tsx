@@ -92,6 +92,7 @@ const availablePermissions = [
   { id: "manage_phone_numbers", label: "Manage Phone Numbers", category: "Communications", description: "Add and configure phone numbers" },
   { id: "make_outbound_calls", label: "Outbound Calling", category: "Communications", description: "Initiate and manage outbound call campaigns" },
   { id: "access_recordings", label: "Access Recordings", category: "Communications", description: "Listen to and download call recordings" },
+  { id: "use_webrtc", label: "Use WebRTC Connection", category: "Communications", description: "Enable enhanced WebRTC connection in playground (experimental)" },
   
   // Administration - System management
   { id: "manage_integrations", label: "Manage Integrations", category: "Administration", description: "Configure third-party integrations" },
