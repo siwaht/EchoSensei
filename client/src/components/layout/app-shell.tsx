@@ -74,6 +74,9 @@ export default function AppShell({ children }: AppShellProps) {
     const currentNav = filteredNavigation.find(item => item.href === location);
     if (currentNav) return currentNav.name;
     
+    // Check for dynamic agent settings route
+    if (location.startsWith("/agents/")) return "Agent Settings";
+    
     // Check for admin route
     if (location === "/admin") return "Admin";
     
