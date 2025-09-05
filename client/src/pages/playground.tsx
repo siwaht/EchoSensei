@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { useAgentContext } from "@/contexts/agent-context";
 
 interface ConversationMessage {
   role: "assistant" | "user";
@@ -34,7 +35,7 @@ interface ChatMessage {
 }
 
 export default function Playground() {
-  const [selectedAgent, setSelectedAgent] = useState<string>("");
+  const { selectedAgent, setSelectedAgent, agents } = useAgentContext();
   const [isCallActive, setIsCallActive] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
@@ -65,10 +66,8 @@ export default function Playground() {
   
   const { toast } = useToast();
 
-  // Fetch agents
-  const { data: agents = [], isLoading: agentsLoading } = useQuery<Agent[]>({
-    queryKey: ["/api/agents"],
-  });
+  // Get loading state for agents from context
+  const agentsLoading = agents.length === 0;
 
   // Fetch integration to get API key status
   const { data: integration, isLoading: integrationLoading } = useQuery<any>({
@@ -177,12 +176,11 @@ export default function Playground() {
       // Start audio level monitoring
       monitorAudioLevel();
 
-      const agent = agents.find(a => a.id === selectedAgent);
-      if (!agent) return;
+      if (!selectedAgent) return;
 
       // Get connection details (WebRTC or WebSocket)
       const response = await apiRequest("POST", "/api/playground/start-session", {
-        agentId: agent.elevenLabsAgentId,
+        agentId: selectedAgent.elevenLabsAgentId,
         connectionType: connectionType
       });
 
@@ -251,7 +249,7 @@ export default function Playground() {
             
             toast({
               title: "Call started",
-              description: `Connected to ${agents.find(a => a.id === selectedAgent)?.name}`,
+              description: `Connected to ${selectedAgent?.name}`,
             });
             
             // Send a small audio chunk to trigger the agent to speak first
@@ -740,7 +738,13 @@ export default function Playground() {
               </p>
             </div>
             
-            <Select value={selectedAgent} onValueChange={setSelectedAgent} disabled={isCallActive}>
+            <Select 
+              value={selectedAgent?.id || ""} 
+              onValueChange={(value) => {
+                const agent = agents.find(a => a.id === value);
+                if (agent) setSelectedAgent(agent);
+              }} 
+              disabled={isCallActive}>
               <SelectTrigger data-testid="select-agent">
                 <SelectValue placeholder="Choose an agent to test" />
               </SelectTrigger>
@@ -765,22 +769,18 @@ export default function Playground() {
 
             {selectedAgent && (
               <div className="mt-4 space-y-2">
-                {agents.find(a => a.id === selectedAgent) && (
-                  <>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Description:</span>
-                      <p className="mt-1">
-                        {agents.find(a => a.id === selectedAgent)?.description || "No description"}
-                      </p>
-                    </div>
-                    <div className="text-sm">
-                      <span className="text-muted-foreground">Voice:</span>
-                      <p className="mt-1">
-                        {agents.find(a => a.id === selectedAgent)?.voiceId || "Default voice"}
-                      </p>
-                    </div>
-                  </>
-                )}
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Description:</span>
+                  <p className="mt-1">
+                    {selectedAgent.description || "No description"}
+                  </p>
+                </div>
+                <div className="text-sm">
+                  <span className="text-muted-foreground">Voice:</span>
+                  <p className="mt-1">
+                    {selectedAgent.voiceId || "Default voice"}
+                  </p>
+                </div>
               </div>
             )}
           </Card>

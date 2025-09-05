@@ -16,6 +16,7 @@ import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger }
 import { SentimentIndicator } from "@/components/analytics/sentiment-indicator";
 import { UserPlanCard } from "@/components/dashboard/user-plan-card";
 import { CallAnalyticsCard } from "@/components/dashboard/call-analytics-card";
+import { useAgentContext } from "@/contexts/agent-context";
 
 // Success Rate Chart Component
 const SuccessRateChart = memo(function SuccessRateChart({ selectedAgentId }: { selectedAgentId: string }) {
@@ -724,12 +725,10 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
-  const [selectedAgentId, setSelectedAgentId] = useState<string>("all");
+  const { selectedAgent, setSelectedAgent, agents } = useAgentContext();
   
-  // Get agents first
-  const { data: agents } = useQuery({
-    queryKey: ["/api/agents"],
-  });
+  // Use agent ID from context, defaulting to "all" if no agent selected
+  const selectedAgentId = selectedAgent?.id || "all";
   
   // Build query parameters based on selected agent
   const queryParams = selectedAgentId !== "all" ? `?agentId=${selectedAgentId}` : "";
@@ -848,7 +847,17 @@ export default function Dashboard() {
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           {/* Agent Selector */}
-          <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+          <Select 
+            value={selectedAgentId} 
+            onValueChange={(value) => {
+              if (value === "all") {
+                setSelectedAgent(null);
+              } else {
+                const agent = agents.find(a => a.id === value);
+                if (agent) setSelectedAgent(agent);
+              }
+            }}
+          >
             <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-agent-filter">
               <Bot className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
               <SelectValue placeholder="All Agents" />

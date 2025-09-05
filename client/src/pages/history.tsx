@@ -12,9 +12,10 @@ import { CallDetailModal } from "@/components/modals/call-detail-modal";
 import { TranscriptSearch } from "@/components/call-history/transcript-search";
 import { AnalyticsExport } from "@/components/analytics/analytics-export";
 import type { CallLog, Agent } from "@shared/schema";
+import { useAgentContext } from "@/contexts/agent-context";
 
 export default function History() {
-  const [selectedAgent, setSelectedAgent] = useState<string>("all");
+  const { selectedAgent, setSelectedAgent, agents } = useAgentContext();
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [selectedCallLog, setSelectedCallLog] = useState<CallLog | null>(null);
@@ -36,9 +37,7 @@ export default function History() {
   // Extract data from paginated response
   const callLogs = callLogsResponse?.data || callLogsResponse || [];
 
-  const { data: agents } = useQuery<Agent[]>({
-    queryKey: ["/api/agents"],
-  });
+  // Agents are now provided by context
 
   const syncCallsMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/sync-calls"),
@@ -122,7 +121,7 @@ export default function History() {
   // Filter call logs based on selected filters
   const filteredCallLogs = (searchResults || callLogs)?.filter((log: CallLog) => {
     // Filter by agent
-    if (selectedAgent !== "all" && log.agentId !== selectedAgent) {
+    if (selectedAgent && log.agentId !== selectedAgent.id) {
       return false;
     }
     
@@ -207,7 +206,17 @@ export default function History() {
               <RefreshCw className={`w-4 h-4 ${syncCallsMutation.isPending ? 'animate-spin' : ''}`} />
               {syncCallsMutation.isPending ? 'Syncing...' : 'Sync Calls'}
             </Button>
-            <Select value={selectedAgent} onValueChange={setSelectedAgent}>
+            <Select 
+              value={selectedAgent?.id || "all"} 
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedAgent(null);
+                } else {
+                  const agent = agents.find(a => a.id === value);
+                  if (agent) setSelectedAgent(agent);
+                }
+              }}
+            >
               <SelectTrigger className="w-full sm:w-48" data-testid="select-agent-filter">
                 <SelectValue placeholder="All Agents" />
               </SelectTrigger>
@@ -325,7 +334,7 @@ export default function History() {
                     onClick={() => {
                       setStatusFilter("all");
                       setDurationFilter("all");
-                      setSelectedAgent("all");
+                      setSelectedAgent(null);
                       setStartDate("");
                       setEndDate("");
                       setSearchResults(null);

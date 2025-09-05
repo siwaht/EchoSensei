@@ -9,6 +9,7 @@ import { ErrorBoundary } from "@/components/error-boundary";
 import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/layout/app-shell";
 import { PermissionGuard } from "@/components/auth/permission-guard";
+import { AgentProvider } from "@/contexts/agent-context";
 
 // Eagerly load critical pages
 import Landing from "@/pages/landing";
@@ -58,9 +59,10 @@ function Router() {
   }
 
   return (
-    <AppShell>
-      <Suspense fallback={<PageLoader />}>
-        <Switch>
+    <AgentProvider>
+      <AppShell>
+        <Suspense fallback={<PageLoader />}>
+          <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/agents">
             <PermissionGuard><Agents /></PermissionGuard>
@@ -102,6 +104,7 @@ function Router() {
         </Switch>
       </Suspense>
     </AppShell>
+    </AgentProvider>
   );
 }
 
