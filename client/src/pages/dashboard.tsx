@@ -839,42 +839,51 @@ export default function Dashboard() {
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-purple-400 flex-shrink-0 mt-0.5" />
             <span className="text-xs sm:text-sm text-muted-foreground break-words">
-              {selectedAgentId !== "all" 
-                ? `Showing: ${Array.isArray(agents) ? agents.find((a: any) => a.id === selectedAgentId)?.name : 'Agent'} `
-                : lastSyncTime || (stats as any)?.lastSync 
-                  ? `Synced: ${(lastSyncTime || new Date((stats as any)?.lastSync)).toLocaleString()}` 
-                  : 'Sync to update data'}
+              {agents.length === 0
+                ? 'No agents available'
+                : selectedAgentId !== "all" 
+                  ? `Showing: ${Array.isArray(agents) ? agents.find((a: any) => a.id === selectedAgentId)?.name : 'Agent'} `
+                  : lastSyncTime || (stats as any)?.lastSync 
+                    ? `Synced: ${(lastSyncTime || new Date((stats as any)?.lastSync)).toLocaleString()}` 
+                    : 'Sync to update data'}
             </span>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-          {/* Agent Selector */}
-          <Select 
-            value={selectedAgentId} 
-            onValueChange={(value) => {
-              if (value === "all") {
-                setSelectedAgent(null);
-              } else {
-                const agent = agents.find(a => a.id === value);
-                if (agent) setSelectedAgent(agent);
-              }
-            }}
-          >
-            <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-agent-filter">
-              <Bot className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
-              <SelectValue placeholder="All Agents" />
-            </SelectTrigger>
-            <SelectContent>
-              {agents.length > 1 && (
-                <SelectItem value="all">All Agents</SelectItem>
-              )}
-              {Array.isArray(agents) && agents.map((agent: any) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  {agent.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Agent Selector - Only show if agents exist */}
+          {agents.length > 0 ? (
+            <Select 
+              value={selectedAgentId} 
+              onValueChange={(value) => {
+                if (value === "all") {
+                  setSelectedAgent(null);
+                } else {
+                  const agent = agents.find(a => a.id === value);
+                  if (agent) setSelectedAgent(agent);
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[250px]" data-testid="select-agent-filter">
+                <Bot className="w-4 h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                <SelectValue placeholder="All Agents" />
+              </SelectTrigger>
+              <SelectContent>
+                {agents.length > 1 && (
+                  <SelectItem value="all">All Agents</SelectItem>
+                )}
+                {Array.isArray(agents) && agents.map((agent: any) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-lg text-sm text-muted-foreground">
+              <Bot className="w-4 h-4 flex-shrink-0" />
+              <span>No agents assigned - Contact admin for access</span>
+            </div>
+          )}
           
           <Button
             onClick={() => syncMutation.mutate()}
