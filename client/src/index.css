@@ -116,10 +116,51 @@
 @media (max-width: 640px) {
   .hide-mobile { display: none !important; }
   .mobile-full { width: 100% !important; }
+  .mobile-text-xs { font-size: 0.75rem !important; }
+  .mobile-text-sm { font-size: 0.875rem !important; }
+  .mobile-p-2 { padding: 0.5rem !important; }
+  .mobile-p-3 { padding: 0.75rem !important; }
+  .mobile-gap-2 { gap: 0.5rem !important; }
+  .mobile-gap-3 { gap: 0.75rem !important; }
 }
 
 @media (min-width: 641px) {
   .hide-desktop { display: none !important; }
+}
+
+/* Tablet responsive utilities */
+@media (max-width: 768px) {
+  .tablet-stack { flex-direction: column !important; }
+  .tablet-w-full { width: 100% !important; }
+  .tablet-gap-3 { gap: 0.75rem !important; }
+}
+
+/* Mobile viewport optimization */
+@viewport {
+  width: device-width;
+  initial-scale: 1.0;
+}
+
+/* Container and spacing utilities */
+.container-mobile {
+  @apply px-4 sm:px-6 lg:px-8;
+}
+
+/* Touch-friendly sizing */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile-friendly scrolling */
+.scroll-smooth-mobile {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+/* Card responsive styling */
+.card-mobile {
+  @apply rounded-lg p-4 sm:p-6 lg:p-8;
 }
 
 /* Extra small screen breakpoint for grid columns */
