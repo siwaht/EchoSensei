@@ -5,21 +5,22 @@ const path = require('path');
 
 console.log('Running post-build fixes...');
 
-// Create the production wrapper script as a simple runner
+// Create the production wrapper script as pure ES module
 const wrapperScript = `#!/usr/bin/env node
 
 // Production wrapper for Replit deployment
-// This script uses tsx to run the TypeScript server directly
+// Uses child_process to run tsx in a clean environment
 
-import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
+import { spawnSync } from 'child_process';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Change to the project root directory
-process.chdir(resolve(__dirname, '..'));
+// Change to project root
+const rootDir = resolve(__dirname, '..');
+process.chdir(rootDir);
 
 // Set production environment
 process.env.NODE_ENV = 'production';
@@ -31,20 +32,28 @@ if (!process.env.PORT) {
 
 console.log('Starting production server on port', process.env.PORT);
 
-try {
-  // Run tsx directly in the same process
-  execSync('exec npx tsx server/index.ts', {
-    stdio: 'inherit',
-    env: process.env
-  });
-} catch (error) {
-  console.error('Server crashed:', error.message);
+// Run tsx with the server file directly (using --import for Node v20+)
+const result = spawnSync('node', [
+  '--import', 'tsx',
+  'server/index.ts'
+], {
+  stdio: 'inherit',
+  env: process.env,
+  cwd: rootDir
+});
+
+if (result.error) {
+  console.error('Failed to start server:', result.error);
   process.exit(1);
 }
+
+process.exit(result.status || 0);
 `;
 
-// Write the wrapper script to dist/index.js
+// Write the wrapper script to dist/index.js (as ES module)
 const distPath = path.join(__dirname, 'dist', 'index.js');
+
+// Write ES module wrapper directly
 fs.writeFileSync(distPath, wrapperScript);
 fs.chmodSync(distPath, '755');
 
