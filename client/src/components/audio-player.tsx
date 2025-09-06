@@ -22,6 +22,7 @@ export function AudioPlayer({ audioUrl, title, callId, duration }: AudioPlayerPr
   const [playbackRate, setPlaybackRate] = useState(1);
   const [volume, setVolume] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>();
@@ -88,29 +89,76 @@ export function AudioPlayer({ audioUrl, title, callId, duration }: AudioPlayerPr
       setCurrentTime(0);
     };
 
+    const handleLoadStart = () => {
+      setIsLoading(true);
+      setError(null);
+    };
+    
+    const handleCanPlay = () => {
+      setIsLoading(false);
+      setError(null);
+    };
+    
+    const handleError = (e: Event) => {
+      setIsLoading(false);
+      setIsPlaying(false);
+      const audioElement = e.target as HTMLAudioElement;
+      let errorMessage = 'Failed to load audio';
+      
+      if (audioElement.error) {
+        switch (audioElement.error.code) {
+          case audioElement.error.MEDIA_ERR_ABORTED:
+            errorMessage = 'Audio loading was aborted';
+            break;
+          case audioElement.error.MEDIA_ERR_NETWORK:
+            errorMessage = 'Network error while loading audio';
+            break;
+          case audioElement.error.MEDIA_ERR_DECODE:
+            errorMessage = 'Audio format not supported';
+            break;
+          case audioElement.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = 'Audio source not available';
+            break;
+        }
+      }
+      setError(errorMessage);
+    };
+
     audio.addEventListener('timeupdate', updateTime);
     audio.addEventListener('ended', handleEnded);
-    audio.addEventListener('loadstart', () => setIsLoading(true));
-    audio.addEventListener('canplay', () => setIsLoading(false));
+    audio.addEventListener('loadstart', handleLoadStart);
+    audio.addEventListener('canplay', handleCanPlay);
+    audio.addEventListener('error', handleError);
 
     return () => {
       audio.removeEventListener('timeupdate', updateTime);
       audio.removeEventListener('ended', handleEnded);
-      audio.removeEventListener('loadstart', () => setIsLoading(true));
-      audio.removeEventListener('canplay', () => setIsLoading(false));
+      audio.removeEventListener('loadstart', handleLoadStart);
+      audio.removeEventListener('canplay', handleCanPlay);
+      audio.removeEventListener('error', handleError);
     };
   }, []);
 
-  const togglePlayPause = () => {
+  const togglePlayPause = async () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || error) return;
 
-    if (isPlaying) {
-      audio.pause();
-    } else {
-      audio.play();
+    try {
+      if (isPlaying) {
+        audio.pause();
+        setIsPlaying(false);
+      } else {
+        setIsLoading(true);
+        await audio.play();
+        setIsPlaying(true);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setIsPlaying(false);
+      console.error('Playback error:', err);
+      setError('Failed to play audio. Please try again.');
     }
-    setIsPlaying(!isPlaying);
   };
 
   const handleRewind = () => {
@@ -186,6 +234,22 @@ export function AudioPlayer({ audioUrl, title, callId, duration }: AudioPlayerPr
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
           </div>
         )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center bg-red-900/20">
+            <div className="text-red-400 text-sm text-center px-4">
+              <p>{error}</p>
+              <button 
+                onClick={() => {
+                  setError(null);
+                  audioRef.current?.load();
+                }}
+                className="mt-2 text-xs underline hover:text-red-300"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Controls */}
@@ -195,7 +259,7 @@ export function AudioPlayer({ audioUrl, title, callId, duration }: AudioPlayerPr
           variant="ghost"
           size="icon"
           onClick={togglePlayPause}
-          disabled={isLoading}
+          disabled={isLoading || !!error}
           className="h-10 w-10 rounded-full bg-purple-600 hover:bg-purple-700 text-white"
         >
           {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5 ml-0.5" />}
