@@ -44,9 +44,9 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <main className="min-h-screen bg-background flex flex-col" role="main">
       {/* Navigation */}
-      <nav className="bg-card/80 backdrop-blur-sm border-b border-border">
+      <header className="bg-card/80 backdrop-blur-sm border-b border-border" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
@@ -67,23 +67,24 @@ export default function Landing() {
             </div>
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Login Section */}
-      <div className="flex-1 flex items-center justify-center p-4">
+      <section className="flex-1 flex items-center justify-center p-4" aria-labelledby="login-heading">
         <div className="w-full max-w-md">
           <Card className="p-8 bg-card/95 backdrop-blur-sm border-border shadow-2xl">
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Mic className="w-8 h-8 text-primary-foreground" />
               </div>
-              <h2 className="text-3xl font-bold text-card-foreground mb-2">Welcome Back</h2>
+              <h1 id="login-heading" className="text-3xl font-bold text-card-foreground mb-2">Welcome Back</h1>
               <p className="text-muted-foreground">Sign in to access your VoiceAI Dashboard</p>
             </div>
 
             <form 
               className="space-y-4"
               onSubmit={handleSubmit}
+              aria-label="Login form"
             >
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium">
@@ -175,7 +176,7 @@ export default function Landing() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
