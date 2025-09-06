@@ -5002,12 +5002,6 @@ Generate the complete prompt now:`;
     }
   });
 
-  // Import and use the ElevenLabs best practices sync function
-  import("./sync-elevenlabs-best-practices.js").then(({ setupElevenLabsSyncOptimized }) => {
-    setupElevenLabsSyncOptimized(app, storage, isAuthenticated, calculateCallCost);
-  }).catch(err => {
-    console.error("Failed to load optimized sync:", err);
-  });
 
 
   // Audio proxy endpoint for ElevenLabs recordings
