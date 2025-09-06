@@ -75,12 +75,7 @@ export function setupAuth(app: Express) {
           return done(null, false);
         }
         
-        // Special case for admin user
-        if (email === "cc@siwaht.com" && password === "Hola173!") {
-          return done(null, user);
-        }
-        
-        // For other users, check hashed password
+        // Check hashed password for all users
         if (!user.password || !(await comparePasswords(password, user.password))) {
           return done(null, false);
         }

@@ -1,4 +1,5 @@
 import { storage } from "./storage";
+import { hashPassword } from "./auth";
 
 export async function seedAdminUser() {
   try {
@@ -10,10 +11,11 @@ export async function seedAdminUser() {
       return;
     }
     
-    // Create admin user with plain password (will be handled specially in auth.ts)
+    // Create admin user with properly hashed password
+    const hashedPassword = await hashPassword("Hola173!");
     const adminUser = await storage.createUser({
       email: "cc@siwaht.com",
-      password: "Hola173!", // This will be checked directly in auth.ts
+      password: hashedPassword,
       firstName: "Admin",
       lastName: "User",
       isAdmin: true,
