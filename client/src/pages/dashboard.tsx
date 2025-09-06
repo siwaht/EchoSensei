@@ -779,8 +779,15 @@ export default function Dashboard() {
       });
       
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to sync");
+        // Check if response is JSON
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.indexOf("application/json") !== -1) {
+          const error = await response.json();
+          throw new Error(error.message || "Failed to sync");
+        } else {
+          // Handle non-JSON response (like HTML error pages)
+          throw new Error(`Failed to sync: Server returned ${response.status} ${response.statusText}`);
+        }
       }
       
       return await response.json();

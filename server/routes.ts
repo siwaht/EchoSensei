@@ -3093,6 +3093,74 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Sync call logs from ElevenLabs - simplified endpoint for dashboard
+  app.post("/api/sync-calls", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const integration = await storage.getIntegration(user.organizationId, "elevenlabs");
+      if (!integration || !integration.apiKey) {
+        return res.status(400).json({ message: "ElevenLabs integration not configured" });
+      }
+
+      const decryptedKey = decryptApiKey(integration.apiKey);
+      
+      // Fetch conversations from ElevenLabs
+      const conversationsResponse = await callElevenLabsAPI(
+        decryptedKey,
+        "/v1/convai/conversations",
+        "GET",
+        undefined,
+        integration.id
+      );
+      
+      const conversations = conversationsResponse.conversations || [];
+      let syncedCount = 0;
+      
+      for (const conversation of conversations) {
+        try {
+          // Check if this conversation already exists
+          const existingLog = await storage.getCallLogByConversationId(
+            user.organizationId,
+            conversation.conversation_id
+          ).catch(() => null);
+          
+          if (!existingLog) {
+            // Store the call log
+            await storage.createCallLog({
+              organizationId: user.organizationId,
+              conversationId: conversation.conversation_id,
+              agentId: conversation.agent_id,
+              status: conversation.status || "completed",
+              duration: conversation.duration || 0,
+              cost: String(conversation.cost || 0),
+              transcript: conversation.transcript || {},
+              audioUrl: conversation.audio_url || null,
+              phoneNumber: conversation.phone_number || null,
+              elevenLabsCallId: conversation.call_id || null,
+              createdAt: conversation.start_time ? new Date(conversation.start_time) : new Date()
+            });
+            syncedCount++;
+          }
+        } catch (err) {
+          console.error("Error syncing conversation:", conversation.conversation_id, err);
+        }
+      }
+      
+      res.json({ 
+        message: `Successfully synced ${syncedCount} call logs`,
+        syncedCount
+      });
+    } catch (error) {
+      console.error("Error syncing call logs:", error);
+      res.status(500).json({ message: "Failed to sync call logs" });
+    }
+  });
+
   // Manual sync agents with ElevenLabs
   app.post("/api/agents/sync", isAuthenticated, checkPermission('manage_agents'), async (req: any, res) => {
     try {

@@ -90,6 +90,7 @@ export interface IStorage {
   getCallLogs(organizationId: string, limit?: number, offset?: number, agentId?: string): Promise<{ data: CallLog[]; total: number }>;
   getCallLog(id: string, organizationId: string): Promise<CallLog | undefined>;
   getCallLogByElevenLabsId(elevenLabsCallId: string, organizationId: string): Promise<CallLog | undefined>;
+  getCallLogByConversationId(organizationId: string, conversationId: string): Promise<CallLog | undefined>;
   createCallLog(callLog: InsertCallLog & { createdAt?: Date }): Promise<CallLog>;
 
   // Phone number operations
@@ -500,6 +501,14 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(callLogs)
       .where(and(eq(callLogs.elevenLabsCallId, elevenLabsCallId), eq(callLogs.organizationId, organizationId)));
+    return callLog;
+  }
+
+  async getCallLogByConversationId(organizationId: string, conversationId: string): Promise<CallLog | undefined> {
+    const [callLog] = await db()
+      .select()
+      .from(callLogs)
+      .where(and(eq(callLogs.conversationId, conversationId), eq(callLogs.organizationId, organizationId)));
     return callLog;
   }
 
