@@ -6,660 +6,323 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Sparkles, Eye, Save, Wand2, Palette, RefreshCw, Check, X, Users } from "lucide-react";
+import { ArrowLeft, Upload, Eye, Save, Check, Users, Palette } from "lucide-react";
 import { useLocation } from "wouter";
 
-interface BrandTheme {
-  id: string;
-  name: string;
-  description: string;
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  backgroundColor: string;
-  textColor: string;
-  mutedColor: string;
-  style: "modern" | "classic" | "playful" | "minimal" | "bold";
-  fontFamily: string;
-}
+// Preset themes with predefined color combinations
+const PRESET_THEMES = [
+  {
+    id: "professional",
+    name: "Professional Blue",
+    primary: "#2563eb", // Blue
+    secondary: "#3b82f6",
+    accent: "#10b981"
+  },
+  {
+    id: "modern",
+    name: "Modern Purple",
+    primary: "#7c3aed", // Purple
+    secondary: "#a855f7",
+    accent: "#ec4899"
+  },
+  {
+    id: "corporate",
+    name: "Corporate Gray",
+    primary: "#475569", // Gray
+    secondary: "#64748b",
+    accent: "#0ea5e9"
+  },
+  {
+    id: "fresh",
+    name: "Fresh Green",
+    primary: "#16a34a", // Green
+    secondary: "#22c55e",
+    accent: "#f59e0b"
+  },
+  {
+    id: "bold",
+    name: "Bold Orange",
+    primary: "#ea580c", // Orange
+    secondary: "#f97316",
+    accent: "#7c3aed"
+  },
+  {
+    id: "minimal",
+    name: "Minimal Black",
+    primary: "#18181b", // Black
+    secondary: "#27272a",
+    accent: "#3b82f6"
+  }
+];
 
-// AI Theme Generator - generates themes based on brand description
-function generateThemesFromPrompt(prompt: string): BrandTheme[] {
-  const themes: BrandTheme[] = [];
-  
-  // Analyze keywords in prompt for theme generation
-  const lowerPrompt = prompt.toLowerCase();
-  
-  // Professional/Corporate theme
-  if (lowerPrompt.includes("professional") || lowerPrompt.includes("corporate") || 
-      lowerPrompt.includes("business") || lowerPrompt.includes("enterprise")) {
-    themes.push({
-      id: "professional",
-      name: "Professional",
-      description: "Clean and trustworthy design for business",
-      primaryColor: "#1e40af", // Deep blue
-      secondaryColor: "#3b82f6", // Bright blue
-      accentColor: "#10b981", // Green
-      backgroundColor: "#ffffff",
-      textColor: "#111827",
-      mutedColor: "#6b7280",
-      style: "classic",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // Tech/Modern theme
-  if (lowerPrompt.includes("tech") || lowerPrompt.includes("modern") || 
-      lowerPrompt.includes("innovative") || lowerPrompt.includes("startup")) {
-    themes.push({
-      id: "modern",
-      name: "Modern Tech",
-      description: "Cutting-edge design for technology companies",
-      primaryColor: "#7c3aed", // Purple
-      secondaryColor: "#a855f7", // Light purple
-      accentColor: "#ec4899", // Pink
-      backgroundColor: "#fafafa",
-      textColor: "#18181b",
-      mutedColor: "#71717a",
-      style: "modern",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // Healthcare/Calm theme
-  if (lowerPrompt.includes("health") || lowerPrompt.includes("medical") || 
-      lowerPrompt.includes("calm") || lowerPrompt.includes("wellness")) {
-    themes.push({
-      id: "healthcare",
-      name: "Healthcare",
-      description: "Calming and trustworthy healthcare design",
-      primaryColor: "#059669", // Teal
-      secondaryColor: "#10b981", // Green
-      accentColor: "#06b6d4", // Cyan
-      backgroundColor: "#f0fdf4",
-      textColor: "#064e3b",
-      mutedColor: "#6b7280",
-      style: "minimal",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // Finance/Trust theme
-  if (lowerPrompt.includes("finance") || lowerPrompt.includes("bank") || 
-      lowerPrompt.includes("trust") || lowerPrompt.includes("secure")) {
-    themes.push({
-      id: "finance",
-      name: "Financial",
-      description: "Secure and trustworthy financial design",
-      primaryColor: "#0f172a", // Dark navy
-      secondaryColor: "#1e293b", // Navy
-      accentColor: "#f59e0b", // Gold
-      backgroundColor: "#ffffff",
-      textColor: "#0f172a",
-      mutedColor: "#64748b",
-      style: "classic",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // Creative/Playful theme
-  if (lowerPrompt.includes("creative") || lowerPrompt.includes("playful") || 
-      lowerPrompt.includes("fun") || lowerPrompt.includes("friendly")) {
-    themes.push({
-      id: "playful",
-      name: "Playful",
-      description: "Fun and energetic design",
-      primaryColor: "#f97316", // Orange
-      secondaryColor: "#fb923c", // Light orange
-      accentColor: "#a855f7", // Purple
-      backgroundColor: "#fffbeb",
-      textColor: "#451a03",
-      mutedColor: "#92400e",
-      style: "playful",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // Luxury/Premium theme
-  if (lowerPrompt.includes("luxury") || lowerPrompt.includes("premium") || 
-      lowerPrompt.includes("elegant") || lowerPrompt.includes("sophisticated")) {
-    themes.push({
-      id: "luxury",
-      name: "Luxury",
-      description: "Elegant and sophisticated premium design",
-      primaryColor: "#991b1b", // Deep red
-      secondaryColor: "#b91c1c", // Red
-      accentColor: "#ca8a04", // Gold
-      backgroundColor: "#fefce8",
-      textColor: "#451a03",
-      mutedColor: "#78350f",
-      style: "classic",
-      fontFamily: "Playfair Display, serif"
-    });
-  }
-  
-  // Minimal/Clean theme
-  if (lowerPrompt.includes("minimal") || lowerPrompt.includes("clean") || 
-      lowerPrompt.includes("simple") || lowerPrompt.includes("sleek")) {
-    themes.push({
-      id: "minimal",
-      name: "Minimal",
-      description: "Clean and minimal design",
-      primaryColor: "#18181b", // Almost black
-      secondaryColor: "#27272a", // Dark gray
-      accentColor: "#3b82f6", // Blue
-      backgroundColor: "#ffffff",
-      textColor: "#18181b",
-      mutedColor: "#a1a1aa",
-      style: "minimal",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // Bold/Energetic theme
-  if (lowerPrompt.includes("bold") || lowerPrompt.includes("energy") || 
-      lowerPrompt.includes("dynamic") || lowerPrompt.includes("vibrant")) {
-    themes.push({
-      id: "bold",
-      name: "Bold Energy",
-      description: "Dynamic and vibrant design",
-      primaryColor: "#dc2626", // Red
-      secondaryColor: "#ef4444", // Bright red
-      accentColor: "#fbbf24", // Yellow
-      backgroundColor: "#fef2f2",
-      textColor: "#450a0a",
-      mutedColor: "#991b1b",
-      style: "bold",
-      fontFamily: "Inter, sans-serif"
-    });
-  }
-  
-  // If no specific themes matched, provide default options
-  if (themes.length === 0) {
-    themes.push(
-      {
-        id: "default1",
-        name: "Ocean Blue",
-        description: "Professional and trustworthy",
-        primaryColor: "#0ea5e9",
-        secondaryColor: "#38bdf8",
-        accentColor: "#7c3aed",
-        backgroundColor: "#f0f9ff",
-        textColor: "#0c4a6e",
-        mutedColor: "#64748b",
-        style: "modern",
-        fontFamily: "Inter, sans-serif"
-      },
-      {
-        id: "default2",
-        name: "Forest Green",
-        description: "Natural and calming",
-        primaryColor: "#16a34a",
-        secondaryColor: "#22c55e",
-        accentColor: "#f59e0b",
-        backgroundColor: "#f0fdf4",
-        textColor: "#14532d",
-        mutedColor: "#6b7280",
-        style: "minimal",
-        fontFamily: "Inter, sans-serif"
-      },
-      {
-        id: "default3",
-        name: "Royal Purple",
-        description: "Premium and innovative",
-        primaryColor: "#9333ea",
-        secondaryColor: "#a855f7",
-        accentColor: "#ec4899",
-        backgroundColor: "#faf5ff",
-        textColor: "#581c87",
-        mutedColor: "#6b7280",
-        style: "modern",
-        fontFamily: "Inter, sans-serif"
-      }
-    );
-  }
-  
-  // Always add a custom option
-  themes.push({
-    id: "custom",
-    name: "Custom",
-    description: "Create your own color scheme",
-    primaryColor: "#7c3aed",
-    secondaryColor: "#a855f7",
-    accentColor: "#ec4899",
-    backgroundColor: "#ffffff",
-    textColor: "#111827",
-    mutedColor: "#6b7280",
-    style: "modern",
-    fontFamily: "Inter, sans-serif"
-  });
-  
-  return themes;
-}
+// Color palette for quick selection
+const COLOR_PALETTE = [
+  "#000000", // Black
+  "#18181b", // Zinc 900
+  "#475569", // Slate 600
+  "#6b7280", // Gray 500
+  "#2563eb", // Blue 600
+  "#3b82f6", // Blue 500
+  "#0ea5e9", // Cyan 500
+  "#06b6d4", // Cyan 500
+  "#14b8a6", // Teal 500
+  "#10b981", // Emerald 500
+  "#16a34a", // Green 600
+  "#22c55e", // Green 500
+  "#84cc16", // Lime 500
+  "#eab308", // Yellow 500
+  "#f59e0b", // Amber 500
+  "#f97316", // Orange 500
+  "#ea580c", // Orange 600
+  "#dc2626", // Red 600
+  "#ef4444", // Red 500
+  "#ec4899", // Pink 500
+  "#d946ef", // Fuchsia 500
+  "#a855f7", // Purple 500
+  "#9333ea", // Purple 600
+  "#7c3aed", // Violet 600
+];
 
 export default function WhitelabelSettings() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const faviconInputRef = useRef<HTMLInputElement>(null);
-  
+
+  // Form state
+  const [logo, setLogo] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string>("");
   const [appName, setAppName] = useState("VoiceAI Dashboard");
   const [companyName, setCompanyName] = useState("");
-  const [brandPrompt, setBrandPrompt] = useState("");
-  const [generatedThemes, setGeneratedThemes] = useState<BrandTheme[]>([]);
-  const [selectedTheme, setSelectedTheme] = useState<BrandTheme | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [removeBranding, setRemoveBranding] = useState(false);
-  const [supportUrl, setSupportUrl] = useState("");
-  const [documentationUrl, setDocumentationUrl] = useState("");
-  const [logoPreview, setLogoPreview] = useState("");
-  const [faviconPreview, setFaviconPreview] = useState("");
-  const [hasChanges, setHasChanges] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState(PRESET_THEMES[0]);
+  const [customPrimaryColor, setCustomPrimaryColor] = useState("#7c3aed");
   const [subdomain, setSubdomain] = useState("");
   const [customDomain, setCustomDomain] = useState("");
+  const [supportUrl, setSupportUrl] = useState("");
+  const [documentationUrl, setDocumentationUrl] = useState("");
+  const [hasChanges, setHasChanges] = useState(false);
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+  const [checkingSubdomain, setCheckingSubdomain] = useState(false);
+  const [useCustomColor, setUseCustomColor] = useState(false);
 
-  // Fetch organization details
-  const { data: organization } = useQuery<{
-    id: string;
-    name: string;
-    subdomain?: string;
-    customDomain?: string;
-  }>({
-    queryKey: ["/api/organization"],
-  });
-
-  // Fetch current whitelabel config
-  const { data: config, isLoading } = useQuery<{
-    organizationId: string;
-    appName?: string;
-    companyName?: string;
-    primaryColor?: string;
-    removePlatformBranding?: boolean;
-    supportUrl?: string;
-    documentationUrl?: string;
-    logoUrl?: string;
-    faviconUrl?: string;
-  }>({
+  // Load existing whitelabel settings
+  const { data: whitelabelData, isLoading } = useQuery({
     queryKey: ["/api/whitelabel"],
+    enabled: true,
+    retry: false,
   });
 
-  // Load organization and config data
-  useEffect(() => {
-    if (organization) {
-      setSubdomain(organization.subdomain || "");
-      setCustomDomain(organization.customDomain || "");
-    }
-  }, [organization]);
+  // Load organization data
+  const { data: orgData } = useQuery({
+    queryKey: ["/api/organization/current"],
+    enabled: true,
+  });
 
   useEffect(() => {
-    if (config) {
-      setAppName(config.appName || "VoiceAI Dashboard");
-      setCompanyName(config.companyName || "");
-      setRemoveBranding(config.removePlatformBranding || false);
-      setSupportUrl(config.supportUrl || "");
-      setDocumentationUrl(config.documentationUrl || "");
-      setLogoPreview(config.logoUrl || "");
-      setFaviconPreview(config.faviconUrl || "");
+    if (whitelabelData) {
+      setAppName(whitelabelData.appName || "VoiceAI Dashboard");
+      setCompanyName(whitelabelData.companyName || "");
+      setLogoPreview(whitelabelData.logoUrl || "");
+      setRemoveBranding(whitelabelData.removeBranding || false);
+      setSupportUrl(whitelabelData.supportUrl || "");
+      setDocumentationUrl(whitelabelData.documentationUrl || "");
       
-      // Set initial theme if color exists
-      if (config.primaryColor) {
-        setSelectedTheme({
-          id: "current",
-          name: "Current Theme",
-          description: "Your existing brand colors",
-          primaryColor: config.primaryColor,
-          secondaryColor: config.primaryColor,
-          accentColor: config.primaryColor,
-          backgroundColor: "#ffffff",
-          textColor: "#111827",
-          mutedColor: "#6b7280",
-          style: "modern",
-          fontFamily: "Inter, sans-serif"
-        });
+      // Set theme based on saved primary color
+      if (whitelabelData.primaryColor) {
+        const matchingTheme = PRESET_THEMES.find(t => t.primary === whitelabelData.primaryColor);
+        if (matchingTheme) {
+          setSelectedTheme(matchingTheme);
+          setUseCustomColor(false);
+        } else {
+          setCustomPrimaryColor(whitelabelData.primaryColor);
+          setUseCustomColor(true);
+        }
       }
     }
-  }, [config]);
+  }, [whitelabelData]);
 
-  // Generate themes based on prompt
-  const handleGenerateThemes = () => {
-    if (!brandPrompt.trim()) {
-      toast({
-        title: "Please describe your brand",
-        description: "Enter a description to generate themes",
-        variant: "destructive",
-      });
-      return;
+  useEffect(() => {
+    if (orgData) {
+      setSubdomain(orgData.subdomain || "");
+      setCustomDomain(orgData.customDomain || "");
     }
-    
-    setIsGenerating(true);
-    
-    // Simulate AI processing delay
-    setTimeout(() => {
-      const themes = generateThemesFromPrompt(brandPrompt);
-      setGeneratedThemes(themes);
-      setIsGenerating(false);
-      setHasChanges(true);
-      
-      toast({
-        title: "Themes generated!",
-        description: `Created ${themes.length} theme options based on your description`,
-      });
-    }, 1500);
-  };
+  }, [orgData]);
 
-  // Check subdomain availability mutation
-  const checkSubdomainMutation = useMutation({
-    mutationFn: async (subdomain: string) => {
-      const response = await apiRequest("POST", "/api/subdomain/check", { subdomain });
-      return response.json();
-    },
-  });
+  // Check subdomain availability
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (!subdomain || subdomain.length < 3) {
+        setSubdomainAvailable(null);
+        return;
+      }
+
+      setCheckingSubdomain(true);
+      try {
+        const response = await apiRequest("POST", "/api/subdomain/check", { 
+          subdomain,
+          excludeOrgId: orgData?.id 
+        });
+        setSubdomainAvailable(response.available);
+      } catch (error) {
+        setSubdomainAvailable(false);
+      } finally {
+        setCheckingSubdomain(false);
+      }
+    };
+
+    const timer = setTimeout(checkAvailability, 500);
+    return () => clearTimeout(timer);
+  }, [subdomain, orgData?.id]);
+
+  const handleSubdomainChange = (value: string) => {
+    // Only allow lowercase letters, numbers, and hyphens
+    const sanitized = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    setSubdomain(sanitized);
+    setHasChanges(true);
+  };
 
   // Save mutation
   const saveMutation = useMutation({
-    mutationFn: async (data: any) => {
-      // Include subdomain in the save data
-      const saveData = {
-        ...data,
-        subdomain: subdomain.trim().toLowerCase(),
-      };
-      return apiRequest("POST", "/api/whitelabel", saveData);
+    mutationFn: async () => {
+      const formData = new FormData();
+      if (logo) {
+        formData.append("logo", logo);
+      }
+      formData.append("appName", appName);
+      formData.append("companyName", companyName);
+      formData.append("primaryColor", useCustomColor ? customPrimaryColor : selectedTheme.primary);
+      formData.append("secondaryColor", useCustomColor ? customPrimaryColor : selectedTheme.secondary);
+      formData.append("accentColor", useCustomColor ? customPrimaryColor : selectedTheme.accent);
+      formData.append("removeBranding", removeBranding.toString());
+      formData.append("subdomain", subdomain);
+      formData.append("customDomain", customDomain);
+      formData.append("supportUrl", supportUrl);
+      formData.append("documentationUrl", documentationUrl);
+
+      return apiRequest("POST", "/api/whitelabel/save", formData, {
+        headers: {} // Let browser set content-type for FormData
+      });
     },
     onSuccess: () => {
       toast({
-        title: "Success",
-        description: "Whitelabel settings saved successfully",
+        title: "Settings Saved",
+        description: "Your whitelabel settings have been updated successfully.",
       });
-      setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["/api/whitelabel"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/organization"] });
-      
-      // Reload the page to apply new branding
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+      queryClient.invalidateQueries({ queryKey: ["/api/organization/current"] });
+      setHasChanges(false);
     },
     onError: (error: any) => {
       toast({
-        title: "Error",
-        description: error.message || "Failed to save settings",
+        title: "Save Failed",
+        description: error.message || "Failed to save whitelabel settings",
         variant: "destructive",
       });
     },
   });
 
-  // Handle logo upload
-  // Handle removing logo or favicon
-  const handleRemoveImage = (type: "logo" | "favicon") => {
-    if (type === "logo") {
-      setLogoPreview("");
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    } else {
-      setFaviconPreview("");
-      if (faviconInputRef.current) {
-        faviconInputRef.current.value = "";
-      }
-    }
-    setHasChanges(true);
-  };
-
-  const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "logo" | "favicon") => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      toast({
-        title: "Invalid file",
-        description: "Please upload an image file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 2MB",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = async () => {
-      const base64 = reader.result as string;
-      
-      // Upload to server
-      try {
-        const response = await apiRequest("POST", "/api/whitelabel/upload-logo", {
-          logo: base64,
-          type,
-        });
-        
-        // Parse the JSON response
-        const result = await response.json();
-        
-        if (result.success) {
-          if (type === "favicon") {
-            setFaviconPreview(base64);
-          } else {
-            setLogoPreview(base64);
-          }
-          
-          setHasChanges(true);
-          
-          toast({
-            title: "Success",
-            description: `${type === "favicon" ? "Favicon" : "Logo"} uploaded successfully`,
-          });
-        } else {
-          throw new Error(result.message || "Upload failed");
-        }
-      } catch (error: any) {
-        toast({
-          title: "Upload failed",
-          description: error.message || "Failed to upload image",
-          variant: "destructive",
-        });
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const validateSubdomain = (value: string) => {
-    // Check if subdomain is valid (alphanumeric and hyphens only)
-    const subdomainRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-    return subdomainRegex.test(value);
-  };
-
-  const handleSubdomainChange = async (value: string) => {
-    const cleanValue = value.trim().toLowerCase();
-    setSubdomain(cleanValue);
-    setHasChanges(true);
-
-    // Check availability if valid
-    if (cleanValue && validateSubdomain(cleanValue)) {
-      const result = await checkSubdomainMutation.mutateAsync(cleanValue);
-      if (!result.available && result.organizationId !== organization?.id) {
-        toast({
-          title: "Subdomain unavailable",
-          description: "This subdomain is already taken. Please choose another.",
-          variant: "destructive",
-        });
-      }
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setLogo(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+        setHasChanges(true);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSave = () => {
-    if (!selectedTheme) {
+    if (subdomainAvailable === false) {
       toast({
-        title: "Please select a theme",
-        description: "Generate and select a theme before saving",
+        title: "Invalid Subdomain",
+        description: "Please choose an available subdomain",
         variant: "destructive",
       });
       return;
     }
-
-    // Validate subdomain
-    if (subdomain && !validateSubdomain(subdomain)) {
-      toast({
-        title: "Invalid subdomain",
-        description: "Subdomain can only contain lowercase letters, numbers, and hyphens",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    saveMutation.mutate({
-      appName,
-      companyName,
-      primaryColor: selectedTheme.primaryColor,
-      removePlatformBranding: removeBranding,
-      supportUrl,
-      documentationUrl,
-      logoUrl: logoPreview,
-      faviconUrl: faviconPreview,
-    });
+    saveMutation.mutate();
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading settings...</p>
+        </div>
       </div>
     );
   }
 
+  const currentPrimaryColor = useCustomColor ? customPrimaryColor : selectedTheme.primary;
+
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+    <div className="p-6">
+      <div className="max-w-6xl mx-auto">
         <Button
           variant="ghost"
-          size="icon"
-          onClick={() => setLocation("/admin")}
+          className="mb-6"
+          onClick={() => setLocation("/settings")}
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Settings
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">AI-Powered Whitelabel</h1>
-          <p className="text-sm text-muted-foreground">
-            Describe your brand and let AI create the perfect design
+
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold">White Label Settings</h1>
+          <p className="text-muted-foreground mt-2">
+            Customize your platform's branding and appearance
           </p>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Settings Panel */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Brand Identity Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Brand Identity
-              </CardTitle>
-              <CardDescription>
-                Upload your logo and describe your brand
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Logo & Favicon Upload */}
-              <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Settings Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Basic Branding */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Branding</CardTitle>
+                <CardDescription>
+                  Configure your agency's brand identity
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Logo Upload */}
                 <div>
-                  <Label>Logo</Label>
-                  <div className="mt-2 relative">
-                    <div 
-                      className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                  <Label htmlFor="logo">Agency Logo</Label>
+                  <div className="mt-2 flex items-center gap-4">
+                    {logoPreview ? (
+                      <img src={logoPreview} alt="Logo" className="h-16 w-auto object-contain" />
+                    ) : (
+                      <div className="h-16 w-16 border-2 border-dashed rounded flex items-center justify-center">
+                        <Upload className="h-6 w-6 text-muted-foreground" />
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="Logo" className="max-w-full max-h-full object-contain" />
-                      ) : (
-                        <>
-                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                          <span className="text-sm text-muted-foreground">Upload Logo</span>
-                        </>
-                      )}
-                    </div>
-                    {logoPreview && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-6 w-6"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveImage("logo");
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                      Upload Logo
+                    </Button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                    />
                   </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleLogoUpload(e, "logo")}
-                  />
                 </div>
-                
-                <div>
-                  <Label>Favicon</Label>
-                  <div className="mt-2 relative">
-                    <div 
-                      className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                      onClick={() => faviconInputRef.current?.click()}
-                    >
-                      {faviconPreview ? (
-                        <img src={faviconPreview} alt="Favicon" className="max-w-full max-h-full object-contain" />
-                      ) : (
-                        <>
-                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                          <span className="text-sm text-muted-foreground">Upload Favicon</span>
-                        </>
-                      )}
-                    </div>
-                    {faviconPreview && (
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-2 right-2 h-6 w-6"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveImage("favicon");
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                  <input
-                    ref={faviconInputRef}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleLogoUpload(e, "favicon")}
-                  />
-                </div>
-              </div>
 
-              {/* App & Company Name */}
-              <div className="grid grid-cols-2 gap-4">
+                {/* App Name */}
                 <div>
-                  <Label htmlFor="appName">App Name</Label>
+                  <Label htmlFor="appName">Application Name</Label>
                   <Input
                     id="appName"
                     value={appName}
@@ -671,6 +334,8 @@ export default function WhitelabelSettings() {
                     className="mt-2"
                   />
                 </div>
+
+                {/* Company Name */}
                 <div>
                   <Label htmlFor="companyName">Company Name</Label>
                   <Input
@@ -684,377 +349,374 @@ export default function WhitelabelSettings() {
                     className="mt-2"
                   />
                 </div>
-              </div>
 
-              {/* Remove Platform Branding */}
-              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <Label>Remove VoiceAI Branding</Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Hide all references to VoiceAI platform
-                  </p>
+                {/* Remove Branding */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="removeBranding">Remove Platform Branding</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Hide "Powered by VoiceAI" from your dashboard
+                    </p>
+                  </div>
+                  <Switch
+                    id="removeBranding"
+                    checked={removeBranding}
+                    onCheckedChange={(checked) => {
+                      setRemoveBranding(checked);
+                      setHasChanges(true);
+                    }}
+                  />
                 </div>
-                <Switch
-                  checked={removeBranding}
-                  onCheckedChange={(checked) => {
-                    setRemoveBranding(checked);
-                    setHasChanges(true);
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* AI Brand Generator */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Wand2 className="h-5 w-5" />
-                AI Brand Generator
-              </CardTitle>
-              <CardDescription>
-                Describe your brand and we'll create the perfect color scheme
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="brandPrompt">Describe Your Brand</Label>
-                <Textarea
-                  id="brandPrompt"
-                  value={brandPrompt}
-                  onChange={(e) => setBrandPrompt(e.target.value)}
-                  placeholder="Example: Modern fintech startup focused on trust and innovation, targeting young professionals..."
-                  className="mt-2 min-h-[100px]"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Include keywords like: professional, modern, healthcare, finance, creative, luxury, minimal, bold, etc.
-                </p>
-              </div>
-              
-              <Button 
-                onClick={handleGenerateThemes}
-                disabled={isGenerating || !brandPrompt.trim()}
-                className="w-full"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                    Generating Themes...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2" />
-                    Generate Brand Themes
-                  </>
-                )}
-              </Button>
-
-              {/* Generated Themes */}
-              {generatedThemes.length > 0 && (
-                <div className="space-y-3 mt-6">
-                  <Label>Select a Theme</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {generatedThemes.map((theme) => (
-                      <div
+            {/* Color Theme */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Color Theme</CardTitle>
+                <CardDescription>
+                  Choose a preset theme or pick a custom color
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Preset Themes */}
+                <div>
+                  <Label>Preset Themes</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+                    {PRESET_THEMES.map((theme) => (
+                      <button
                         key={theme.id}
-                        className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                          selectedTheme?.id === theme.id 
+                        className={`relative p-3 rounded-lg border-2 transition-all ${
+                          !useCustomColor && selectedTheme.id === theme.id
                             ? 'border-primary bg-primary/5' 
                             : 'border-border hover:border-primary/50'
                         }`}
                         onClick={() => {
                           setSelectedTheme(theme);
+                          setUseCustomColor(false);
                           setHasChanges(true);
                         }}
                       >
-                        {selectedTheme?.id === theme.id && (
-                          <div className="absolute top-2 right-2">
-                            <Check className="h-5 w-5 text-primary" />
-                          </div>
+                        {!useCustomColor && selectedTheme.id === theme.id && (
+                          <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
                         )}
                         
                         <div className="space-y-2">
-                          <div className="font-semibold">{theme.name}</div>
-                          <div className="text-xs text-muted-foreground">{theme.description}</div>
+                          <div className="text-sm font-medium text-left">{theme.name}</div>
                           
                           {/* Color preview */}
-                          <div className="flex gap-1 mt-2">
+                          <div className="flex gap-1">
                             <div 
                               className="w-8 h-8 rounded"
-                              style={{ backgroundColor: theme.primaryColor }}
+                              style={{ backgroundColor: theme.primary }}
                               title="Primary"
                             />
                             <div 
                               className="w-8 h-8 rounded"
-                              style={{ backgroundColor: theme.secondaryColor }}
+                              style={{ backgroundColor: theme.secondary }}
                               title="Secondary"
                             />
                             <div 
                               className="w-8 h-8 rounded"
-                              style={{ backgroundColor: theme.accentColor }}
+                              style={{ backgroundColor: theme.accent }}
                               title="Accent"
                             />
                           </div>
                         </div>
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
 
-          {/* Custom Domain Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Custom Domain</CardTitle>
-              <CardDescription>
-                Set up your agency's custom subdomain for branded access
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="subdomain">Subdomain</Label>
-                <div className="flex gap-2 mt-2">
-                  <Input
-                    id="subdomain"
-                    value={subdomain}
-                    onChange={(e) => handleSubdomainChange(e.target.value)}
-                    placeholder="agency-name"
-                    className="flex-1"
-                  />
-                  <span className="text-sm text-muted-foreground flex items-center">
-                    .voiceai.com
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  Your clients will access the platform at: {subdomain || 'agency-name'}.voiceai.com
-                </p>
-              </div>
-              
-              <div>
-                <Label htmlFor="customDomain">Custom Domain (Optional)</Label>
-                <Input
-                  id="customDomain"
-                  type="url"
-                  value={customDomain}
-                  onChange={(e) => {
-                    setCustomDomain(e.target.value);
-                    setHasChanges(true);
-                  }}
-                  placeholder="dashboard.youragency.com"
-                  className="mt-2"
-                />
-                <p className="text-xs text-muted-foreground mt-2">
-                  Point your domain's CNAME record to {subdomain || 'your-subdomain'}.voiceai.com
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* User Management Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                User Management
-              </CardTitle>
-              <CardDescription>
-                Manage your organization's users and permissions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Control who has access to your white-labeled platform and what they can do.
-              </p>
-              <Button 
-                className="w-full"
-                onClick={() => setLocation("/agency-users")}
-              >
-                <Users className="h-4 w-4 mr-2" />
-                Manage Users
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Support Links */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Support Links (Optional)</CardTitle>
-              <CardDescription>
-                Direct customers to your support resources
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="supportUrl">Support URL</Label>
-                <Input
-                  id="supportUrl"
-                  type="url"
-                  value={supportUrl}
-                  onChange={(e) => {
-                    setSupportUrl(e.target.value);
-                    setHasChanges(true);
-                  }}
-                  placeholder="https://support.youragency.com"
-                  className="mt-2"
-                />
-              </div>
-              <div>
-                <Label htmlFor="documentationUrl">Documentation URL</Label>
-                <Input
-                  id="documentationUrl"
-                  type="url"
-                  value={documentationUrl}
-                  onChange={(e) => {
-                    setDocumentationUrl(e.target.value);
-                    setHasChanges(true);
-                  }}
-                  placeholder="https://docs.youragency.com"
-                  className="mt-2"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Save Button */}
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || saveMutation.isPending || !selectedTheme}
-            className="w-full"
-            style={{ 
-              backgroundColor: hasChanges && selectedTheme ? selectedTheme.primaryColor : undefined 
-            }}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {saveMutation.isPending ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
-
-        {/* Live Preview */}
-        <div className="lg:sticky lg:top-6">
-          <Card className="h-fit">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Live Preview
-              </CardTitle>
-              <CardDescription>
-                See your branding in action
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Tabs defaultValue="login" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="login">Login Page</TabsTrigger>
-                  <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="login" className="mt-4">
-                  <div 
-                    className="border rounded-lg p-6"
-                    style={{ 
-                      backgroundColor: selectedTheme?.backgroundColor || "#ffffff",
-                      color: selectedTheme?.textColor || "#111827"
-                    }}
-                  >
-                    {/* Login Preview */}
-                    <div className="text-center mb-6">
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="Logo" className="h-12 mx-auto mb-4" />
-                      ) : (
-                        <div className="h-12 w-32 bg-gray-200 rounded mx-auto mb-4" />
-                      )}
-                      <h2 className="text-2xl font-bold">{appName || "VoiceAI Dashboard"}</h2>
-                      <p 
-                        className="text-sm mt-2"
-                        style={{ color: selectedTheme?.mutedColor || "#6b7280" }}
-                      >
-                        {companyName ? `Welcome to ${companyName}` : "Sign in to your account"}
-                      </p>
-                    </div>
-                    <div className="space-y-3">
-                      <div 
-                        className="h-10 rounded"
-                        style={{ backgroundColor: selectedTheme?.mutedColor || "#e5e7eb", opacity: 0.2 }}
-                      />
-                      <div 
-                        className="h-10 rounded"
-                        style={{ backgroundColor: selectedTheme?.mutedColor || "#e5e7eb", opacity: 0.2 }}
-                      />
-                      <button 
-                        className="w-full h-10 rounded text-white font-medium"
-                        style={{ backgroundColor: selectedTheme?.primaryColor || "#7c3aed" }}
-                      >
-                        Sign In
-                      </button>
-                    </div>
-                    {!removeBranding && (
-                      <p 
-                        className="text-xs text-center mt-6"
-                        style={{ color: selectedTheme?.mutedColor || "#6b7280" }}
-                      >
-                        Powered by VoiceAI Platform
-                      </p>
+                {/* Choose Own Color */}
+                <div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <Label>Choose Your Own Color</Label>
+                    {useCustomColor && (
+                      <Check className="h-4 w-4 text-primary" />
                     )}
                   </div>
-                </TabsContent>
-                
-                <TabsContent value="dashboard" className="mt-4">
-                  <div className="border rounded-lg overflow-hidden">
-                    {/* Dashboard Header Preview */}
-                    <div 
-                      className="h-14 flex items-center px-4 text-white"
-                      style={{ backgroundColor: selectedTheme?.primaryColor || "#7c3aed" }}
-                    >
-                      {logoPreview ? (
-                        <img src={logoPreview} alt="Logo" className="h-8 mr-3 brightness-0 invert" />
-                      ) : (
-                        <div className="h-8 w-24 bg-white/20 rounded mr-3" />
-                      )}
-                      <span className="font-semibold">{appName || "VoiceAI Dashboard"}</span>
-                    </div>
-                    {/* Dashboard Content Preview */}
-                    <div 
-                      className="p-4"
-                      style={{ 
-                        backgroundColor: selectedTheme?.backgroundColor || "#ffffff",
-                        color: selectedTheme?.textColor || "#111827"
-                      }}
-                    >
-                      <div className="grid grid-cols-3 gap-3 mb-4">
-                        <div 
-                          className="h-20 rounded"
-                          style={{ 
-                            backgroundColor: selectedTheme?.primaryColor || "#7c3aed",
-                            opacity: 0.1
-                          }}
-                        />
-                        <div 
-                          className="h-20 rounded"
-                          style={{ 
-                            backgroundColor: selectedTheme?.secondaryColor || "#a855f7",
-                            opacity: 0.1
-                          }}
-                        />
-                        <div 
-                          className="h-20 rounded"
-                          style={{ 
-                            backgroundColor: selectedTheme?.accentColor || "#ec4899",
-                            opacity: 0.1
-                          }}
-                        />
-                      </div>
-                      <div 
-                        className="h-32 rounded"
-                        style={{ backgroundColor: selectedTheme?.mutedColor || "#e5e7eb", opacity: 0.2 }}
+                  <div className="grid grid-cols-8 sm:grid-cols-12 gap-2">
+                    {COLOR_PALETTE.map((color) => (
+                      <button
+                        key={color}
+                        className={`w-full aspect-square rounded-lg border-2 transition-all ${
+                          useCustomColor && customPrimaryColor === color
+                            ? 'border-primary ring-2 ring-primary ring-offset-2' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => {
+                          setCustomPrimaryColor(color);
+                          setUseCustomColor(true);
+                          setHasChanges(true);
+                        }}
+                        title={color}
                       />
-                    </div>
+                    ))}
                   </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                  
+                  {/* Custom hex input */}
+                  <div className="flex items-center gap-2 mt-3">
+                    <Input
+                      type="text"
+                      value={customPrimaryColor}
+                      onChange={(e) => {
+                        setCustomPrimaryColor(e.target.value);
+                        setUseCustomColor(true);
+                        setHasChanges(true);
+                      }}
+                      placeholder="#7c3aed"
+                      className="w-32"
+                    />
+                    <div 
+                      className="w-10 h-10 rounded border"
+                      style={{ backgroundColor: customPrimaryColor }}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Custom Domain Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Domain</CardTitle>
+                <CardDescription>
+                  Set up your agency's custom subdomain for branded access
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="subdomain">Subdomain</Label>
+                  <div className="flex gap-2 mt-2">
+                    <div className="relative flex-1">
+                      <Input
+                        id="subdomain"
+                        value={subdomain}
+                        onChange={(e) => handleSubdomainChange(e.target.value)}
+                        placeholder="agency-name"
+                        className={`pr-10 ${
+                          subdomainAvailable === false ? 'border-red-500' : 
+                          subdomainAvailable === true ? 'border-green-500' : ''
+                        }`}
+                      />
+                      {checkingSubdomain && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        </div>
+                      )}
+                      {!checkingSubdomain && subdomainAvailable === true && (
+                        <Check className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-green-500" />
+                      )}
+                      {!checkingSubdomain && subdomainAvailable === false && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-500">
+                          Taken
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-sm text-muted-foreground flex items-center">
+                      .voiceai.com
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Your clients will access the platform at: {subdomain || 'agency-name'}.voiceai.com
+                  </p>
+                </div>
+                
+                <div>
+                  <Label htmlFor="customDomain">Custom Domain (Optional)</Label>
+                  <Input
+                    id="customDomain"
+                    type="url"
+                    value={customDomain}
+                    onChange={(e) => {
+                      setCustomDomain(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="dashboard.youragency.com"
+                    className="mt-2"
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Point your domain's CNAME record to {subdomain || 'your-subdomain'}.voiceai.com
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* User Management Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  User Management
+                </CardTitle>
+                <CardDescription>
+                  Manage your organization's users and permissions
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  Control who has access to your white-labeled platform and what they can do.
+                </p>
+                <Button 
+                  className="w-full"
+                  onClick={() => setLocation("/agency-users")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Manage Users
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Support Links */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Support Links (Optional)</CardTitle>
+                <CardDescription>
+                  Direct customers to your support resources
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label htmlFor="supportUrl">Support URL</Label>
+                  <Input
+                    id="supportUrl"
+                    type="url"
+                    value={supportUrl}
+                    onChange={(e) => {
+                      setSupportUrl(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="https://support.youragency.com"
+                    className="mt-2"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="documentationUrl">Documentation URL</Label>
+                  <Input
+                    id="documentationUrl"
+                    type="url"
+                    value={documentationUrl}
+                    onChange={(e) => {
+                      setDocumentationUrl(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="https://docs.youragency.com"
+                    className="mt-2"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save Button */}
+            <Button
+              onClick={handleSave}
+              disabled={!hasChanges || saveMutation.isPending}
+              className="w-full"
+              style={{ 
+                backgroundColor: hasChanges ? currentPrimaryColor : undefined 
+              }}
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {saveMutation.isPending ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+
+          {/* Live Preview */}
+          <div className="lg:sticky lg:top-6">
+            <Card className="h-fit">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  Live Preview
+                </CardTitle>
+                <CardDescription>
+                  See your branding in action
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Tabs defaultValue="login" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="login">Login Page</TabsTrigger>
+                    <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="login" className="mt-4">
+                    <div className="border rounded-lg p-6 bg-white">
+                      {/* Login Preview */}
+                      <div className="text-center mb-6">
+                        {logoPreview ? (
+                          <img src={logoPreview} alt="Logo" className="h-12 mx-auto mb-4" />
+                        ) : (
+                          <div 
+                            className="h-12 w-12 rounded mx-auto mb-4"
+                            style={{ backgroundColor: currentPrimaryColor }}
+                          >
+                            <Palette className="h-full w-full p-2 text-white" />
+                          </div>
+                        )}
+                        <h2 className="text-2xl font-bold">{appName || "VoiceAI Dashboard"}</h2>
+                        <p className="text-sm mt-2 text-gray-600">
+                          {companyName ? `Welcome to ${companyName}` : "Sign in to your account"}
+                        </p>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="h-10 rounded bg-gray-100" />
+                        <div className="h-10 rounded bg-gray-100" />
+                        <button 
+                          className="w-full h-10 rounded text-white font-medium"
+                          style={{ backgroundColor: currentPrimaryColor }}
+                        >
+                          Sign In
+                        </button>
+                      </div>
+                      {!removeBranding && (
+                        <p className="text-xs text-center mt-6 text-gray-500">
+                          Powered by VoiceAI Platform
+                        </p>
+                      )}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="dashboard" className="mt-4">
+                    <div className="border rounded-lg overflow-hidden">
+                      {/* Dashboard Header Preview */}
+                      <div 
+                        className="h-14 flex items-center px-4 text-white"
+                        style={{ backgroundColor: currentPrimaryColor }}
+                      >
+                        {logoPreview ? (
+                          <img src={logoPreview} alt="Logo" className="h-8 mr-3 brightness-0 invert" />
+                        ) : (
+                          <div className="h-8 w-24 bg-white/20 rounded mr-3" />
+                        )}
+                        <span className="font-semibold">{appName || "VoiceAI Dashboard"}</span>
+                      </div>
+                      {/* Dashboard Content Preview */}
+                      <div className="p-4 bg-white">
+                        <div className="grid grid-cols-3 gap-3 mb-4">
+                          <div 
+                            className="h-20 rounded opacity-10"
+                            style={{ backgroundColor: currentPrimaryColor }}
+                          />
+                          <div 
+                            className="h-20 rounded opacity-10"
+                            style={{ backgroundColor: currentPrimaryColor }}
+                          />
+                          <div 
+                            className="h-20 rounded opacity-10"
+                            style={{ backgroundColor: currentPrimaryColor }}
+                          />
+                        </div>
+                        <div className="h-32 rounded bg-gray-100" />
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
