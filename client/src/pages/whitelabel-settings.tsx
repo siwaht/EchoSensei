@@ -109,14 +109,14 @@ export default function WhitelabelSettings() {
   const [useCustomColor, setUseCustomColor] = useState(false);
 
   // Load existing whitelabel settings
-  const { data: whitelabelData, isLoading } = useQuery({
+  const { data: whitelabelData, isLoading } = useQuery<any>({
     queryKey: ["/api/whitelabel"],
     enabled: true,
     retry: false,
   });
 
   // Load organization data
-  const { data: orgData } = useQuery({
+  const { data: orgData } = useQuery<any>({
     queryKey: ["/api/organization/current"],
     enabled: true,
   });
@@ -164,7 +164,7 @@ export default function WhitelabelSettings() {
         const response = await apiRequest("POST", "/api/subdomain/check", { 
           subdomain,
           excludeOrgId: orgData?.id 
-        });
+        }) as any;
         setSubdomainAvailable(response.available);
       } catch (error) {
         setSubdomainAvailable(false);
@@ -202,9 +202,7 @@ export default function WhitelabelSettings() {
       formData.append("supportUrl", supportUrl);
       formData.append("documentationUrl", documentationUrl);
 
-      return apiRequest("POST", "/api/whitelabel/save", formData, {
-        headers: {} // Let browser set content-type for FormData
-      });
+      return apiRequest("POST", "/api/whitelabel/save", formData);
     },
     onSuccess: () => {
       toast({
