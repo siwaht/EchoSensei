@@ -896,6 +896,53 @@ export function UserManagementPage() {
                 <Label>Email</Label>
                 <Input value={selectedUser.email} disabled />
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-password">Reset Password</Label>
+                <Input
+                  id="edit-password"
+                  type="password"
+                  placeholder="Leave blank to keep current password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Enter a new password to reset the user's password. Leave blank to keep the current password.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select 
+                  value={selectedUser.status} 
+                  onValueChange={(value) => setSelectedUser({...selectedUser, status: value as any})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Active
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="inactive">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="h-4 w-4 text-gray-400" />
+                        Inactive
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-yellow-500" />
+                        Pending
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>First Name</Label>
