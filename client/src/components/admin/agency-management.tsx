@@ -889,6 +889,37 @@ export function AgencyManagement() {
                     </SelectContent>
                   </Select>
                 </div>
+                
+                <div className="border-t pt-4 mt-4 col-span-full">
+                  <Label className="text-base font-semibold mb-2 block">User Management</Label>
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                    <p className="text-sm text-muted-foreground">
+                      To manage users and reset passwords for this organization:
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => {
+                        setShowSettingsDialog(false);
+                        // Navigate to user management
+                        window.location.href = '/user-management';
+                      }}
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      Manage Users & Reset Passwords
+                    </Button>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p className="font-medium">From User Management you can:</p>
+                      <ul className="list-disc list-inside space-y-0.5 ml-2">
+                        <li>View all users in this organization</li>
+                        <li>Reset any user's password</li>
+                        <li>Activate or deactivate users</li>
+                        <li>Edit user permissions and roles</li>
+                        <li>Delete users from the organization</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
