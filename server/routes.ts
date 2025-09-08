@@ -686,7 +686,7 @@ export function registerRoutes(app: Express): Server {
   // Admin routes - Create new user
   app.post('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const { email, firstName, lastName, password, companyName, isAdmin, organizationType, commissionRate } = req.body;
+      const { email, firstName, lastName, password, companyName, isAdmin, organizationType, commissionRate, role, parentOrganizationId } = req.body;
       
       // Check if user exists
       const existingUser = await storage.getUserByEmail(email);
@@ -710,13 +710,14 @@ export function registerRoutes(app: Express): Server {
           const newOrg = await storage.createOrganization({ 
             name: companyName,
             organizationType: organizationType || 'end_customer',
-            commissionRate: organizationType === 'agency' ? (commissionRate || 30) : undefined
+            commissionRate: organizationType === 'agency' ? (commissionRate || 30) : undefined,
+            parentOrganizationId: parentOrganizationId
           });
           organizationId = newOrg.id;
         }
       }
 
-      // Create new user
+      // Create new user with role
       const newUser = await storage.createUser({
         email,
         firstName,
@@ -724,12 +725,53 @@ export function registerRoutes(app: Express): Server {
         password,
         organizationId,
         isAdmin: isAdmin || false,
+        role: role || (organizationType === 'agency' ? 'agency' : 'user'),
       });
 
       res.json(newUser);
     } catch (error) {
       console.error("Error creating user:", error);
       res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+  
+  // Quick test agency creation endpoint
+  app.post('/api/admin/create-test-agency', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      // Create a test agency organization
+      const testAgency = await storage.createOrganization({
+        name: 'Test Agency Co',
+        organizationType: 'agency',
+        commissionRate: 30,
+        maxAgents: '10',
+        maxUsers: '5',
+        creditBalance: '100'
+      });
+      
+      // Create an agency owner user
+      const agencyOwner = await storage.createUser({
+        email: 'agency@test.com',
+        firstName: 'Agency',
+        lastName: 'Owner',
+        password: 'agency123',
+        organizationId: testAgency.id,
+        isAdmin: false,
+        role: 'agency'
+      });
+      
+      res.json({
+        message: 'Test agency created successfully',
+        agency: testAgency,
+        owner: {
+          email: agencyOwner.email,
+          password: 'agency123',
+          firstName: agencyOwner.firstName,
+          lastName: agencyOwner.lastName
+        }
+      });
+    } catch (error) {
+      console.error("Error creating test agency:", error);
+      res.status(500).json({ message: "Failed to create test agency" });
     }
   });
 

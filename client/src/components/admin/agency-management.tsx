@@ -12,7 +12,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Building2, Users, DollarSign, Plus, ChevronRight, ChevronDown,
   UserPlus, TrendingUp, CreditCard, Briefcase, Store, Settings,
-  Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent, Palette
+  Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent, Palette, Wand2
 } from "lucide-react";
 import type { Organization, User } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
@@ -356,16 +356,50 @@ export function AgencyManagement() {
             Manage agencies, their customers, and commission structures
           </p>
         </div>
-        <Button 
-          onClick={() => {
-            setCreateType("agency");
-            setSelectedAgency(null);
-            setShowCreateDialog(true);
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Agency
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={async () => {
+              try {
+                const response = await apiRequest("POST", "/api/admin/create-test-agency", {});
+                const data = await response.json();
+                queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+                queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+                toast({
+                  title: "Test Agency Created!",
+                  description: (
+                    <div className="space-y-2">
+                      <p>Login credentials:</p>
+                      <div className="bg-muted p-2 rounded text-sm font-mono">
+                        Email: {data.owner.email}<br/>
+                        Password: {data.owner.password}
+                      </div>
+                      <p className="text-xs">Use these to test whitelabel features</p>
+                    </div>
+                  ),
+                });
+              } catch (error) {
+                toast({
+                  title: "Failed to create test agency",
+                  variant: "destructive",
+                });
+              }
+            }}
+          >
+            <Wand2 className="w-4 h-4 mr-2" />
+            Create Test Agency
+          </Button>
+          <Button 
+            onClick={() => {
+              setCreateType("agency");
+              setSelectedAgency(null);
+              setShowCreateDialog(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create Agency
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

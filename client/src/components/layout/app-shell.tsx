@@ -186,7 +186,8 @@ export default function AppShell({ children }: AppShellProps) {
                   <span>Admin</span>
                 </Link>
               )}
-              {isAgency && (
+              {/* Only show whitelabel for agency organizations, not admin users */}
+              {isAgency && !isAdmin && (
                 <Link
                   href="/whitelabel-settings"
                   onClick={() => setSidebarOpen(false)}
