@@ -944,32 +944,37 @@ export function AgencyManagement() {
                   updates.creditBalance = parseFloat(creditInput?.value || '0');
                 }
                 
-                // If password is provided, update it for the admin user
+                // If password is provided, update it for the first user in the organization
                 if (adminPassword) {
-                  // Find the admin user for this organization
-                  const adminUser = users.find(u => 
-                    u.organizationId === selectedOrgForView.id && 
-                    (u.role === 'agency' || u.isAdmin)
-                  );
+                  // Find the first user for this organization (typically the admin/owner)
+                  const orgUsers = users.filter(u => u.organizationId === selectedOrgForView.id);
+                  const primaryUser = orgUsers.find(u => u.role === 'agency' || u.isAdmin) || orgUsers[0];
                   
-                  if (adminUser) {
+                  if (primaryUser) {
                     try {
-                      await apiRequest("PATCH", `/api/admin/users/${adminUser.id}`, { 
+                      await apiRequest("PATCH", `/api/admin/users/${primaryUser.id}`, { 
                         password: adminPassword 
                       });
                       toast({
                         title: "Password Updated",
-                        description: "Admin password has been reset successfully",
+                        description: `Password has been reset for ${primaryUser.email}`,
                       });
                       setAdminPassword("");
                     } catch (error) {
                       toast({
                         title: "Password Update Failed",
-                        description: "Failed to reset admin password",
+                        description: "Failed to reset password",
                         variant: "destructive",
                       });
                       return;
                     }
+                  } else {
+                    toast({
+                      title: "No User Found",
+                      description: "No user found for this organization",
+                      variant: "destructive",
+                    });
+                    return;
                   }
                 }
                 
