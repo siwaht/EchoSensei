@@ -234,7 +234,7 @@ function decryptApiKey(encryptedApiKey: string): string {
   }
 }
 
-// Cost calculation helper
+// Cost calculation helper with updated ElevenLabs pricing
 function calculateCallCost(durationSeconds: number, costData?: any): number {
   // ElevenLabs may return credits_consumed or credits_used where 1 credit = $0.001
   const credits = costData?.credits_consumed || costData?.credits_used;
@@ -262,10 +262,23 @@ function calculateCallCost(durationSeconds: number, costData?: any): number {
     return cost;
   }
   
-  // Otherwise, calculate estimated cost based on typical pricing
-  // Conversational AI typically costs $0.15-0.30 per minute
-  const minutes = durationSeconds / 60;
-  return Math.round(minutes * 0.25 * 100) / 100; // Round to 2 decimal places
+  // Check for silent period tracking
+  const silentSeconds = costData?.silent_seconds || 0;
+  const activeSeconds = Math.max(0, durationSeconds - silentSeconds);
+  
+  // Calculate cost based on ElevenLabs pricing tiers
+  // Business plan: $0.08 per minute (annual), $0.096 per minute (monthly)
+  // Silent periods (>10 seconds): charged at 5% of usual rate
+  const RATE_PER_MINUTE = 0.08; // Business plan rate
+  const SILENT_RATE_MULTIPLIER = 0.05; // 5% rate for silent periods
+  
+  const activeMinutes = activeSeconds / 60;
+  const silentMinutes = silentSeconds / 60;
+  
+  const activeCost = activeMinutes * RATE_PER_MINUTE;
+  const silentCost = silentMinutes * RATE_PER_MINUTE * SILENT_RATE_MULTIPLIER;
+  
+  return Math.round((activeCost + silentCost) * 100) / 100; // Round to 2 decimal places
 }
 
 export function registerRoutes(app: Express): Server {
