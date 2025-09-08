@@ -1079,6 +1079,54 @@ export const auditLogs = pgTable("audit_logs", {
   index("audit_logs_created_idx").on(table.createdAt),
 ]);
 
+// Whitelabel configurations for agencies
+export const whitelabelConfigs = pgTable("whitelabel_configs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull().unique(),
+  
+  // Basic branding
+  appName: varchar("app_name").default("VoiceAI Dashboard"),
+  companyName: varchar("company_name"),
+  
+  // Logo URLs (stored in cloud storage)
+  logoUrl: text("logo_url"),
+  faviconUrl: text("favicon_url"),
+  
+  // Colors (stored as hex values)
+  primaryColor: varchar("primary_color").default("#7C3AED"), // Purple
+  
+  // Auto-generated colors (calculated from primary)
+  colorPalette: json("color_palette").$type<{
+    primary: string;
+    primaryDark: string;
+    primaryLight: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    backgroundDark: string;
+    text: string;
+    textMuted: string;
+    border: string;
+    success: string;
+    warning: string;
+    error: string;
+  }>(),
+  
+  // Simple toggles
+  removePlatformBranding: boolean("remove_platform_branding").default(false),
+  
+  // Support links (optional)
+  supportUrl: text("support_url"),
+  documentationUrl: text("documentation_url"),
+  
+  // Metadata
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("whitelabel_org_idx").on(table.organizationId),
+]);
+
 
 // Insert schemas for new tables
 export const insertAgentTestSchema = createInsertSchema(agentTests).omit({
@@ -1168,6 +1216,12 @@ export const insertRoleTemplateSchema = createInsertSchema(roleTemplates).omit({
 export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
   id: true,
   createdAt: true,
+});
+
+export const insertWhitelabelConfigSchema = createInsertSchema(whitelabelConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
 // Payment relations (defined after billingPackages table)
@@ -1276,3 +1330,5 @@ export type CreditTransaction = typeof creditTransactions.$inferSelect;
 export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
 export type AgencyInvitation = typeof agencyInvitations.$inferSelect;
 export type InsertAgencyInvitation = z.infer<typeof insertAgencyInvitationSchema>;
+export type WhitelabelConfig = typeof whitelabelConfigs.$inferSelect;
+export type InsertWhitelabelConfig = z.infer<typeof insertWhitelabelConfigSchema>;

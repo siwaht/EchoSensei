@@ -5152,6 +5152,121 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Whitelabel configuration endpoints
+  app.get("/api/whitelabel", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user || !user.organizationId) {
+        return res.status(403).json({ message: "User must belong to an organization" });
+      }
+
+      // Check if user's organization is an agency
+      const organization = await storage.getOrganization(user.organizationId);
+      if (!organization || organization.organizationType !== "agency") {
+        return res.status(403).json({ message: "Whitelabel is only available for agencies" });
+      }
+
+      const config = await storage.getWhitelabelConfig(user.organizationId);
+      if (!config) {
+        // Return default config if none exists
+        return res.json({
+          organizationId: user.organizationId,
+          appName: "VoiceAI Dashboard",
+          companyName: organization.name,
+          primaryColor: "#7C3AED",
+          removePlatformBranding: false,
+        });
+      }
+
+      res.json(config);
+    } catch (error) {
+      console.error("Error fetching whitelabel config:", error);
+      res.status(500).json({ message: "Failed to fetch whitelabel configuration" });
+    }
+  });
+
+  app.post("/api/whitelabel", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user || !user.organizationId) {
+        return res.status(403).json({ message: "User must belong to an organization" });
+      }
+
+      // Check if user's organization is an agency
+      const organization = await storage.getOrganization(user.organizationId);
+      if (!organization || organization.organizationType !== "agency") {
+        return res.status(403).json({ message: "Whitelabel is only available for agencies" });
+      }
+
+      // Check if user has permission to modify organization settings
+      if (!user.isAdmin && user.role !== "admin" && user.role !== "owner") {
+        return res.status(403).json({ message: "Only organization admins can modify whitelabel settings" });
+      }
+
+      const { appName, companyName, primaryColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl } = req.body;
+
+      const config = await storage.updateWhitelabelConfig(user.organizationId, {
+        organizationId: user.organizationId,
+        appName,
+        companyName,
+        primaryColor,
+        removePlatformBranding,
+        supportUrl,
+        documentationUrl,
+        logoUrl,
+        faviconUrl,
+      });
+
+      res.json(config);
+    } catch (error) {
+      console.error("Error updating whitelabel config:", error);
+      res.status(500).json({ message: "Failed to update whitelabel configuration" });
+    }
+  });
+
+  // Logo upload endpoint
+  app.post("/api/whitelabel/upload-logo", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user || !user.organizationId) {
+        return res.status(403).json({ message: "User must belong to an organization" });
+      }
+
+      // Check if user's organization is an agency
+      const organization = await storage.getOrganization(user.organizationId);
+      if (!organization || organization.organizationType !== "agency") {
+        return res.status(403).json({ message: "Whitelabel is only available for agencies" });
+      }
+
+      // Check if user has permission
+      if (!user.isAdmin && user.role !== "admin" && user.role !== "owner") {
+        return res.status(403).json({ message: "Only organization admins can modify whitelabel settings" });
+      }
+
+      // For now, we'll store base64 encoded images directly
+      // In production, you'd want to use cloud storage like S3 or Google Cloud Storage
+      const { logo, type } = req.body; // type: "logo" or "favicon"
+      
+      if (!logo || !type) {
+        return res.status(400).json({ message: "Logo data and type are required" });
+      }
+
+      const updateData = type === "favicon" 
+        ? { faviconUrl: logo }
+        : { logoUrl: logo };
+
+      const config = await storage.updateWhitelabelConfig(user.organizationId, updateData);
+      
+      res.json({ success: true, url: type === "favicon" ? config.faviconUrl : config.logoUrl });
+    } catch (error) {
+      console.error("Error uploading logo:", error);
+      res.status(500).json({ message: "Failed to upload logo" });
+    }
+  });
+
   // Analytics routes
   app.get("/api/analytics/organization", isAuthenticated, checkPermission('view_analytics'), async (req: any, res) => {
     try {

@@ -31,6 +31,7 @@ const OutboundCalling = lazy(() => import("@/pages/outbound-calling"));
 const Tools = lazy(() => import("@/pages/tools"));
 const AgentSettings = lazy(() => import("@/pages/agent-settings"));
 const AgentTesting = lazy(() => import("@/pages/agent-testing"));
+const WhitelabelSettings = lazy(() => import("@/pages/whitelabel-settings"));
 
 // Loading fallback component
 function PageLoader() {
@@ -99,6 +100,9 @@ function Router() {
           <Route path="/settings" component={Settings} />
           <Route path="/admin">
             <PermissionGuard permission="manage_users"><Admin /></PermissionGuard>
+          </Route>
+          <Route path="/whitelabel-settings">
+            <PermissionGuard><WhitelabelSettings /></PermissionGuard>
           </Route>
           <Route component={NotFound} />
         </Switch>

@@ -19,6 +19,7 @@ import {
   agencyInvitations,
   creditPackages,
   creditAlerts,
+  whitelabelConfigs,
   type User,
   type UpsertUser,
   type Organization,
@@ -56,6 +57,8 @@ import {
   type InsertCreditPackage,
   type CreditAlert,
   type InsertCreditAlert,
+  type WhitelabelConfig,
+  type InsertWhitelabelConfig,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sum, avg, max, or, inArray, isNull } from "drizzle-orm";
@@ -76,6 +79,11 @@ export interface IStorage {
   getAllIntegrations(): Promise<Integration[]>;
   upsertIntegration(integration: InsertIntegration): Promise<Integration>;
   updateIntegrationStatus(id: string, status: "ACTIVE" | "INACTIVE" | "ERROR" | "PENDING_APPROVAL", lastTested?: Date): Promise<void>;
+  
+  // Whitelabel configuration operations
+  getWhitelabelConfig(organizationId: string): Promise<WhitelabelConfig | undefined>;
+  createWhitelabelConfig(config: InsertWhitelabelConfig): Promise<WhitelabelConfig>;
+  updateWhitelabelConfig(organizationId: string, config: Partial<InsertWhitelabelConfig>): Promise<WhitelabelConfig>;
   
   // Admin task operations
   createAdminTask(task: InsertAdminTask): Promise<AdminTask>;
@@ -1384,6 +1392,144 @@ export class DatabaseStorage implements IStorage {
         acknowledgedBy: userId,
       })
       .where(eq(creditAlerts.id, alertId));
+  }
+
+  // Whitelabel configuration operations
+  async getWhitelabelConfig(organizationId: string): Promise<WhitelabelConfig | undefined> {
+    const [config] = await db()
+      .select()
+      .from(whitelabelConfigs)
+      .where(and(
+        eq(whitelabelConfigs.organizationId, organizationId),
+        eq(whitelabelConfigs.isActive, true)
+      ));
+    return config;
+  }
+
+  async createWhitelabelConfig(config: InsertWhitelabelConfig): Promise<WhitelabelConfig> {
+    // Generate color palette from primary color
+    const colorPalette = this.generateColorPalette(config.primaryColor || "#7C3AED");
+    
+    const [result] = await db()
+      .insert(whitelabelConfigs)
+      .values({
+        ...config,
+        colorPalette,
+      })
+      .returning();
+    return result;
+  }
+
+  async updateWhitelabelConfig(organizationId: string, config: Partial<InsertWhitelabelConfig>): Promise<WhitelabelConfig> {
+    // If primary color changed, regenerate palette
+    let colorPalette = undefined;
+    if (config.primaryColor) {
+      colorPalette = this.generateColorPalette(config.primaryColor);
+    }
+    
+    const [result] = await db()
+      .update(whitelabelConfigs)
+      .set({
+        ...config,
+        ...(colorPalette && { colorPalette }),
+        updatedAt: new Date(),
+      })
+      .where(eq(whitelabelConfigs.organizationId, organizationId))
+      .returning();
+    
+    if (!result) {
+      // If no config exists, create one
+      return this.createWhitelabelConfig({ organizationId, ...config });
+    }
+    
+    return result;
+  }
+
+  // Helper function to generate color palette from primary color
+  private generateColorPalette(primaryColor: string) {
+    // Convert hex to RGB
+    const hex2rgb = (hex: string) => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : { r: 124, g: 58, b: 237 }; // Default purple
+    };
+
+    // Convert RGB to HSL
+    const rgb2hsl = (r: number, g: number, b: number) => {
+      r /= 255;
+      g /= 255;
+      b /= 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      let h = 0, s = 0, l = (max + min) / 2;
+
+      if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+          case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+          case g: h = ((b - r) / d + 2) / 6; break;
+          case b: h = ((r - g) / d + 4) / 6; break;
+        }
+      }
+      return { h: h * 360, s: s * 100, l: l * 100 };
+    };
+
+    // Convert HSL to hex
+    const hsl2hex = (h: number, s: number, l: number) => {
+      h /= 360;
+      s /= 100;
+      l /= 100;
+      let r, g, b;
+
+      if (s === 0) {
+        r = g = b = l;
+      } else {
+        const hue2rgb = (p: number, q: number, t: number) => {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1/6) return p + (q - p) * 6 * t;
+          if (t < 1/2) return q;
+          if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+          return p;
+        };
+
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+      }
+
+      const toHex = (x: number) => {
+        const hex = Math.round(x * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    };
+
+    const rgb = hex2rgb(primaryColor);
+    const hsl = rgb2hsl(rgb.r, rgb.g, rgb.b);
+
+    return {
+      primary: primaryColor,
+      primaryDark: hsl2hex(hsl.h, hsl.s, Math.max(hsl.l - 10, 0)),
+      primaryLight: hsl2hex(hsl.h, hsl.s, Math.min(hsl.l + 10, 100)),
+      secondary: hsl2hex((hsl.h + 180) % 360, hsl.s * 0.7, hsl.l),
+      accent: hsl2hex((hsl.h + 30) % 360, hsl.s, hsl.l),
+      background: "#FFFFFF",
+      backgroundDark: "#F9FAFB",
+      text: "#111827",
+      textMuted: "#6B7280",
+      border: "#E5E7EB",
+      success: "#10B981",
+      warning: "#F59E0B",
+      error: "#EF4444",
+    };
   }
 
   async acceptAgencyInvitation(code: string, userId: string): Promise<Organization> {

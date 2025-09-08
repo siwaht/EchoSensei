@@ -22,10 +22,12 @@ import {
   Wrench,
   MessageSquare,
   Brain,
-  Users
+  Users,
+  Palette
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
+import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard }, // Dashboard is always visible
@@ -57,6 +59,14 @@ export default function AppShell({ children }: AppShellProps) {
   // Get user permissions
   const userPermissions = (user as any)?.permissions || [];
   const isAdmin = (user as any)?.isAdmin || false;
+  
+  // Fetch organization details to check if it's an agency
+  const { data: organization } = useQuery({
+    queryKey: ["/api/organization/current"],
+    enabled: !!user,
+  });
+  
+  const isAgency = organization?.organizationType === "agency";
   
   // Filter navigation based on permissions
   const filteredNavigation = navigation.filter(item => {
@@ -100,6 +110,9 @@ export default function AppShell({ children }: AppShellProps) {
     
     // Check for conversations route
     if (location === "/conversations") return "Conversations";
+    
+    // Check for whitelabel settings route
+    if (location === "/whitelabel-settings") return "Whitelabel Settings";
     
     
     // Default to "Page Not Found" for unknown routes
@@ -171,6 +184,22 @@ export default function AppShell({ children }: AppShellProps) {
                 >
                   <Shield className="w-5 h-5" />
                   <span>Admin</span>
+                </Link>
+              )}
+              {isAgency && (
+                <Link
+                  href="/whitelabel-settings"
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
+                    location === "/whitelabel-settings"
+                      ? "gradient-purple text-white shadow-lg"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
+                  )}
+                  data-testid="nav-whitelabel"
+                >
+                  <Palette className="w-5 h-5" />
+                  <span>Whitelabel</span>
                 </Link>
               )}
               {secondaryNavigation.map((item) => {

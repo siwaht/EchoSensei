@@ -12,11 +12,12 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Building2, Users, DollarSign, Plus, ChevronRight, ChevronDown,
   UserPlus, TrendingUp, CreditCard, Briefcase, Store, Settings,
-  Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent
+  Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent, Palette
 } from "lucide-react";
 import type { Organization, User } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useLocation } from "wouter";
 
 interface OrganizationWithDetails extends Organization {
   userCount?: number;
@@ -28,6 +29,7 @@ interface OrganizationWithDetails extends Organization {
 
 export function AgencyManagement() {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [expandedOrgs, setExpandedOrgs] = useState<Set<string>>(new Set());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
@@ -243,20 +245,32 @@ export function AgencyManagement() {
               {/* Action buttons */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {isAgency && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedAgency(org.id);
-                      setCreateType("customer");
-                      setShowCreateDialog(true);
-                    }}
-                    className="whitespace-nowrap"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    <span className="hidden sm:inline">Add Customer</span>
-                    <span className="sm:hidden">Add</span>
-                  </Button>
+                  <>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedAgency(org.id);
+                        setCreateType("customer");
+                        setShowCreateDialog(true);
+                      }}
+                      className="whitespace-nowrap"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      <span className="hidden sm:inline">Add Customer</span>
+                      <span className="sm:hidden">Add</span>
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      title="Whitelabel Settings"
+                      onClick={() => setLocation("/whitelabel-settings")}
+                      className="bg-gradient-to-r from-purple-500/10 to-purple-600/10 hover:from-purple-500/20 hover:to-purple-600/20 border-purple-500/20"
+                    >
+                      <Palette className="w-4 h-4" />
+                      <span className="hidden sm:inline ml-1">Whitelabel</span>
+                    </Button>
+                  </>
                 )}
                 <Button 
                   size="sm" 
