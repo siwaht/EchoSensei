@@ -704,8 +704,8 @@ export function AgencyManagement() {
 
       {/* Settings Dialog */}
       <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
-        <DialogContent className="max-w-xl">
-          <DialogHeader>
+        <DialogContent className="max-w-xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               Settings: {selectedOrgForView?.name}
             </DialogTitle>
@@ -715,74 +715,76 @@ export function AgencyManagement() {
           </DialogHeader>
 
           {selectedOrgForView && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="org-name">Organization Name</Label>
-                <Input id="org-name" defaultValue={selectedOrgForView.name} />
-              </div>
+            <div className="flex-1 overflow-y-auto px-1 py-4">
+              <div className="space-y-4 pr-2">
+                <div className="space-y-2">
+                  <Label htmlFor="org-name">Organization Name</Label>
+                  <Input id="org-name" defaultValue={selectedOrgForView.name} />
+                </div>
 
-              {selectedOrgForView.organizationType === 'agency' && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="commission-rate">Commission Rate (%)</Label>
-                    <Input 
-                      id="commission-rate" 
-                      type="number" 
-                      defaultValue={selectedOrgForView.commissionRate || 30}
-                      min="0"
-                      max="100"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="credit-balance">Credit Balance ($)</Label>
-                    <Input 
-                      id="credit-balance" 
-                      type="number" 
-                      defaultValue={selectedOrgForView.creditBalance || 0}
-                      min="0"
-                    />
-                  </div>
-                </>
-              )}
+                {selectedOrgForView.organizationType === 'agency' && (
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="commission-rate">Commission Rate (%)</Label>
+                      <Input 
+                        id="commission-rate" 
+                        type="number" 
+                        defaultValue={selectedOrgForView.commissionRate || 30}
+                        min="0"
+                        max="100"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="credit-balance">Credit Balance ($)</Label>
+                      <Input 
+                        id="credit-balance" 
+                        type="number" 
+                        defaultValue={selectedOrgForView.creditBalance || 0}
+                        min="0"
+                      />
+                    </div>
+                  </>
+                )}
 
-              <div className="space-y-2">
-                <Label htmlFor="max-agents">Max Agents</Label>
-                <Input 
-                  id="max-agents" 
-                  type="number" 
-                  defaultValue={selectedOrgForView.maxAgents || 5}
-                  min="1"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max-agents">Max Agents</Label>
+                  <Input 
+                    id="max-agents" 
+                    type="number" 
+                    defaultValue={selectedOrgForView.maxAgents || 5}
+                    min="1"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="max-users">Max Users</Label>
-                <Input 
-                  id="max-users" 
-                  type="number" 
-                  defaultValue={selectedOrgForView.maxUsers || 10}
-                  min="1"
-                />
-              </div>
+                <div className="space-y-2">
+                  <Label htmlFor="max-users">Max Users</Label>
+                  <Input 
+                    id="max-users" 
+                    type="number" 
+                    defaultValue={selectedOrgForView.maxUsers || 10}
+                    min="1"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="billing-package">Billing Package</Label>
-                <Select defaultValue={selectedOrgForView.billingPackage || 'starter'}>
-                  <SelectTrigger id="billing-package">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="starter">Starter</SelectItem>
-                    <SelectItem value="professional">Professional</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="enterprise">Enterprise</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                  <Label htmlFor="billing-package">Billing Package</Label>
+                  <Select defaultValue={selectedOrgForView.billingPackage || 'starter'}>
+                    <SelectTrigger id="billing-package">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="starter">Starter</SelectItem>
+                      <SelectItem value="professional">Professional</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                      <SelectItem value="enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
               Cancel
             </Button>
