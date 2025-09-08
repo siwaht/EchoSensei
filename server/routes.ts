@@ -5283,9 +5283,8 @@ Generate the complete prompt now:`;
       }
 
       // Check if user has permission to modify organization settings
-      if (!user.isAdmin && user.role !== "admin" && user.role !== "owner") {
-        return res.status(403).json({ message: "Only organization admins can modify whitelabel settings" });
-      }
+      // Allow any user in an agency organization to modify whitelabel
+      // (agencies should be able to customize their whitelabel regardless of role)
 
       const { appName, companyName, primaryColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl } = req.body;
 
@@ -5324,9 +5323,8 @@ Generate the complete prompt now:`;
       }
 
       // Check if user has permission
-      if (!user.isAdmin && user.role !== "admin" && user.role !== "owner") {
-        return res.status(403).json({ message: "Only organization admins can modify whitelabel settings" });
-      }
+      // Allow any user in an agency organization to modify whitelabel
+      // (agencies should be able to customize their whitelabel regardless of role)
 
       // For now, we'll store base64 encoded images directly
       // In production, you'd want to use cloud storage like S3 or Google Cloud Storage
