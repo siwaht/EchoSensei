@@ -38,9 +38,13 @@ export const users = pgTable("users", {
   profileImageUrl: varchar("profile_image_url"),
   organizationId: varchar("organization_id").notNull(),
   isAdmin: boolean("is_admin").default(false),
-  role: varchar("role").default("user"), // user, admin, agency
+  role: varchar("role").default("user"), // user, admin, agency, owner, manager, viewer
+  roleTemplate: varchar("role_template"), // Reference to the role template used
   status: varchar("status").default("active"), // active, inactive, pending
   permissions: jsonb("permissions").$type<string[]>().default([]),
+  metadata: jsonb("metadata").$type<Record<string, any>>(), // Custom user attributes
+  lastLoginAt: timestamp("last_login_at"),
+  invitedBy: varchar("invited_by"), // User ID who invited this user
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -72,6 +76,25 @@ export const organizations = pgTable("organizations", {
   subscriptionId: varchar("subscription_id"),
   billingStatus: varchar("billing_status").default('inactive'), // active, inactive, past_due
   lastPaymentDate: timestamp("last_payment_date"),
+  // New fields for enhanced management
+  metadata: jsonb("metadata").$type<Record<string, any>>(), // Flexible custom attributes
+  settings: jsonb("settings").$type<{ // Organization-specific settings
+    defaultUserRole?: string;
+    autoProvisionResources?: boolean;
+    welcomeMessage?: string;
+    maxApiCallsPerDay?: number;
+    customBranding?: {
+      logo?: string;
+      primaryColor?: string;
+      companyUrl?: string;
+    };
+  }>(),
+  tierLimits: jsonb("tier_limits").$type<{ // Resource usage limits
+    maxMinutesPerMonth?: number;
+    maxCallsPerMonth?: number;
+    maxStorageGB?: number;
+    maxConcurrentCalls?: number;
+  }>(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -936,6 +959,61 @@ export const agencyInvitations = pgTable("agency_invitations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Role Templates table for predefined role configurations
+export const roleTemplates = pgTable("role_templates", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id"), // Null for system templates, org ID for custom
+  name: varchar("name").notNull(),
+  label: varchar("label").notNull(),
+  description: text("description"),
+  organizationType: organizationTypeEnum("organization_type").notNull(),
+  permissions: jsonb("permissions").$type<string[]>().notNull(),
+  isDefault: boolean("is_default").default(false),
+  isSystem: boolean("is_system").default(false), // System templates can't be edited
+  icon: varchar("icon"), // Icon name for UI
+  color: varchar("color"), // Color for UI badge
+  order: integer("order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Audit action enum
+export const auditActionEnum = pgEnum("audit_action", [
+  "user_created", "user_updated", "user_deleted",
+  "org_created", "org_updated", "org_deleted",
+  "permission_granted", "permission_revoked",
+  "agent_created", "agent_updated", "agent_deleted",
+  "login", "logout", "password_changed",
+  "billing_updated", "payment_processed"
+]);
+
+// Audit Logs table for tracking all system changes
+export const auditLogs = pgTable("audit_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id"),
+  userId: varchar("user_id"),
+  userEmail: varchar("user_email"),
+  action: auditActionEnum("action").notNull(),
+  entityType: varchar("entity_type"), // user, organization, agent, etc.
+  entityId: varchar("entity_id"),
+  changes: jsonb("changes").$type<{
+    before?: Record<string, any>;
+    after?: Record<string, any>;
+  }>(),
+  metadata: jsonb("metadata").$type<{
+    ipAddress?: string;
+    userAgent?: string;
+    sessionId?: string;
+    additionalInfo?: Record<string, any>;
+  }>(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("audit_logs_org_idx").on(table.organizationId),
+  index("audit_logs_user_idx").on(table.userId),
+  index("audit_logs_entity_idx").on(table.entityType, table.entityId),
+  index("audit_logs_created_idx").on(table.createdAt),
+]);
+
 
 // Insert schemas for new tables
 export const insertAgentTestSchema = createInsertSchema(agentTests).omit({
@@ -1002,6 +1080,17 @@ export const insertCreditTransactionSchema = createInsertSchema(creditTransactio
 export const insertAgencyInvitationSchema = createInsertSchema(agencyInvitations).omit({
   id: true,
   invitationCode: true,
+  createdAt: true,
+});
+
+export const insertRoleTemplateSchema = createInsertSchema(roleTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({
+  id: true,
   createdAt: true,
 });
 
@@ -1073,6 +1162,10 @@ export type BatchCallRecipient = typeof batchCallRecipients.$inferSelect;
 export type InsertBatchCallRecipient = z.infer<typeof insertBatchCallRecipientSchema>;
 export type SystemTemplate = typeof systemTemplates.$inferSelect;
 export type InsertSystemTemplate = z.infer<typeof insertSystemTemplateSchema>;
+export type RoleTemplate = typeof roleTemplates.$inferSelect;
+export type InsertRoleTemplate = z.infer<typeof insertRoleTemplateSchema>;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
 export type QuickActionButton = typeof quickActionButtons.$inferSelect;
 export type InsertQuickActionButton = z.infer<typeof insertQuickActionButtonSchema>;
 export type AdminTask = typeof adminTasks.$inferSelect;
