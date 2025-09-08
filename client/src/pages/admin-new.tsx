@@ -71,6 +71,9 @@ export default function AdminDashboard() {
     maxUsers: "10",
     monthlyPrice: "0",
     features: [] as string[],
+    availableToType: "end_customer" as "agency" | "end_customer",
+    baseCost: "0",
+    marginPercentage: "30",
   });
   const [editingOrg, setEditingOrg] = useState<{
     id: string;
@@ -496,7 +499,12 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-2">
                       <h3 className="font-semibold text-base">{pkg.displayName}</h3>
-                      <p className="text-xl font-bold">${pkg.monthlyPrice}/mo</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-xl font-bold">${pkg.monthlyPrice}/mo</p>
+                        {pkg.availableToType === 'agency' && (
+                          <Badge variant="secondary" className="text-xs">Agency Only</Badge>
+                        )}
+                      </div>
                       <ul className="space-y-1 text-xs">
                         <li className="truncate">• ${pkg.perCallRate} per call</li>
                         <li className="truncate">• ${pkg.perMinuteRate} per minute</li>
@@ -504,6 +512,9 @@ export default function AdminDashboard() {
                         <li className="truncate">• {pkg.maxUsers} users max</li>
                         {pkg.monthlyCredits > 0 && (
                           <li className="truncate">• {pkg.monthlyCredits} monthly credits</li>
+                        )}
+                        {pkg.marginPercentage && pkg.marginPercentage > 0 && (
+                          <li className="truncate text-muted-foreground">• {pkg.marginPercentage}% agency margin</li>
                         )}
                       </ul>
                     </div>
@@ -1420,6 +1431,61 @@ export default function AdminDashboard() {
                   onChange={(e) => setNewPackage({ ...newPackage, maxUsers: e.target.value })}
                   data-testid="input-package-max-users"
                 />
+              </div>
+            </div>
+
+            {/* Tier-based availability */}
+            <div className="space-y-4 border-t pt-4">
+              <h4 className="font-medium">Tier Availability & Agency Settings</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Available To</Label>
+                  <Select 
+                    value={newPackage.availableToType}
+                    onValueChange={(value) => setNewPackage({ ...newPackage, availableToType: value as "agency" | "end_customer" })}
+                  >
+                    <SelectTrigger data-testid="select-available-to">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="end_customer">End Customers</SelectItem>
+                      <SelectItem value="agency">Agencies Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {newPackage.availableToType === "agency" 
+                      ? "Only agencies can purchase this package"
+                      : "End customers and agencies can purchase this package"}
+                  </p>
+                </div>
+                <div>
+                  <Label>Agency Margin (%)</Label>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="0"
+                    max="100"
+                    value={newPackage.marginPercentage}
+                    onChange={(e) => setNewPackage({ ...newPackage, marginPercentage: e.target.value })}
+                    data-testid="input-margin-percentage"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Maximum margin agencies can add when reselling
+                  </p>
+                </div>
+              </div>
+              <div>
+                <Label>Base Cost ($)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={newPackage.baseCost}
+                  onChange={(e) => setNewPackage({ ...newPackage, baseCost: e.target.value })}
+                  data-testid="input-base-cost"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Cost for agencies (leave 0 if not applicable)
+                </p>
               </div>
             </div>
             
