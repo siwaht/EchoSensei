@@ -70,6 +70,8 @@ export const creditAlertStatusEnum = pgEnum("credit_alert_status", [
 export const organizations = pgTable("organizations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: varchar("name").notNull(),
+  subdomain: varchar("subdomain"), // Custom subdomain for agency (e.g., 'agency-name' for agency-name.voiceai.com)
+  customDomain: varchar("custom_domain"), // Full custom domain (e.g., dashboard.agency.com)
   parentOrganizationId: varchar("parent_organization_id"), // For hierarchy (agencies have parent, end customers have agency as parent)
   organizationType: organizationTypeEnum("organization_type").default("end_customer"), // platform_owner, agency, end_customer
   billingPackage: billingPackageEnum("billing_package").default("starter"),

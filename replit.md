@@ -4,7 +4,14 @@
 
 VoiceAI Dashboard is a white-label, multi-tenant SaaS platform for managing and monitoring voice AI agents. The platform follows a "Bring Your Own Key" (BYOK) model where clients securely connect their VoiceAI API credentials to monitor call logs, agent performance, and usage analytics. The application provides comprehensive dashboards for tracking voice agent interactions, billing information, and system integrations. While the platform is powered by advanced voice AI technology, it operates as a fully branded solution where customers interact with the VoiceAI brand without awareness of the underlying infrastructure.
 
-### Recent Updates (September 2, 2025)
+### Recent Updates (September 8, 2025)
+- **Subdomain-Based Whitelabel Access**: Implemented subdomain routing for agencies to access their branded dashboard (e.g., agency-name.voiceai.com)
+- **Subdomain Management Interface**: Added subdomain configuration in whitelabel settings with real-time availability checking
+- **Organization API Enhancement**: Added organization details endpoint with subdomain and custom domain information
+- **Subdomain Validation**: Implemented proper validation for subdomain format (lowercase letters, numbers, hyphens only)
+- **Subdomain Middleware**: Created middleware to detect and route subdomain-based requests to appropriate organization branding
+
+### Previous Updates (September 2, 2025)
 - **Google Integrations Removed**: Successfully removed all Google OAuth integrations including Google Sheets, Calendar, and Gmail to simplify the platform
 - **RAG System Removed**: Completely removed the custom RAG (Retrieval-Augmented Generation) system to prepare for native ElevenLabs Knowledge Base integration
 - **Knowledge Base Feature Removed**: Completely removed all knowledge base functionality since ElevenLabs doesn't support it yet - users will use ElevenLabs directly

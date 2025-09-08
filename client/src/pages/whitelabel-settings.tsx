@@ -259,6 +259,18 @@ export default function WhitelabelSettings() {
   const [logoPreview, setLogoPreview] = useState("");
   const [faviconPreview, setFaviconPreview] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
+  const [subdomain, setSubdomain] = useState("");
+  const [customDomain, setCustomDomain] = useState("");
+
+  // Fetch organization details
+  const { data: organization } = useQuery<{
+    id: string;
+    name: string;
+    subdomain?: string;
+    customDomain?: string;
+  }>({
+    queryKey: ["/api/organization"],
+  });
 
   // Fetch current whitelabel config
   const { data: config, isLoading } = useQuery<{
@@ -275,7 +287,14 @@ export default function WhitelabelSettings() {
     queryKey: ["/api/whitelabel"],
   });
 
-  // Load config data
+  // Load organization and config data
+  useEffect(() => {
+    if (organization) {
+      setSubdomain(organization.subdomain || "");
+      setCustomDomain(organization.customDomain || "");
+    }
+  }, [organization]);
+
   useEffect(() => {
     if (config) {
       setAppName(config.appName || "VoiceAI Dashboard");
@@ -332,10 +351,23 @@ export default function WhitelabelSettings() {
     }, 1500);
   };
 
+  // Check subdomain availability mutation
+  const checkSubdomainMutation = useMutation({
+    mutationFn: async (subdomain: string) => {
+      const response = await apiRequest("POST", "/api/subdomain/check", { subdomain });
+      return response.json();
+    },
+  });
+
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("POST", "/api/whitelabel", data);
+      // Include subdomain in the save data
+      const saveData = {
+        ...data,
+        subdomain: subdomain.trim().toLowerCase(),
+      };
+      return apiRequest("POST", "/api/whitelabel", saveData);
     },
     onSuccess: () => {
       toast({
@@ -344,6 +376,7 @@ export default function WhitelabelSettings() {
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["/api/whitelabel"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/organization"] });
       
       // Reload the page to apply new branding
       setTimeout(() => {
@@ -442,11 +475,45 @@ export default function WhitelabelSettings() {
     reader.readAsDataURL(file);
   };
 
+  const validateSubdomain = (value: string) => {
+    // Check if subdomain is valid (alphanumeric and hyphens only)
+    const subdomainRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+    return subdomainRegex.test(value);
+  };
+
+  const handleSubdomainChange = async (value: string) => {
+    const cleanValue = value.trim().toLowerCase();
+    setSubdomain(cleanValue);
+    setHasChanges(true);
+
+    // Check availability if valid
+    if (cleanValue && validateSubdomain(cleanValue)) {
+      const result = await checkSubdomainMutation.mutateAsync(cleanValue);
+      if (!result.available && result.organizationId !== organization?.id) {
+        toast({
+          title: "Subdomain unavailable",
+          description: "This subdomain is already taken. Please choose another.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const handleSave = () => {
     if (!selectedTheme) {
       toast({
         title: "Please select a theme",
         description: "Generate and select a theme before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate subdomain
+    if (subdomain && !validateSubdomain(subdomain)) {
+      toast({
+        title: "Invalid subdomain",
+        description: "Subdomain can only contain lowercase letters, numbers, and hyphens",
         variant: "destructive",
       });
       return;
@@ -734,6 +801,54 @@ export default function WhitelabelSettings() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Custom Domain Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Domain</CardTitle>
+              <CardDescription>
+                Set up your agency's custom subdomain for branded access
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="subdomain">Subdomain</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="subdomain"
+                    value={subdomain}
+                    onChange={(e) => handleSubdomainChange(e.target.value)}
+                    placeholder="agency-name"
+                    className="flex-1"
+                  />
+                  <span className="text-sm text-muted-foreground flex items-center">
+                    .voiceai.com
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Your clients will access the platform at: {subdomain || 'agency-name'}.voiceai.com
+                </p>
+              </div>
+              
+              <div>
+                <Label htmlFor="customDomain">Custom Domain (Optional)</Label>
+                <Input
+                  id="customDomain"
+                  type="url"
+                  value={customDomain}
+                  onChange={(e) => {
+                    setCustomDomain(e.target.value);
+                    setHasChanges(true);
+                  }}
+                  placeholder="dashboard.youragency.com"
+                  className="mt-2"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Point your domain's CNAME record to {subdomain || 'your-subdomain'}.voiceai.com
+                </p>
+              </div>
             </CardContent>
           </Card>
 

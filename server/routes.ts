@@ -5234,6 +5234,48 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Public whitelabel endpoint by subdomain (no auth required)
+  app.get("/api/whitelabel/subdomain/:subdomain", async (req, res) => {
+    try {
+      const { subdomain } = req.params;
+      
+      // Get organization by subdomain
+      const org = await storage.getOrganizationBySubdomain(subdomain);
+      if (!org) {
+        return res.status(404).json({ error: "Organization not found" });
+      }
+      
+      // Get whitelabel config for this organization
+      const config = await storage.getWhitelabelConfig(org.id);
+      
+      if (!config) {
+        // Return default branding if no config exists
+        return res.json({
+          appName: org.name,
+          companyName: org.name,
+          primaryColor: "#7C3AED",
+          removePlatformBranding: false
+        });
+      }
+      
+      // Return public whitelabel config
+      res.json({
+        appName: config.appName || org.name,
+        companyName: config.companyName || org.name,
+        logoUrl: config.logoUrl,
+        faviconUrl: config.faviconUrl,
+        primaryColor: config.primaryColor,
+        colorPalette: config.colorPalette,
+        removePlatformBranding: config.removePlatformBranding,
+        supportUrl: config.supportUrl,
+        documentationUrl: config.documentationUrl
+      });
+    } catch (error) {
+      console.error("Error fetching subdomain whitelabel config:", error);
+      res.status(500).json({ error: "Failed to fetch configuration" });
+    }
+  });
+
   // Public whitelabel endpoint for login page
   app.get("/api/whitelabel/public", async (req: any, res) => {
     try {
@@ -5307,6 +5349,72 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Get current user's organization details
+  app.get("/api/organization", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user || !user.organizationId) {
+        return res.status(404).json({ message: "User organization not found" });
+      }
+
+      const organization = await storage.getOrganization(user.organizationId);
+      if (!organization) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+
+      res.json({
+        id: organization.id,
+        name: organization.name,
+        subdomain: organization.subdomain,
+        customDomain: organization.customDomain,
+        organizationType: organization.organizationType,
+      });
+    } catch (error) {
+      console.error("Error fetching organization:", error);
+      res.status(500).json({ message: "Failed to fetch organization" });
+    }
+  });
+
+  // Check subdomain availability
+  app.post("/api/subdomain/check", isAuthenticated, async (req: any, res) => {
+    try {
+      const { subdomain } = req.body;
+      
+      if (!subdomain) {
+        return res.status(400).json({ message: "Subdomain is required" });
+      }
+
+      // Validate subdomain format
+      const subdomainRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+      if (!subdomainRegex.test(subdomain)) {
+        return res.status(400).json({ 
+          available: false, 
+          message: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens." 
+        });
+      }
+
+      // Check if subdomain exists
+      const existingOrg = await storage.getOrganizationBySubdomain(subdomain);
+      
+      if (existingOrg) {
+        res.json({ 
+          available: false, 
+          organizationId: existingOrg.id,
+          message: "Subdomain is already taken" 
+        });
+      } else {
+        res.json({ 
+          available: true, 
+          message: "Subdomain is available" 
+        });
+      }
+    } catch (error) {
+      console.error("Error checking subdomain:", error);
+      res.status(500).json({ message: "Failed to check subdomain availability" });
+    }
+  });
+
   app.post("/api/whitelabel", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.id;
@@ -5325,7 +5433,27 @@ Generate the complete prompt now:`;
       // Allow any user in an agency organization to modify whitelabel
       // (agencies should be able to customize their whitelabel regardless of role)
 
-      const { appName, companyName, primaryColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl } = req.body;
+      const { appName, companyName, primaryColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl, subdomain } = req.body;
+
+      // If subdomain is provided, update the organization
+      if (subdomain !== undefined) {
+        // Validate subdomain format
+        const subdomainRegex = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+        if (subdomain && !subdomainRegex.test(subdomain)) {
+          return res.status(400).json({ message: "Invalid subdomain format. Use only lowercase letters, numbers, and hyphens." });
+        }
+
+        // Check if subdomain is already taken by another organization
+        if (subdomain) {
+          const existingOrg = await storage.getOrganizationBySubdomain(subdomain);
+          if (existingOrg && existingOrg.id !== user.organizationId) {
+            return res.status(400).json({ message: "This subdomain is already taken. Please choose another." });
+          }
+        }
+
+        // Update organization with new subdomain
+        await storage.updateOrganization(user.organizationId, { subdomain });
+      }
 
       const config = await storage.updateWhitelabelConfig(user.organizationId, {
         organizationId: user.organizationId,

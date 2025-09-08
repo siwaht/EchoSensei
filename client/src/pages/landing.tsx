@@ -16,8 +16,20 @@ export default function Landing() {
   const [password, setPassword] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const [subdomain, setSubdomain] = useState<string | null>(null);
   
-  // Fetch public whitelabel configuration
+  // Detect subdomain from URL
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    const parts = hostname.split('.');
+    
+    // Check if we have a subdomain (not www, not localhost)
+    if (parts.length >= 2 && parts[0] !== 'www' && parts[0] !== 'localhost') {
+      setSubdomain(parts[0]);
+    }
+  }, []);
+  
+  // Fetch public whitelabel configuration based on subdomain
   const { data: whitelabelConfig } = useQuery<{
     appName?: string;
     companyName?: string;
@@ -26,8 +38,11 @@ export default function Landing() {
     primaryColor?: string;
     removePlatformBranding?: boolean;
   }>({
-    queryKey: ["/api/whitelabel/public"],
+    queryKey: subdomain 
+      ? [`/api/whitelabel/subdomain/${subdomain}`]
+      : ["/api/whitelabel/public"],
     retry: false,
+    enabled: true,
   });
   
   // Apply whitelabel settings to document

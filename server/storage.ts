@@ -93,6 +93,9 @@ export interface IStorage {
   // Organization operations
   createOrganization(org: InsertOrganization): Promise<Organization>;
   getOrganization(id: string): Promise<Organization | undefined>;
+  getOrganizationBySubdomain(subdomain: string): Promise<Organization | undefined>;
+  getOrganizationByCustomDomain(domain: string): Promise<Organization | undefined>;
+  updateOrganizationSubdomain(id: string, subdomain: string): Promise<Organization>;
 
   // Integration operations
   getIntegration(organizationId: string, provider: string): Promise<Integration | undefined>;
@@ -457,6 +460,32 @@ export class DatabaseStorage implements IStorage {
 
   async getOrganization(id: string): Promise<Organization | undefined> {
     const [org] = await db().select().from(organizations).where(eq(organizations.id, id));
+    return org;
+  }
+
+  async getOrganizationBySubdomain(subdomain: string): Promise<Organization | undefined> {
+    const [org] = await db()
+      .select()
+      .from(organizations)
+      .where(eq(organizations.subdomain, subdomain));
+    return org;
+  }
+
+  async getOrganizationByCustomDomain(domain: string): Promise<Organization | undefined> {
+    const [org] = await db()
+      .select()
+      .from(organizations)
+      .where(eq(organizations.customDomain, domain));
+    return org;
+  }
+
+  async updateOrganizationSubdomain(id: string, subdomain: string): Promise<Organization> {
+    const [org] = await db()
+      .update(organizations)
+      .set({ subdomain, updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    if (!org) throw new Error("Organization not found");
     return org;
   }
 
