@@ -757,12 +757,15 @@ export function registerRoutes(app: Express): Server {
         }
       }
 
+      // Hash password before creating user
+      const hashedPassword = await hashPassword(password);
+      
       // Create new user with role
       const newUser = await storage.createUser({
         email,
         firstName,
         lastName,
-        password,
+        password: hashedPassword,
         organizationId,
         isAdmin: isAdmin || false,
         role: role || (organizationType === 'agency' ? 'agency' : 'user'),
