@@ -41,6 +41,7 @@ export function AgencyManagement() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [orgToDelete, setOrgToDelete] = useState<OrganizationWithDetails | null>(null);
+  const [adminPassword, setAdminPassword] = useState<string>("");
   
   // New agency form state
   const [newAgency, setNewAgency] = useState({
@@ -812,7 +813,15 @@ export function AgencyManagement() {
       </Dialog>
 
       {/* Settings Dialog */}
-      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+      <Dialog 
+        open={showSettingsDialog} 
+        onOpenChange={(open) => {
+          setShowSettingsDialog(open);
+          if (!open) {
+            setAdminPassword("");
+          }
+        }}
+      >
         <DialogContent className="max-w-xl max-h-[85vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>
@@ -890,27 +899,18 @@ export function AgencyManagement() {
                   </Select>
                 </div>
                 
-                <div className="border-t pt-4 mt-4 col-span-full">
-                  <Label className="text-base font-semibold mb-2 block">User Management</Label>
-                  <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      To manage users, reset passwords, or update permissions:
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => {
-                        setShowSettingsDialog(false);
-                        window.location.href = '/user-management';
-                      }}
-                    >
-                      <Users className="mr-2 h-4 w-4" />
-                      Go to User Management
-                    </Button>
-                    <div className="text-xs text-muted-foreground text-center">
-                      Manage all user accounts, permissions, and passwords from the dedicated User Management page.
-                    </div>
-                  </div>
+                <div className="col-span-full space-y-2">
+                  <Label htmlFor="admin-password">New Password (leave blank to keep current)</Label>
+                  <Input 
+                    id="admin-password"
+                    type="password"
+                    placeholder="Enter new password or leave blank"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Reset the admin user's password for this organization
+                  </p>
                 </div>
               </div>
             </div>
@@ -921,7 +921,7 @@ export function AgencyManagement() {
               Cancel
             </Button>
             <Button 
-              onClick={() => {
+              onClick={async () => {
                 if (!selectedOrgForView) return;
                 
                 // Get form values
@@ -942,6 +942,35 @@ export function AgencyManagement() {
                 if (selectedOrgForView.organizationType === 'agency') {
                   updates.commissionRate = parseFloat(commissionInput?.value || '30');
                   updates.creditBalance = parseFloat(creditInput?.value || '0');
+                }
+                
+                // If password is provided, update it for the admin user
+                if (adminPassword) {
+                  // Find the admin user for this organization
+                  const adminUser = users.find(u => 
+                    u.organizationId === selectedOrgForView.id && 
+                    (u.role === 'agency' || u.isAdmin)
+                  );
+                  
+                  if (adminUser) {
+                    try {
+                      await apiRequest("PATCH", `/api/admin/users/${adminUser.id}`, { 
+                        password: adminPassword 
+                      });
+                      toast({
+                        title: "Password Updated",
+                        description: "Admin password has been reset successfully",
+                      });
+                      setAdminPassword("");
+                    } catch (error) {
+                      toast({
+                        title: "Password Update Failed",
+                        description: "Failed to reset admin password",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                  }
                 }
                 
                 updateOrgMutation.mutate({ 
