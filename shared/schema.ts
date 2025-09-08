@@ -55,6 +55,17 @@ export const billingPackageEnum = pgEnum("billing_package", ["starter", "profess
 // Organization type enum for multi-tier hierarchy
 export const organizationTypeEnum = pgEnum("organization_type", ["platform_owner", "agency", "end_customer"]);
 
+// Credit package type enum
+export const creditPackageTypeEnum = pgEnum("credit_package_type", [
+  "agency_starter", "agency_growth", "agency_scale",
+  "customer_basic", "customer_professional", "customer_business", "customer_enterprise"
+]);
+
+// Credit alert status enum
+export const creditAlertStatusEnum = pgEnum("credit_alert_status", [
+  "normal", "warning_25", "warning_10", "critical_5", "depleted"
+]);
+
 // Organizations table for multi-tenancy and multi-tier hierarchy
 export const organizations = pgTable("organizations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -74,7 +85,10 @@ export const organizations = pgTable("organizations", {
   maxUsers: integer("max_users").default(10),
   stripeCustomerId: varchar("stripe_customer_id"),
   subscriptionId: varchar("subscription_id"),
-  billingStatus: varchar("billing_status").default('inactive'), // active, inactive, past_due
+  billingStatus: varchar("billing_status").default('inactive'), // active, inactive, past_due, warning, paused
+  creditAlertStatus: creditAlertStatusEnum("credit_alert_status").default("normal"),
+  lastAlertSentAt: timestamp("last_alert_sent_at"),
+  servicePausedAt: timestamp("service_paused_at"),
   lastPaymentDate: timestamp("last_payment_date"),
   // New fields for enhanced management
   metadata: jsonb("metadata").$type<Record<string, any>>(), // Flexible custom attributes
@@ -959,6 +973,42 @@ export const agencyInvitations = pgTable("agency_invitations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Credit packages table for prepaid credit bundles
+export const creditPackages = pgTable("credit_packages", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  packageType: creditPackageTypeEnum("package_type").notNull().unique(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  credits: integer("credits").notNull(),
+  bonusCredits: integer("bonus_credits").default(0), // Extra credits as bonus
+  targetAudience: organizationTypeEnum("target_audience").notNull(), // agency or end_customer
+  isMonthly: boolean("is_monthly").default(false), // true for monthly plans, false for one-time packs
+  features: jsonb("features").$type<string[]>(),
+  isActive: boolean("is_active").default(true),
+  sortOrder: integer("sort_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Credit alerts tracking table
+export const creditAlerts = pgTable("credit_alerts", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  alertType: creditAlertStatusEnum("alert_type").notNull(),
+  creditPercentage: decimal("credit_percentage", { precision: 5, scale: 2 }), // Percentage remaining
+  creditsRemaining: integer("credits_remaining"),
+  message: text("message"),
+  notificationSent: boolean("notification_sent").default(false),
+  emailSent: boolean("email_sent").default(false),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  acknowledgedBy: varchar("acknowledged_by"), // User ID who acknowledged
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("credit_alerts_org_idx").on(table.organizationId),
+  index("credit_alerts_created_idx").on(table.createdAt),
+]);
+
 // Role Templates table for predefined role configurations
 export const roleTemplates = pgTable("role_templates", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1083,6 +1133,17 @@ export const insertAgencyInvitationSchema = createInsertSchema(agencyInvitations
   createdAt: true,
 });
 
+export const insertCreditPackageSchema = createInsertSchema(creditPackages).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCreditAlertSchema = createInsertSchema(creditAlerts).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertRoleTemplateSchema = createInsertSchema(roleTemplates).omit({
   id: true,
   createdAt: true,
@@ -1166,6 +1227,10 @@ export type RoleTemplate = typeof roleTemplates.$inferSelect;
 export type InsertRoleTemplate = z.infer<typeof insertRoleTemplateSchema>;
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+export type CreditPackage = typeof creditPackages.$inferSelect;
+export type InsertCreditPackage = z.infer<typeof insertCreditPackageSchema>;
+export type CreditAlert = typeof creditAlerts.$inferSelect;
+export type InsertCreditAlert = z.infer<typeof insertCreditAlertSchema>;
 export type QuickActionButton = typeof quickActionButtons.$inferSelect;
 export type InsertQuickActionButton = z.infer<typeof insertQuickActionButtonSchema>;
 export type AdminTask = typeof adminTasks.$inferSelect;
