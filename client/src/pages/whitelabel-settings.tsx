@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Sparkles, Eye, Save, Wand2, Palette, RefreshCw, Check, X } from "lucide-react";
+import { ArrowLeft, Upload, Sparkles, Eye, Save, Wand2, Palette, RefreshCw, Check, X, Users } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface BrandTheme {
@@ -734,6 +734,31 @@ export default function WhitelabelSettings() {
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* User Management Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                User Management
+              </CardTitle>
+              <CardDescription>
+                Manage your organization's users and permissions
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Control who has access to your white-labeled platform and what they can do.
+              </p>
+              <Button 
+                className="w-full"
+                onClick={() => setLocation("/agency-users")}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Manage Users
+              </Button>
             </CardContent>
           </Card>
 

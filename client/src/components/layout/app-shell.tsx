@@ -150,6 +150,9 @@ export default function AppShell({ children }: AppShellProps) {
     // Check for whitelabel settings route
     if (location === "/whitelabel-settings") return "Whitelabel Settings";
     
+    // Check for agency users route
+    if (location === "/agency-users") return "User Management";
+    
     
     // Default to "Page Not Found" for unknown routes
     return "Page Not Found";
@@ -234,20 +237,36 @@ export default function AppShell({ children }: AppShellProps) {
               )}
               {/* Only show whitelabel for agency organizations, not admin users */}
               {isAgency && !isAdmin && (
-                <Link
-                  href="/whitelabel-settings"
-                  onClick={() => setSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                    location === "/whitelabel-settings"
-                      ? "gradient-purple text-white shadow-lg"
-                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
-                  )}
-                  data-testid="nav-whitelabel"
-                >
-                  <Palette className="w-5 h-5" />
-                  <span>Whitelabel</span>
-                </Link>
+                <>
+                  <Link
+                    href="/whitelabel-settings"
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
+                      location === "/whitelabel-settings"
+                        ? "gradient-purple text-white shadow-lg"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
+                    )}
+                    data-testid="nav-whitelabel"
+                  >
+                    <Palette className="w-5 h-5" />
+                    <span>Whitelabel</span>
+                  </Link>
+                  <Link
+                    href="/agency-users"
+                    onClick={() => setSidebarOpen(false)}
+                    className={cn(
+                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
+                      location === "/agency-users"
+                        ? "gradient-purple text-white shadow-lg"
+                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
+                    )}
+                    data-testid="nav-agency-users"
+                  >
+                    <Users className="w-5 h-5" />
+                    <span>User Management</span>
+                  </Link>
+                </>
               )}
               {secondaryNavigation.map((item) => {
                 const Icon = item.icon;
