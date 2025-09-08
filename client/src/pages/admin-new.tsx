@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Shield, Building2, CreditCard, Wallet, CheckCircle, RefreshCw, Users
+  Shield, Building2, CreditCard, Wallet, CheckCircle, RefreshCw, Users, Package, Zap, DollarSign
 } from "lucide-react";
 import { UnifiedManagement } from "@/components/admin/unified-management";
 import ApiSync from "./admin/api-sync";
@@ -87,14 +87,26 @@ export default function AdminDashboard() {
       {/* Scrollable Tabs Content */}
       <div className="flex-1 overflow-hidden">
         <Tabs defaultValue="management" className="h-full flex flex-col">
-          <TabsList className="mx-6 mt-6 grid w-fit grid-cols-4">
+          <TabsList className="mx-6 mt-6 grid w-fit grid-cols-7">
             <TabsTrigger value="management" className="flex items-center gap-2">
               <Building2 className="w-4 h-4" />
               Management
             </TabsTrigger>
+            <TabsTrigger value="billing-plans" className="flex items-center gap-2">
+              <Package className="w-4 h-4" />
+              Plans
+            </TabsTrigger>
             <TabsTrigger value="payments" className="flex items-center gap-2">
               <Wallet className="w-4 h-4" />
               Payments
+            </TabsTrigger>
+            <TabsTrigger value="stripe" className="flex items-center gap-2">
+              <CreditCard className="w-4 h-4" />
+              Stripe
+            </TabsTrigger>
+            <TabsTrigger value="paypal" className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4" />
+              PayPal
             </TabsTrigger>
             <TabsTrigger value="approvals" className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
@@ -112,10 +124,103 @@ export default function AdminDashboard() {
               <UnifiedManagement />
             </TabsContent>
 
+            <TabsContent value="billing-plans" className="space-y-6 mt-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">Billing Plans Management</h2>
+                <p className="text-muted-foreground mb-4">Configure and manage billing packages for organizations.</p>
+                <div className="space-y-4">
+                  <Card className="p-4 border-2">
+                    <h3 className="font-semibold mb-2">Starter Plan</h3>
+                    <p className="text-sm text-muted-foreground">$99/month - 5 agents, 1000 minutes</p>
+                  </Card>
+                  <Card className="p-4 border-2">
+                    <h3 className="font-semibold mb-2">Professional Plan</h3>
+                    <p className="text-sm text-muted-foreground">$299/month - 20 agents, 5000 minutes</p>
+                  </Card>
+                  <Card className="p-4 border-2">
+                    <h3 className="font-semibold mb-2">Enterprise Plan</h3>
+                    <p className="text-sm text-muted-foreground">Custom pricing - Unlimited agents and minutes</p>
+                  </Card>
+                </div>
+              </Card>
+            </TabsContent>
+
             <TabsContent value="payments" className="space-y-6 mt-6">
               <Card className="p-6">
-                <h2 className="text-xl font-bold mb-4">Payment Management</h2>
-                <p className="text-muted-foreground">Payment analytics and history features coming soon.</p>
+                <h2 className="text-xl font-bold mb-4">Payment History & Analytics</h2>
+                <p className="text-muted-foreground mb-4">Track all platform payments and revenue.</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+                    <p className="text-2xl font-bold">$0.00</p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-muted-foreground">Total Transactions</p>
+                    <p className="text-2xl font-bold">0</p>
+                  </Card>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="stripe" className="space-y-6 mt-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">Stripe Configuration</h2>
+                <p className="text-muted-foreground mb-4">Configure Stripe payment gateway settings.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Stripe Public Key</label>
+                    <input 
+                      type="text" 
+                      placeholder="pk_live_..." 
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Stripe Secret Key</label>
+                    <input 
+                      type="password" 
+                      placeholder="sk_live_..." 
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Webhook Endpoint Secret</label>
+                    <input 
+                      type="password" 
+                      placeholder="whsec_..." 
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="paypal" className="space-y-6 mt-6">
+              <Card className="p-6">
+                <h2 className="text-xl font-bold mb-4">PayPal Configuration</h2>
+                <p className="text-muted-foreground mb-4">Configure PayPal payment gateway settings.</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">PayPal Client ID</label>
+                    <input 
+                      type="text" 
+                      placeholder="AV..." 
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">PayPal Secret</label>
+                    <input 
+                      type="password" 
+                      placeholder="EK..." 
+                      className="w-full mt-1 px-3 py-2 border rounded-md"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 mt-4">
+                    <input type="checkbox" id="paypal-sandbox" />
+                    <label htmlFor="paypal-sandbox" className="text-sm">Use Sandbox Mode</label>
+                  </div>
+                </div>
               </Card>
             </TabsContent>
 

@@ -114,14 +114,26 @@ export function UnifiedManagement() {
 
     // Second pass: build hierarchy
     const roots: ExtendedOrganization[] = [];
+    const addedToParent = new Set<string>();
+    
+    // First add all customer organizations to their parent agencies
     orgMap.forEach(org => {
       if (org.parentOrganizationId && orgMap.has(org.parentOrganizationId)) {
         const parent = orgMap.get(org.parentOrganizationId)!;
         parent.children = parent.children || [];
         parent.children.push(org);
         parent.customerCount = (parent.customerCount || 0) + 1;
-      } else if (org.organizationType === 'agency' || !org.parentOrganizationId) {
-        roots.push(org);
+        addedToParent.add(org.id);
+      }
+    });
+    
+    // Then add all agencies and organizations without parents to roots
+    orgMap.forEach(org => {
+      if (!addedToParent.has(org.id)) {
+        // Add all agencies and any org without a parent
+        if (org.organizationType === 'agency' || !org.parentOrganizationId) {
+          roots.push(org);
+        }
       }
     });
 
@@ -386,10 +398,13 @@ export function UnifiedManagement() {
         organizationId: selectedOrgForUser,
       });
     } else {
-      createOrgMutation.mutate({
+      // For agencies, ensure no parent organization is set
+      const orgData = {
         ...formData,
         organizationType: createType === "agency" ? "agency" : "end_customer",
-      });
+        parentOrganizationId: createType === "agency" ? null : formData.parentOrganizationId,
+      };
+      createOrgMutation.mutate(orgData);
     }
   };
 
