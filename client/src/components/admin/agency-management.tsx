@@ -377,20 +377,20 @@ export function AgencyManagement() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  title={org.isActive ? "Disable Organization" : "Enable Organization"}
+                  title={org.billingStatus === 'active' ? "Disable Organization" : "Enable Organization"}
                   onClick={() => {
                     toggleOrgStatusMutation.mutate({ 
                       orgId: org.id, 
-                      isActive: !org.isActive 
+                      isActive: org.billingStatus !== 'active' 
                     });
                   }}
                 >
-                  {org.isActive ? (
+                  {org.billingStatus === 'active' ? (
                     <Ban className="w-4 h-4 text-orange-500" />
                   ) : (
                     <Power className="w-4 h-4 text-green-500" />
                   )}
-                  <span className="sr-only">{org.isActive ? "Disable" : "Enable"}</span>
+                  <span className="sr-only">{org.billingStatus === 'active' ? "Disable" : "Enable"}</span>
                 </Button>
                 <Button
                   size="sm"

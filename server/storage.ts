@@ -655,7 +655,10 @@ export class DatabaseStorage implements IStorage {
   async toggleOrganizationStatus(id: string, isActive: boolean): Promise<Organization> {
     const [updatedOrg] = await db()
       .update(organizations)
-      .set({ isActive, updatedAt: new Date() })
+      .set({ 
+        billingStatus: isActive ? 'active' : 'inactive', 
+        updatedAt: new Date() 
+      })
       .where(eq(organizations.id, id))
       .returning();
     if (!updatedOrg) {

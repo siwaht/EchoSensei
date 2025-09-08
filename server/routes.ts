@@ -782,9 +782,9 @@ export function registerRoutes(app: Express): Server {
       const testAgency = await storage.createOrganization({
         name: 'Test Agency Co',
         organizationType: 'agency',
-        commissionRate: 30,
-        maxAgents: '10',
-        maxUsers: '5',
+        commissionRate: '30',
+        maxAgents: 10,
+        maxUsers: 5,
         creditBalance: '100'
       });
       
