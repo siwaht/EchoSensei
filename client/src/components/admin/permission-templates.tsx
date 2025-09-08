@@ -42,111 +42,186 @@ export const availablePermissions = [
   { id: "white_label_settings", label: "White Label Settings", category: "Agency", description: "Configure white-label branding", icon: Building2 },
 ];
 
-// Permission presets for quick selection
-export const permissionPresets = {
-  // Regular user roles
-  viewer: {
-    label: "Viewer",
-    description: "Read-only access to view data",
-    permissions: ["view_analytics", "view_call_history"],
-    icon: Eye,
-    color: "secondary"
+// Organization type specific role templates
+export const roleTemplatesByOrgType = {
+  platform_owner: {
+    owner: {
+      label: "Platform Owner",
+      description: "Complete system control and management",
+      permissions: availablePermissions.map(p => p.id),
+      icon: Shield,
+      color: "destructive",
+      isDefault: false
+    },
+    admin: {
+      label: "Platform Admin",
+      description: "System administration without financial access",
+      permissions: availablePermissions.filter(p => p.id !== "view_billing").map(p => p.id),
+      icon: Shield,
+      color: "destructive",
+      isDefault: false
+    },
+    support: {
+      label: "Support Staff",
+      description: "Customer support and troubleshooting",
+      permissions: ["view_analytics", "view_call_history", "access_playground", "manage_agents", "configure_tools"],
+      icon: User,
+      color: "secondary",
+      isDefault: true
+    }
   },
-  user: {
-    label: "Basic User",
-    description: "Standard user with agent testing",
-    permissions: ["view_analytics", "view_call_history", "access_playground", "access_recordings"],
-    icon: User,
-    color: "secondary"
+  agency: {
+    owner: {
+      label: "Agency Owner",
+      description: "Full agency control with financial access",
+      permissions: [
+        "view_analytics", "view_call_history", "manage_customers", 
+        "view_commission_reports", "create_billing_packages", "white_label_settings",
+        "manage_agents", "manage_integrations", "view_billing", "manage_settings", "manage_users",
+        "configure_tools", "manage_voices", "manage_phone_numbers", "make_outbound_calls"
+      ],
+      icon: Building2,
+      color: "primary",
+      isDefault: false
+    },
+    admin: {
+      label: "Agency Admin",
+      description: "Manage customers and agents",
+      permissions: [
+        "view_analytics", "view_call_history", "manage_customers", "manage_agents",
+        "configure_tools", "access_playground", "manage_users", "manage_voices", "manage_phone_numbers"
+      ],
+      icon: Briefcase,
+      color: "primary",
+      isDefault: false
+    },
+    manager: {
+      label: "Agency Manager",
+      description: "Customer support and agent management",
+      permissions: ["view_analytics", "view_call_history", "manage_customers", "access_playground", "manage_agents"],
+      icon: Briefcase,
+      color: "primary",
+      isDefault: true
+    },
+    staff: {
+      label: "Agency Staff",
+      description: "Basic customer support",
+      permissions: ["view_analytics", "view_call_history", "access_playground"],
+      icon: User,
+      color: "secondary",
+      isDefault: false
+    }
   },
-  agent_manager: {
-    label: "Agent Manager",
-    description: "Manage AI agents and configurations",
-    permissions: ["view_analytics", "view_call_history", "manage_agents", "configure_tools", "access_playground", "manage_voices", "advanced_agent_settings"],
-    icon: Bot,
-    color: "default"
-  },
-  communications: {
-    label: "Communications Manager",
-    description: "Manage all voice and phone features",
-    permissions: ["view_analytics", "view_call_history", "manage_voices", "manage_phone_numbers", "make_outbound_calls", "access_recordings", "access_playground"],
-    icon: Phone,
-    color: "default"
-  },
-  
-  // Agency roles
-  agency_staff: {
-    label: "Agency Staff",
-    description: "Agency employee with customer management",
-    permissions: ["view_analytics", "view_call_history", "manage_customers", "access_playground"],
-    icon: Briefcase,
-    color: "primary"
-  },
-  agency_owner: {
-    label: "Agency Owner",
-    description: "Full agency control with commission access",
-    permissions: [
-      "view_analytics", "view_call_history", "manage_customers", 
-      "view_commission_reports", "create_billing_packages", "white_label_settings",
-      "manage_agents", "manage_integrations", "view_billing", "manage_settings"
-    ],
-    icon: Building2,
-    color: "primary"
-  },
-  
-  // Customer admin roles
-  customer_admin: {
-    label: "Customer Admin",
-    description: "Full control within organization",
-    permissions: availablePermissions.filter(p => 
-      !["manage_customers", "view_commission_reports", "create_billing_packages", "white_label_settings"].includes(p.id)
-    ).map(p => p.id),
-    icon: Shield,
-    color: "default"
-  },
-  
-  // System admin
-  full_admin: {
-    label: "System Admin",
-    description: "Complete system access",
-    permissions: availablePermissions.map(p => p.id),
-    icon: Shield,
-    color: "destructive"
+  end_customer: {
+    owner: {
+      label: "Account Owner",
+      description: "Full control of organization",
+      permissions: availablePermissions.filter(p => 
+        !["manage_customers", "view_commission_reports", "create_billing_packages", "white_label_settings"].includes(p.id)
+      ).map(p => p.id),
+      icon: Shield,
+      color: "default",
+      isDefault: false
+    },
+    admin: {
+      label: "Admin",
+      description: "Manage users and settings",
+      permissions: [
+        "view_analytics", "view_call_history", "manage_agents", "configure_tools", 
+        "access_playground", "manage_voices", "manage_phone_numbers", "manage_users", "manage_settings"
+      ],
+      icon: Shield,
+      color: "default",
+      isDefault: false
+    },
+    manager: {
+      label: "Manager",
+      description: "Manage agents and communications",
+      permissions: [
+        "view_analytics", "view_call_history", "manage_agents", "configure_tools",
+        "access_playground", "manage_voices", "make_outbound_calls"
+      ],
+      icon: Bot,
+      color: "default",
+      isDefault: true
+    },
+    user: {
+      label: "User",
+      description: "Standard user access",
+      permissions: ["view_analytics", "view_call_history", "access_playground", "access_recordings"],
+      icon: User,
+      color: "secondary",
+      isDefault: false
+    },
+    viewer: {
+      label: "Viewer",
+      description: "Read-only access",
+      permissions: ["view_analytics", "view_call_history"],
+      icon: Eye,
+      color: "secondary",
+      isDefault: false
+    }
   }
+};
+
+// Legacy permission presets for backward compatibility
+export const permissionPresets = {
+  viewer: roleTemplatesByOrgType.end_customer.viewer,
+  user: roleTemplatesByOrgType.end_customer.user,
+  agent_manager: roleTemplatesByOrgType.end_customer.manager,
+  communications: roleTemplatesByOrgType.end_customer.manager,
+  agency_staff: roleTemplatesByOrgType.agency.staff,
+  agency_owner: roleTemplatesByOrgType.agency.owner,
+  customer_admin: roleTemplatesByOrgType.end_customer.admin,
+  full_admin: roleTemplatesByOrgType.platform_owner.owner
 };
 
 interface PermissionTemplatesSelectorProps {
   selectedPermissions: string[];
   onPermissionsChange: (permissions: string[]) => void;
   userType?: "regular" | "agency" | "customer";
+  organizationType?: "platform_owner" | "agency" | "end_customer";
   showCustomization?: boolean;
+  selectedRole?: string;
+  onRoleChange?: (role: string) => void;
 }
 
 export function PermissionTemplatesSelector({ 
   selectedPermissions, 
   onPermissionsChange,
   userType = "regular",
-  showCustomization = true
+  organizationType,
+  showCustomization = true,
+  selectedRole,
+  onRoleChange
 }: PermissionTemplatesSelectorProps) {
-  const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<string | null>(selectedRole || null);
   const [customMode, setCustomMode] = useState(false);
 
-  // Filter presets based on user type
-  const getAvailablePresets = () => {
-    if (userType === "agency") {
-      return ["agency_staff", "agency_owner", "full_admin"];
-    } else if (userType === "customer") {
-      return ["viewer", "user", "agent_manager", "communications", "customer_admin"];
+  // Get available role templates based on organization type
+  const getAvailableTemplates = () => {
+    // Use new organization type if provided, otherwise fall back to legacy userType
+    if (organizationType) {
+      return roleTemplatesByOrgType[organizationType] || {};
     }
-    return Object.keys(permissionPresets);
+    // Legacy support
+    if (userType === "agency") {
+      return roleTemplatesByOrgType.agency;
+    } else if (userType === "customer") {
+      return roleTemplatesByOrgType.end_customer;
+    }
+    return permissionPresets;
   };
+
+  const templates = getAvailableTemplates() as Record<string, any>;
 
   const handlePresetSelect = (presetKey: string) => {
     setSelectedPreset(presetKey);
     setCustomMode(false);
-    const preset = permissionPresets[presetKey as keyof typeof permissionPresets];
-    if (preset) {
-      onPermissionsChange(preset.permissions);
+    const template = templates[presetKey as keyof typeof templates] || permissionPresets[presetKey as keyof typeof permissionPresets];
+    if (template) {
+      onPermissionsChange(template.permissions);
+      onRoleChange?.(presetKey);
     }
   };
 
@@ -175,8 +250,7 @@ export function PermissionTemplatesSelector({
         <Label className="text-base font-semibold mb-3 block">Permission Templates</Label>
         <RadioGroup value={selectedPreset || ""} onValueChange={handlePresetSelect}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {getAvailablePresets().map(presetKey => {
-              const preset = permissionPresets[presetKey as keyof typeof permissionPresets];
+            {Object.entries(templates).map(([presetKey, preset]) => {
               const Icon = preset.icon;
               return (
                 <Card 

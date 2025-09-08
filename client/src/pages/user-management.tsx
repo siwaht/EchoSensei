@@ -35,12 +35,20 @@ import {
   SendHorizontal,
   Copy,
   ExternalLink,
-  Bot
+  Bot,
+  Download,
+  Upload,
+  Building2,
+  Store,
+  CheckSquare,
+  Square,
+  MailOpen
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { AgentAssignment } from "@/components/admin/agent-assignment";
-import { PermissionTemplatesSelector, availablePermissions, permissionPresets } from "@/components/admin/permission-templates";
+import { PermissionTemplatesSelector, availablePermissions, permissionPresets, roleTemplatesByOrgType } from "@/components/admin/permission-templates";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,8 +100,12 @@ export function UserManagementPage() {
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [selectedRole, setSelectedRole] = useState<string>("manager");
+  const [selectedOrgType, setSelectedOrgType] = useState<"platform_owner" | "agency" | "end_customer">("end_customer");
   const [pendingAgentAssignments, setPendingAgentAssignments] = useState<string[]>([]);
   const [originalAgentAssignments, setOriginalAgentAssignments] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [showBulkActions, setShowBulkActions] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
@@ -322,11 +334,64 @@ export function UserManagementPage() {
                 />
               </div>
               
+              {/* Organization Type Selection */}
+              <div className="space-y-2">
+                <Label>Organization Type</Label>
+                <Select value={selectedOrgType} onValueChange={(value) => {
+                  const orgType = value as "platform_owner" | "agency" | "end_customer";
+                  setSelectedOrgType(orgType);
+                  // Reset role when org type changes
+                  const templates = roleTemplatesByOrgType[orgType];
+                  let defaultRole: string;
+                  
+                  // Get the first available role for this org type
+                  if (orgType === "platform_owner") {
+                    defaultRole = "support"; // Default to support for platform
+                  } else if (orgType === "agency") {
+                    defaultRole = "manager"; // Default to manager for agency
+                  } else {
+                    defaultRole = "user"; // Default to user for customers
+                  }
+                  
+                  setSelectedRole(defaultRole);
+                  const template = templates[defaultRole as keyof typeof templates];
+                  if (template) {
+                    setSelectedPermissions(template.permissions);
+                  }
+                }}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="end_customer">
+                      <div className="flex items-center gap-2">
+                        <Store className="w-4 h-4" />
+                        <span>Customer Organization</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="agency">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        <span>Agency (Reseller)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="platform_owner">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
+                        <span>Platform Admin</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Permission Templates */}
               <PermissionTemplatesSelector
                 selectedPermissions={selectedPermissions}
                 onPermissionsChange={setSelectedPermissions}
-                userType="regular"
+                organizationType={selectedOrgType}
+                selectedRole={selectedRole}
+                onRoleChange={setSelectedRole}
                 showCustomization={true}
               />
               
@@ -515,9 +580,57 @@ export function UserManagementPage() {
                     <SelectItem value="pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button variant="outline" size="icon">
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon">
+                  <Upload className="h-4 w-4" />
+                </Button>
               </div>
             </CardHeader>
           </Card>
+
+          {/* Bulk Actions Bar */}
+          {showBulkActions && (
+            <Card className="border-primary">
+              <CardHeader className="py-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckSquare className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">{selectedUsers.size} users selected</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedUsers(new Set());
+                        setShowBulkActions(false);
+                      }}
+                    >
+                      Clear selection
+                    </Button>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      <UserCheck className="h-4 w-4 mr-2" />
+                      Activate
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <UserX className="h-4 w-4 mr-2" />
+                      Deactivate
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <MailOpen className="h-4 w-4 mr-2" />
+                      Send Email
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          )}
 
           {/* Users Table */}
           <Card>
@@ -547,6 +660,20 @@ export function UserManagementPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-12">
+                          <Checkbox
+                            checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedUsers(new Set(filteredUsers.map(u => u.id)));
+                                setShowBulkActions(true);
+                              } else {
+                                setSelectedUsers(new Set());
+                                setShowBulkActions(false);
+                              }
+                            }}
+                          />
+                        </TableHead>
                         <TableHead>User</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Status</TableHead>
@@ -557,7 +684,22 @@ export function UserManagementPage() {
                     </TableHeader>
                     <TableBody>
                       {filteredUsers.map((user) => (
-                        <TableRow key={user.id}>
+                        <TableRow key={user.id} className={selectedUsers.has(user.id) ? "bg-muted/50" : ""}>
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedUsers.has(user.id)}
+                              onCheckedChange={(checked) => {
+                                const newSelection = new Set(selectedUsers);
+                                if (checked) {
+                                  newSelection.add(user.id);
+                                } else {
+                                  newSelection.delete(user.id);
+                                }
+                                setSelectedUsers(newSelection);
+                                setShowBulkActions(newSelection.size > 0);
+                              }}
+                            />
+                          </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-3">
                               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
