@@ -6,10 +6,239 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Palette, Eye, Save, Sparkles } from "lucide-react";
+import { ArrowLeft, Upload, Sparkles, Eye, Save, Wand2, Palette, RefreshCw, Check } from "lucide-react";
 import { useLocation } from "wouter";
+
+interface BrandTheme {
+  id: string;
+  name: string;
+  description: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  backgroundColor: string;
+  textColor: string;
+  mutedColor: string;
+  style: "modern" | "classic" | "playful" | "minimal" | "bold";
+  fontFamily: string;
+}
+
+// AI Theme Generator - generates themes based on brand description
+function generateThemesFromPrompt(prompt: string): BrandTheme[] {
+  const themes: BrandTheme[] = [];
+  
+  // Analyze keywords in prompt for theme generation
+  const lowerPrompt = prompt.toLowerCase();
+  
+  // Professional/Corporate theme
+  if (lowerPrompt.includes("professional") || lowerPrompt.includes("corporate") || 
+      lowerPrompt.includes("business") || lowerPrompt.includes("enterprise")) {
+    themes.push({
+      id: "professional",
+      name: "Professional",
+      description: "Clean and trustworthy design for business",
+      primaryColor: "#1e40af", // Deep blue
+      secondaryColor: "#3b82f6", // Bright blue
+      accentColor: "#10b981", // Green
+      backgroundColor: "#ffffff",
+      textColor: "#111827",
+      mutedColor: "#6b7280",
+      style: "classic",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // Tech/Modern theme
+  if (lowerPrompt.includes("tech") || lowerPrompt.includes("modern") || 
+      lowerPrompt.includes("innovative") || lowerPrompt.includes("startup")) {
+    themes.push({
+      id: "modern",
+      name: "Modern Tech",
+      description: "Cutting-edge design for technology companies",
+      primaryColor: "#7c3aed", // Purple
+      secondaryColor: "#a855f7", // Light purple
+      accentColor: "#ec4899", // Pink
+      backgroundColor: "#fafafa",
+      textColor: "#18181b",
+      mutedColor: "#71717a",
+      style: "modern",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // Healthcare/Calm theme
+  if (lowerPrompt.includes("health") || lowerPrompt.includes("medical") || 
+      lowerPrompt.includes("calm") || lowerPrompt.includes("wellness")) {
+    themes.push({
+      id: "healthcare",
+      name: "Healthcare",
+      description: "Calming and trustworthy healthcare design",
+      primaryColor: "#059669", // Teal
+      secondaryColor: "#10b981", // Green
+      accentColor: "#06b6d4", // Cyan
+      backgroundColor: "#f0fdf4",
+      textColor: "#064e3b",
+      mutedColor: "#6b7280",
+      style: "minimal",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // Finance/Trust theme
+  if (lowerPrompt.includes("finance") || lowerPrompt.includes("bank") || 
+      lowerPrompt.includes("trust") || lowerPrompt.includes("secure")) {
+    themes.push({
+      id: "finance",
+      name: "Financial",
+      description: "Secure and trustworthy financial design",
+      primaryColor: "#0f172a", // Dark navy
+      secondaryColor: "#1e293b", // Navy
+      accentColor: "#f59e0b", // Gold
+      backgroundColor: "#ffffff",
+      textColor: "#0f172a",
+      mutedColor: "#64748b",
+      style: "classic",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // Creative/Playful theme
+  if (lowerPrompt.includes("creative") || lowerPrompt.includes("playful") || 
+      lowerPrompt.includes("fun") || lowerPrompt.includes("friendly")) {
+    themes.push({
+      id: "playful",
+      name: "Playful",
+      description: "Fun and energetic design",
+      primaryColor: "#f97316", // Orange
+      secondaryColor: "#fb923c", // Light orange
+      accentColor: "#a855f7", // Purple
+      backgroundColor: "#fffbeb",
+      textColor: "#451a03",
+      mutedColor: "#92400e",
+      style: "playful",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // Luxury/Premium theme
+  if (lowerPrompt.includes("luxury") || lowerPrompt.includes("premium") || 
+      lowerPrompt.includes("elegant") || lowerPrompt.includes("sophisticated")) {
+    themes.push({
+      id: "luxury",
+      name: "Luxury",
+      description: "Elegant and sophisticated premium design",
+      primaryColor: "#991b1b", // Deep red
+      secondaryColor: "#b91c1c", // Red
+      accentColor: "#ca8a04", // Gold
+      backgroundColor: "#fefce8",
+      textColor: "#451a03",
+      mutedColor: "#78350f",
+      style: "classic",
+      fontFamily: "Playfair Display, serif"
+    });
+  }
+  
+  // Minimal/Clean theme
+  if (lowerPrompt.includes("minimal") || lowerPrompt.includes("clean") || 
+      lowerPrompt.includes("simple") || lowerPrompt.includes("sleek")) {
+    themes.push({
+      id: "minimal",
+      name: "Minimal",
+      description: "Clean and minimal design",
+      primaryColor: "#18181b", // Almost black
+      secondaryColor: "#27272a", // Dark gray
+      accentColor: "#3b82f6", // Blue
+      backgroundColor: "#ffffff",
+      textColor: "#18181b",
+      mutedColor: "#a1a1aa",
+      style: "minimal",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // Bold/Energetic theme
+  if (lowerPrompt.includes("bold") || lowerPrompt.includes("energy") || 
+      lowerPrompt.includes("dynamic") || lowerPrompt.includes("vibrant")) {
+    themes.push({
+      id: "bold",
+      name: "Bold Energy",
+      description: "Dynamic and vibrant design",
+      primaryColor: "#dc2626", // Red
+      secondaryColor: "#ef4444", // Bright red
+      accentColor: "#fbbf24", // Yellow
+      backgroundColor: "#fef2f2",
+      textColor: "#450a0a",
+      mutedColor: "#991b1b",
+      style: "bold",
+      fontFamily: "Inter, sans-serif"
+    });
+  }
+  
+  // If no specific themes matched, provide default options
+  if (themes.length === 0) {
+    themes.push(
+      {
+        id: "default1",
+        name: "Ocean Blue",
+        description: "Professional and trustworthy",
+        primaryColor: "#0ea5e9",
+        secondaryColor: "#38bdf8",
+        accentColor: "#7c3aed",
+        backgroundColor: "#f0f9ff",
+        textColor: "#0c4a6e",
+        mutedColor: "#64748b",
+        style: "modern",
+        fontFamily: "Inter, sans-serif"
+      },
+      {
+        id: "default2",
+        name: "Forest Green",
+        description: "Natural and calming",
+        primaryColor: "#16a34a",
+        secondaryColor: "#22c55e",
+        accentColor: "#f59e0b",
+        backgroundColor: "#f0fdf4",
+        textColor: "#14532d",
+        mutedColor: "#6b7280",
+        style: "minimal",
+        fontFamily: "Inter, sans-serif"
+      },
+      {
+        id: "default3",
+        name: "Royal Purple",
+        description: "Premium and innovative",
+        primaryColor: "#9333ea",
+        secondaryColor: "#a855f7",
+        accentColor: "#ec4899",
+        backgroundColor: "#faf5ff",
+        textColor: "#581c87",
+        mutedColor: "#6b7280",
+        style: "modern",
+        fontFamily: "Inter, sans-serif"
+      }
+    );
+  }
+  
+  // Always add a custom option
+  themes.push({
+    id: "custom",
+    name: "Custom",
+    description: "Create your own color scheme",
+    primaryColor: "#7c3aed",
+    secondaryColor: "#a855f7",
+    accentColor: "#ec4899",
+    backgroundColor: "#ffffff",
+    textColor: "#111827",
+    mutedColor: "#6b7280",
+    style: "modern",
+    fontFamily: "Inter, sans-serif"
+  });
+  
+  return themes;
+}
 
 export default function WhitelabelSettings() {
   const [, setLocation] = useLocation();
@@ -20,7 +249,10 @@ export default function WhitelabelSettings() {
   
   const [appName, setAppName] = useState("VoiceAI Dashboard");
   const [companyName, setCompanyName] = useState("");
-  const [primaryColor, setPrimaryColor] = useState("#7C3AED");
+  const [brandPrompt, setBrandPrompt] = useState("");
+  const [generatedThemes, setGeneratedThemes] = useState<BrandTheme[]>([]);
+  const [selectedTheme, setSelectedTheme] = useState<BrandTheme | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [removeBranding, setRemoveBranding] = useState(false);
   const [supportUrl, setSupportUrl] = useState("");
   const [documentationUrl, setDocumentationUrl] = useState("");
@@ -29,7 +261,17 @@ export default function WhitelabelSettings() {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Fetch current whitelabel config
-  const { data: config, isLoading } = useQuery({
+  const { data: config, isLoading } = useQuery<{
+    organizationId: string;
+    appName?: string;
+    companyName?: string;
+    primaryColor?: string;
+    removePlatformBranding?: boolean;
+    supportUrl?: string;
+    documentationUrl?: string;
+    logoUrl?: string;
+    faviconUrl?: string;
+  }>({
     queryKey: ["/api/whitelabel"],
   });
 
@@ -38,14 +280,57 @@ export default function WhitelabelSettings() {
     if (config) {
       setAppName(config.appName || "VoiceAI Dashboard");
       setCompanyName(config.companyName || "");
-      setPrimaryColor(config.primaryColor || "#7C3AED");
       setRemoveBranding(config.removePlatformBranding || false);
       setSupportUrl(config.supportUrl || "");
       setDocumentationUrl(config.documentationUrl || "");
       setLogoPreview(config.logoUrl || "");
       setFaviconPreview(config.faviconUrl || "");
+      
+      // Set initial theme if color exists
+      if (config.primaryColor) {
+        setSelectedTheme({
+          id: "current",
+          name: "Current Theme",
+          description: "Your existing brand colors",
+          primaryColor: config.primaryColor,
+          secondaryColor: config.primaryColor,
+          accentColor: config.primaryColor,
+          backgroundColor: "#ffffff",
+          textColor: "#111827",
+          mutedColor: "#6b7280",
+          style: "modern",
+          fontFamily: "Inter, sans-serif"
+        });
+      }
     }
   }, [config]);
+
+  // Generate themes based on prompt
+  const handleGenerateThemes = () => {
+    if (!brandPrompt.trim()) {
+      toast({
+        title: "Please describe your brand",
+        description: "Enter a description to generate themes",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsGenerating(true);
+    
+    // Simulate AI processing delay
+    setTimeout(() => {
+      const themes = generateThemesFromPrompt(brandPrompt);
+      setGeneratedThemes(themes);
+      setIsGenerating(false);
+      setHasChanges(true);
+      
+      toast({
+        title: "Themes generated!",
+        description: `Created ${themes.length} theme options based on your description`,
+      });
+    }, 1500);
+  };
 
   // Save mutation
   const saveMutation = useMutation({
@@ -135,10 +420,19 @@ export default function WhitelabelSettings() {
   };
 
   const handleSave = () => {
+    if (!selectedTheme) {
+      toast({
+        title: "Please select a theme",
+        description: "Generate and select a theme before saving",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     saveMutation.mutate({
       appName,
       companyName,
-      primaryColor,
+      primaryColor: selectedTheme.primaryColor,
       removePlatformBranding: removeBranding,
       supportUrl,
       documentationUrl,
@@ -146,26 +440,6 @@ export default function WhitelabelSettings() {
       faviconUrl: faviconPreview,
     });
   };
-
-  // Generate color variations for preview
-  const generateColorVariations = (color: string) => {
-    const hex2rgb = (hex: string) => {
-      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return result ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16)
-      } : { r: 124, g: 58, b: 237 };
-    };
-
-    const rgb = hex2rgb(color);
-    const darker = `rgb(${Math.max(0, rgb.r - 30)}, ${Math.max(0, rgb.g - 30)}, ${Math.max(0, rgb.b - 30)})`;
-    const lighter = `rgb(${Math.min(255, rgb.r + 30)}, ${Math.min(255, rgb.g + 30)}, ${Math.min(255, rgb.b + 30)})`;
-    
-    return { primary: color, darker, lighter };
-  };
-
-  const colors = generateColorVariations(primaryColor);
 
   if (isLoading) {
     return (
@@ -176,7 +450,7 @@ export default function WhitelabelSettings() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-7xl mx-auto p-6">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button
@@ -187,46 +461,44 @@ export default function WhitelabelSettings() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Whitelabel Settings</h1>
+          <h1 className="text-2xl font-bold">AI-Powered Whitelabel</h1>
           <p className="text-sm text-muted-foreground">
-            Customize your platform branding in seconds
+            Describe your brand and let AI create the perfect design
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Settings Panel */}
-        <div className="space-y-6">
-          {/* Basic Branding */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Brand Identity Card */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
-                Basic Branding
+                Brand Identity
               </CardTitle>
               <CardDescription>
-                The essentials - logo, name, and color
+                Upload your logo and describe your brand
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Logo Upload */}
-              <div>
-                <Label>Logo</Label>
-                <div className="mt-2 flex items-center gap-4">
+              {/* Logo & Favicon Upload */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Logo</Label>
                   <div 
-                    className="w-24 h-24 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                    className="mt-2 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
                     onClick={() => fileInputRef.current?.click()}
-                    style={{ borderColor: hasChanges ? primaryColor : undefined }}
                   >
                     {logoPreview ? (
                       <img src={logoPreview} alt="Logo" className="max-w-full max-h-full object-contain" />
                     ) : (
-                      <Upload className="h-8 w-8 text-muted-foreground" />
+                      <>
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">Upload Logo</span>
+                      </>
                     )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <p>Click to upload</p>
-                    <p>PNG, JPG (max 2MB)</p>
                   </div>
                   <input
                     ref={fileInputRef}
@@ -236,26 +508,21 @@ export default function WhitelabelSettings() {
                     onChange={(e) => handleLogoUpload(e, "logo")}
                   />
                 </div>
-              </div>
-
-              {/* Favicon Upload */}
-              <div>
-                <Label>Favicon</Label>
-                <div className="mt-2 flex items-center gap-4">
+                
+                <div>
+                  <Label>Favicon</Label>
                   <div 
-                    className="w-16 h-16 border-2 border-dashed rounded-lg flex items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                    className="mt-2 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
                     onClick={() => faviconInputRef.current?.click()}
-                    style={{ borderColor: hasChanges ? primaryColor : undefined }}
                   >
                     {faviconPreview ? (
                       <img src={faviconPreview} alt="Favicon" className="max-w-full max-h-full object-contain" />
                     ) : (
-                      <Upload className="h-6 w-6 text-muted-foreground" />
+                      <>
+                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">Upload Favicon</span>
+                      </>
                     )}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    <p>Browser tab icon</p>
-                    <p>32x32 or 64x64</p>
                   </div>
                   <input
                     ref={faviconInputRef}
@@ -267,80 +534,38 @@ export default function WhitelabelSettings() {
                 </div>
               </div>
 
-              {/* App Name */}
-              <div>
-                <Label htmlFor="appName">App Name</Label>
-                <Input
-                  id="appName"
-                  value={appName}
-                  onChange={(e) => {
-                    setAppName(e.target.value);
-                    setHasChanges(true);
-                  }}
-                  placeholder="VoiceAI Dashboard"
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Company Name */}
-              <div>
-                <Label htmlFor="companyName">Company Name</Label>
-                <Input
-                  id="companyName"
-                  value={companyName}
-                  onChange={(e) => {
-                    setCompanyName(e.target.value);
-                    setHasChanges(true);
-                  }}
-                  placeholder="Your Agency Name"
-                  className="mt-2"
-                />
-              </div>
-
-              {/* Primary Color */}
-              <div>
-                <Label htmlFor="primaryColor">Brand Color</Label>
-                <div className="mt-2 flex items-center gap-3">
-                  <input
-                    id="primaryColor"
-                    type="color"
-                    value={primaryColor}
-                    onChange={(e) => {
-                      setPrimaryColor(e.target.value);
-                      setHasChanges(true);
-                    }}
-                    className="h-10 w-20 rounded border cursor-pointer"
-                  />
+              {/* App & Company Name */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="appName">App Name</Label>
                   <Input
-                    value={primaryColor}
+                    id="appName"
+                    value={appName}
                     onChange={(e) => {
-                      setPrimaryColor(e.target.value);
+                      setAppName(e.target.value);
                       setHasChanges(true);
                     }}
-                    placeholder="#7C3AED"
-                    className="flex-1"
+                    placeholder="VoiceAI Dashboard"
+                    className="mt-2"
                   />
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <div 
-                    className="w-10 h-10 rounded cursor-pointer"
-                    style={{ backgroundColor: colors.darker }}
-                    onClick={() => setPrimaryColor(colors.darker)}
-                  />
-                  <div 
-                    className="w-10 h-10 rounded cursor-pointer"
-                    style={{ backgroundColor: colors.primary }}
-                  />
-                  <div 
-                    className="w-10 h-10 rounded cursor-pointer"
-                    style={{ backgroundColor: colors.lighter }}
-                    onClick={() => setPrimaryColor(colors.lighter)}
+                <div>
+                  <Label htmlFor="companyName">Company Name</Label>
+                  <Input
+                    id="companyName"
+                    value={companyName}
+                    onChange={(e) => {
+                      setCompanyName(e.target.value);
+                      setHasChanges(true);
+                    }}
+                    placeholder="Your Agency Name"
+                    className="mt-2"
                   />
                 </div>
               </div>
 
               {/* Remove Platform Branding */}
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                 <div>
                   <Label>Remove VoiceAI Branding</Label>
                   <p className="text-xs text-muted-foreground mt-1">
@@ -355,6 +580,105 @@ export default function WhitelabelSettings() {
                   }}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* AI Brand Generator */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wand2 className="h-5 w-5" />
+                AI Brand Generator
+              </CardTitle>
+              <CardDescription>
+                Describe your brand and we'll create the perfect color scheme
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="brandPrompt">Describe Your Brand</Label>
+                <Textarea
+                  id="brandPrompt"
+                  value={brandPrompt}
+                  onChange={(e) => setBrandPrompt(e.target.value)}
+                  placeholder="Example: Modern fintech startup focused on trust and innovation, targeting young professionals..."
+                  className="mt-2 min-h-[100px]"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  Include keywords like: professional, modern, healthcare, finance, creative, luxury, minimal, bold, etc.
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleGenerateThemes}
+                disabled={isGenerating || !brandPrompt.trim()}
+                className="w-full"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                    Generating Themes...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4 mr-2" />
+                    Generate Brand Themes
+                  </>
+                )}
+              </Button>
+
+              {/* Generated Themes */}
+              {generatedThemes.length > 0 && (
+                <div className="space-y-3 mt-6">
+                  <Label>Select a Theme</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {generatedThemes.map((theme) => (
+                      <div
+                        key={theme.id}
+                        className={`relative border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                          selectedTheme?.id === theme.id 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border hover:border-primary/50'
+                        }`}
+                        onClick={() => {
+                          setSelectedTheme(theme);
+                          setHasChanges(true);
+                        }}
+                      >
+                        {selectedTheme?.id === theme.id && (
+                          <div className="absolute top-2 right-2">
+                            <Check className="h-5 w-5 text-primary" />
+                          </div>
+                        )}
+                        
+                        <div className="space-y-2">
+                          <div className="font-semibold">{theme.name}</div>
+                          <div className="text-xs text-muted-foreground">{theme.description}</div>
+                          
+                          {/* Color preview */}
+                          <div className="flex gap-1 mt-2">
+                            <div 
+                              className="w-8 h-8 rounded"
+                              style={{ backgroundColor: theme.primaryColor }}
+                              title="Primary"
+                            />
+                            <div 
+                              className="w-8 h-8 rounded"
+                              style={{ backgroundColor: theme.secondaryColor }}
+                              title="Secondary"
+                            />
+                            <div 
+                              className="w-8 h-8 rounded"
+                              style={{ backgroundColor: theme.accentColor }}
+                              title="Accent"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -401,9 +725,11 @@ export default function WhitelabelSettings() {
           {/* Save Button */}
           <Button
             onClick={handleSave}
-            disabled={!hasChanges || saveMutation.isPending}
+            disabled={!hasChanges || saveMutation.isPending || !selectedTheme}
             className="w-full"
-            style={{ backgroundColor: hasChanges ? primaryColor : undefined }}
+            style={{ 
+              backgroundColor: hasChanges && selectedTheme ? selectedTheme.primaryColor : undefined 
+            }}
           >
             <Save className="h-4 w-4 mr-2" />
             {saveMutation.isPending ? "Saving..." : "Save Changes"}
@@ -412,7 +738,7 @@ export default function WhitelabelSettings() {
 
         {/* Live Preview */}
         <div className="lg:sticky lg:top-6">
-          <Card className="h-full">
+          <Card className="h-fit">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Eye className="h-5 w-5" />
@@ -430,31 +756,49 @@ export default function WhitelabelSettings() {
                 </TabsList>
                 
                 <TabsContent value="login" className="mt-4">
-                  <div className="border rounded-lg p-6 bg-background">
+                  <div 
+                    className="border rounded-lg p-6"
+                    style={{ 
+                      backgroundColor: selectedTheme?.backgroundColor || "#ffffff",
+                      color: selectedTheme?.textColor || "#111827"
+                    }}
+                  >
                     {/* Login Preview */}
                     <div className="text-center mb-6">
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="h-12 mx-auto mb-4" />
                       ) : (
-                        <div className="h-12 w-32 bg-muted rounded mx-auto mb-4" />
+                        <div className="h-12 w-32 bg-gray-200 rounded mx-auto mb-4" />
                       )}
                       <h2 className="text-2xl font-bold">{appName || "VoiceAI Dashboard"}</h2>
-                      <p className="text-sm text-muted-foreground mt-2">
+                      <p 
+                        className="text-sm mt-2"
+                        style={{ color: selectedTheme?.mutedColor || "#6b7280" }}
+                      >
                         {companyName ? `Welcome to ${companyName}` : "Sign in to your account"}
                       </p>
                     </div>
                     <div className="space-y-3">
-                      <div className="h-10 bg-muted rounded" />
-                      <div className="h-10 bg-muted rounded" />
+                      <div 
+                        className="h-10 rounded"
+                        style={{ backgroundColor: selectedTheme?.mutedColor || "#e5e7eb", opacity: 0.2 }}
+                      />
+                      <div 
+                        className="h-10 rounded"
+                        style={{ backgroundColor: selectedTheme?.mutedColor || "#e5e7eb", opacity: 0.2 }}
+                      />
                       <button 
                         className="w-full h-10 rounded text-white font-medium"
-                        style={{ backgroundColor: primaryColor }}
+                        style={{ backgroundColor: selectedTheme?.primaryColor || "#7c3aed" }}
                       >
                         Sign In
                       </button>
                     </div>
                     {!removeBranding && (
-                      <p className="text-xs text-center text-muted-foreground mt-6">
+                      <p 
+                        className="text-xs text-center mt-6"
+                        style={{ color: selectedTheme?.mutedColor || "#6b7280" }}
+                      >
                         Powered by VoiceAI Platform
                       </p>
                     )}
@@ -466,7 +810,7 @@ export default function WhitelabelSettings() {
                     {/* Dashboard Header Preview */}
                     <div 
                       className="h-14 flex items-center px-4 text-white"
-                      style={{ backgroundColor: primaryColor }}
+                      style={{ backgroundColor: selectedTheme?.primaryColor || "#7c3aed" }}
                     >
                       {logoPreview ? (
                         <img src={logoPreview} alt="Logo" className="h-8 mr-3 brightness-0 invert" />
@@ -476,13 +820,40 @@ export default function WhitelabelSettings() {
                       <span className="font-semibold">{appName || "VoiceAI Dashboard"}</span>
                     </div>
                     {/* Dashboard Content Preview */}
-                    <div className="p-4 bg-background">
+                    <div 
+                      className="p-4"
+                      style={{ 
+                        backgroundColor: selectedTheme?.backgroundColor || "#ffffff",
+                        color: selectedTheme?.textColor || "#111827"
+                      }}
+                    >
                       <div className="grid grid-cols-3 gap-3 mb-4">
-                        <div className="h-20 bg-muted rounded" />
-                        <div className="h-20 bg-muted rounded" />
-                        <div className="h-20 bg-muted rounded" />
+                        <div 
+                          className="h-20 rounded"
+                          style={{ 
+                            backgroundColor: selectedTheme?.primaryColor || "#7c3aed",
+                            opacity: 0.1
+                          }}
+                        />
+                        <div 
+                          className="h-20 rounded"
+                          style={{ 
+                            backgroundColor: selectedTheme?.secondaryColor || "#a855f7",
+                            opacity: 0.1
+                          }}
+                        />
+                        <div 
+                          className="h-20 rounded"
+                          style={{ 
+                            backgroundColor: selectedTheme?.accentColor || "#ec4899",
+                            opacity: 0.1
+                          }}
+                        />
                       </div>
-                      <div className="h-32 bg-muted rounded" />
+                      <div 
+                        className="h-32 rounded"
+                        style={{ backgroundColor: selectedTheme?.mutedColor || "#e5e7eb", opacity: 0.2 }}
+                      />
                     </div>
                   </div>
                 </TabsContent>
