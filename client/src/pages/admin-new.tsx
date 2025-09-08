@@ -15,7 +15,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Users, Building2, DollarSign, Phone, Edit, Trash2, Plus, Shield, 
   Activity, TrendingUp, Package, CreditCard, UserPlus, Settings,
-  Save, X, Eye, Wallet, CheckCircle, AlertCircle, RefreshCw
+  Save, X, Eye, Wallet, CheckCircle, AlertCircle, RefreshCw, Briefcase
 } from "lucide-react";
 import type { User, Organization, BillingPackage } from "@shared/schema";
 import ApiSync from "./admin/api-sync";
@@ -24,6 +24,7 @@ import { UserManagementPage } from "./user-management";
 import { PaymentAnalytics } from "@/components/admin/payment-analytics";
 import { PaymentHistory } from "@/components/admin/payment-history";
 import { UserBulkOperations } from "@/components/admin/user-bulk-operations";
+import { AgencyManagement } from "@/components/admin/agency-management";
 
 interface BillingData {
   totalUsers: number;
@@ -334,8 +335,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Tabs for different admin sections */}
-      <Tabs defaultValue="users" className="w-full">
-        <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 h-auto">
+      <Tabs defaultValue="agencies" className="w-full">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 h-auto">
+          <TabsTrigger value="agencies" className="flex items-center justify-center gap-1 px-2 py-2">
+            <Briefcase className="w-4 h-4" />
+            <span className="hidden sm:inline text-xs lg:text-sm">Agencies</span>
+          </TabsTrigger>
           <TabsTrigger value="users" className="flex items-center justify-center gap-1 px-2 py-2">
             <Users className="w-4 h-4" />
             <span className="hidden sm:inline text-xs lg:text-sm">Users</span>
@@ -361,6 +366,11 @@ export default function AdminDashboard() {
             <span className="hidden sm:inline text-xs lg:text-sm">API</span>
           </TabsTrigger>
         </TabsList>
+
+        {/* Agencies Tab */}
+        <TabsContent value="agencies" className="space-y-4">
+          <AgencyManagement />
+        </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-4">
