@@ -1609,7 +1609,12 @@ export function registerRoutes(app: Express): Server {
       }
       
       // Check if user has permission to manage users
-      if (user.role !== 'admin' && user.role !== 'agency' && !user.permissions?.includes('manage_users')) {
+      // Agency owners and admins have implicit permission to manage users within their organization
+      const isAgencyOwner = org.organizationType === 'agency' && 
+        (user.role === 'admin' || user.role === 'agency' || user.role === 'owner' || 
+         user.permissions?.includes('manage_users'));
+      
+      if (!isAgencyOwner && !user.isAdmin) {
         return res.status(403).json({ message: "You don't have permission to manage users" });
       }
       
