@@ -5279,6 +5279,20 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Domain configuration endpoint
+  app.get("/api/config/domain", (req: any, res) => {
+    const baseDomain = process.env.BASE_DOMAIN || 
+      (process.env.NODE_ENV === 'production' ? req.get('host') : 'localhost:5000');
+    
+    res.json({
+      baseDomain,
+      isDevelopment: process.env.NODE_ENV !== 'production',
+      supportsSubdomains: true,
+      // In development, subdomain can be passed as query parameter
+      developmentSubdomainParam: process.env.NODE_ENV !== 'production' ? 'subdomain' : null
+    });
+  });
+
   // Public whitelabel endpoint for login page
   app.get("/api/whitelabel/public", async (req: any, res) => {
     try {

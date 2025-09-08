@@ -18,14 +18,23 @@ export default function Landing() {
   const { toast } = useToast();
   const [subdomain, setSubdomain] = useState<string | null>(null);
   
-  // Detect subdomain from URL
+  // Detect subdomain from URL or query parameter (for development)
   useEffect(() => {
-    const hostname = window.location.hostname;
-    const parts = hostname.split('.');
+    // Check for subdomain in query parameter first (development mode)
+    const urlParams = new URLSearchParams(window.location.search);
+    const querySubdomain = urlParams.get('subdomain');
     
-    // Check if we have a subdomain (not www, not localhost)
-    if (parts.length >= 2 && parts[0] !== 'www' && parts[0] !== 'localhost') {
-      setSubdomain(parts[0]);
+    if (querySubdomain) {
+      setSubdomain(querySubdomain);
+    } else {
+      // Check hostname for subdomain
+      const hostname = window.location.hostname;
+      const parts = hostname.split('.');
+      
+      // Check if we have a subdomain (not www, not localhost)
+      if (parts.length >= 2 && parts[0] !== 'www' && parts[0] !== 'localhost') {
+        setSubdomain(parts[0]);
+      }
     }
   }, []);
   

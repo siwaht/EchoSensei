@@ -85,11 +85,22 @@ const COLOR_PALETTE = [
   "#7c3aed", // Violet 600
 ];
 
+// Get base domain from environment or use default
+const getBaseDomain = () => {
+  // In development, use the current host
+  if (import.meta.env.DEV) {
+    return window.location.host;
+  }
+  // In production, use configured domain or fallback
+  return import.meta.env.VITE_BASE_DOMAIN || window.location.host;
+};
+
 export default function WhitelabelSettings() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const baseDomain = getBaseDomain();
 
   // Form state
   const [logo, setLogo] = useState<File | null>(null);
@@ -514,11 +525,11 @@ export default function WhitelabelSettings() {
                       )}
                     </div>
                     <span className="text-sm text-muted-foreground flex items-center">
-                      .voiceai.com
+                      .{baseDomain}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
-                    Your clients will access the platform at: {subdomain || 'agency-name'}.voiceai.com
+                    Your clients will access the platform at: {subdomain || 'agency-name'}.{baseDomain}
                   </p>
                 </div>
                 
@@ -536,7 +547,7 @@ export default function WhitelabelSettings() {
                     className="mt-2"
                   />
                   <p className="text-xs text-muted-foreground mt-2">
-                    Point your domain's CNAME record to {subdomain || 'your-subdomain'}.voiceai.com
+                    Point your domain's CNAME record to {subdomain || 'your-subdomain'}.{baseDomain}
                   </p>
                 </div>
               </CardContent>
