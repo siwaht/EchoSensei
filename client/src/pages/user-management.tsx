@@ -40,6 +40,7 @@ import {
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
 import { AgentAssignment } from "@/components/admin/agent-assignment";
+import { PermissionTemplatesSelector, availablePermissions, permissionPresets } from "@/components/admin/permission-templates";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +57,7 @@ interface User {
   lastName: string;
   organizationId: string;
   organizationName?: string;
-  role: "admin" | "manager" | "member" | "viewer";
+  role: "admin" | "manager" | "member" | "viewer" | "agency" | "user";
   status: "active" | "inactive" | "pending";
   isAdmin: boolean;
   permissions?: string[];
@@ -76,65 +77,6 @@ interface ActivityLog {
   timestamp: string;
 }
 
-// Available permissions with clear descriptions
-const availablePermissions = [
-  // Core Access - Basic viewing rights
-  { id: "view_analytics", label: "View Dashboard & Analytics", category: "Core Access", description: "Access to dashboard metrics and analytics data" },
-  { id: "view_call_history", label: "View Call History", category: "Core Access", description: "View call logs and conversation history" },
-  
-  // Agent Management - Managing AI agents
-  { id: "manage_agents", label: "Manage Agents", category: "Agent Management", description: "Create, edit, and delete AI agents" },
-  { id: "configure_tools", label: "Configure Agent Tools", category: "Agent Management", description: "Set up and modify agent tools and capabilities" },
-  { id: "access_playground", label: "Test Agents", category: "Agent Management", description: "Access playground to test agent interactions" },
-  { id: "advanced_agent_settings", label: "Advanced Agent Settings", category: "Agent Management", description: "Access to advanced agent configuration (turn-taking, privacy, variables)" },
-  
-  // Voice & Communications - Phone and voice features
-  { id: "manage_voices", label: "Manage Voices", category: "Communications", description: "Configure voice settings and preferences" },
-  { id: "manage_phone_numbers", label: "Manage Phone Numbers", category: "Communications", description: "Add and configure phone numbers" },
-  { id: "make_outbound_calls", label: "Outbound Calling", category: "Communications", description: "Initiate and manage outbound call campaigns" },
-  { id: "access_recordings", label: "Access Recordings", category: "Communications", description: "Listen to and download call recordings" },
-  { id: "use_webrtc", label: "Use WebRTC Connection", category: "Communications", description: "Enable enhanced WebRTC connection in playground (experimental)" },
-  
-  // Administration - System management
-  { id: "manage_integrations", label: "Manage Integrations", category: "Administration", description: "Configure third-party integrations" },
-  { id: "view_billing", label: "View Billing", category: "Administration", description: "Access billing and payment information" },
-  { id: "manage_settings", label: "Manage Settings", category: "Administration", description: "Modify organization settings" },
-  { id: "manage_users", label: "Manage Users", category: "Administration", description: "Add and manage user accounts (Admin only)" },
-];
-
-// Permission presets for quick selection
-const permissionPresets = {
-  viewer: {
-    label: "Viewer",
-    description: "Read-only access to view data",
-    permissions: ["view_analytics", "view_call_history"]
-  },
-  user: {
-    label: "Basic User",
-    description: "Standard user with agent testing",
-    permissions: ["view_analytics", "view_call_history", "access_playground", "access_recordings"]
-  },
-  agent_manager: {
-    label: "Agent Manager",
-    description: "Manage AI agents and configurations",
-    permissions: ["view_analytics", "view_call_history", "manage_agents", "configure_tools", "access_playground", "manage_voices", "advanced_agent_settings"]
-  },
-  communications: {
-    label: "Communications Manager",
-    description: "Manage all voice and phone features",
-    permissions: ["view_analytics", "view_call_history", "manage_voices", "manage_phone_numbers", "make_outbound_calls", "access_recordings", "access_playground"]
-  },
-  organization_admin: {
-    label: "Organization Admin",
-    description: "Full organization control (no user management)",
-    permissions: availablePermissions.filter(p => p.id !== "manage_users").map(p => p.id)
-  },
-  full_admin: {
-    label: "System Admin",
-    description: "Complete system access",
-    permissions: availablePermissions.map(p => p.id)
-  }
-};
 
 export function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -380,31 +322,13 @@ export function UserManagementPage() {
                 />
               </div>
               
-              {/* Permission Presets */}
-              <div className="space-y-2">
-                <Label>Quick Templates</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {Object.entries(permissionPresets).map(([key, preset]) => (
-                    <Button
-                      key={key}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedPermissions(preset.permissions)}
-                      className="text-xs"
-                    >
-                      {preset.label}
-                    </Button>
-                  ))}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedPermissions([])}
-                    className="text-xs"
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              </div>
+              {/* Permission Templates */}
+              <PermissionTemplatesSelector
+                selectedPermissions={selectedPermissions}
+                onPermissionsChange={setSelectedPermissions}
+                userType="regular"
+                showCustomization={true}
+              />
               
               {/* Permissions Checkboxes */}
               <div className="space-y-2">
@@ -797,30 +721,13 @@ export function UserManagementPage() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select 
-                  value={selectedUser.role} 
-                  onValueChange={(value) => {
-                    setSelectedUser({...selectedUser, role: value as any});
-                    // Update permissions when role preset is selected
-                    if (permissionPresets[value as keyof typeof permissionPresets]) {
-                      setEditPermissions(permissionPresets[value as keyof typeof permissionPresets].permissions);
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(permissionPresets).map(([key, preset]) => (
-                      <SelectItem key={key} value={key}>
-                        {preset.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Permission Templates for Edit */}
+              <PermissionTemplatesSelector
+                selectedPermissions={editPermissions}
+                onPermissionsChange={setEditPermissions}
+                userType={selectedUser.role === 'agency' ? 'agency' : 'regular'}
+                showCustomization={true}
+              />
               
               {/* Permission Quick Templates */}
               <div className="space-y-2">
