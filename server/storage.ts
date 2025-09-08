@@ -376,9 +376,12 @@ export class DatabaseStorage implements IStorage {
 
   // User invitation operations
   async createInvitation(invitation: InsertUserInvitation): Promise<UserInvitation> {
+    const crypto = require('crypto');
+    const code = crypto.randomBytes(16).toString('hex');
+    
     const [inv] = await db()
       .insert(userInvitations)
-      .values(invitation)
+      .values({ ...invitation, code })
       .returning();
     return inv;
   }

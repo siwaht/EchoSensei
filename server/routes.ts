@@ -7195,7 +7195,7 @@ Generate the complete prompt now:`;
         createdAt: user.createdAt?.toISOString(),
         lastLoginAt: user.lastLoginAt?.toISOString(),
         permissions: user.permissions || [],
-        assignedAgentIds: []  // Will be populated later
+        assignedAgentIds: [] as string[]  // Will be populated later
       }));
       
       // Get assigned agents for each user
@@ -7337,8 +7337,7 @@ Generate the complete prompt now:`;
         permissions: permissions || [],
         invitedBy,
         status: "pending",
-        expiresAt,
-        code: crypto.randomBytes(16).toString("hex")
+        expiresAt
       });
       
       // TODO: Send invitation email
