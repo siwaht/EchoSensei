@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Sparkles, Eye, Save, Wand2, Palette, RefreshCw, Check } from "lucide-react";
+import { ArrowLeft, Upload, Sparkles, Eye, Save, Wand2, Palette, RefreshCw, Check, X } from "lucide-react";
 import { useLocation } from "wouter";
 
 interface BrandTheme {
@@ -360,6 +360,22 @@ export default function WhitelabelSettings() {
   });
 
   // Handle logo upload
+  // Handle removing logo or favicon
+  const handleRemoveImage = (type: "logo" | "favicon") => {
+    if (type === "logo") {
+      setLogoPreview("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } else {
+      setFaviconPreview("");
+      if (faviconInputRef.current) {
+        faviconInputRef.current.value = "";
+      }
+    }
+    setHasChanges(true);
+  };
+
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: "logo" | "favicon") => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -494,17 +510,33 @@ export default function WhitelabelSettings() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Logo</Label>
-                  <div 
-                    className="mt-2 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {logoPreview ? (
-                      <img src={logoPreview} alt="Logo" className="max-w-full max-h-full object-contain" />
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">Upload Logo</span>
-                      </>
+                  <div className="mt-2 relative">
+                    <div 
+                      className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {logoPreview ? (
+                        <img src={logoPreview} alt="Logo" className="max-w-full max-h-full object-contain" />
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                          <span className="text-sm text-muted-foreground">Upload Logo</span>
+                        </>
+                      )}
+                    </div>
+                    {logoPreview && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage("logo");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
                   <input
@@ -518,17 +550,33 @@ export default function WhitelabelSettings() {
                 
                 <div>
                   <Label>Favicon</Label>
-                  <div 
-                    className="mt-2 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
-                    onClick={() => faviconInputRef.current?.click()}
-                  >
-                    {faviconPreview ? (
-                      <img src={faviconPreview} alt="Favicon" className="max-w-full max-h-full object-contain" />
-                    ) : (
-                      <>
-                        <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                        <span className="text-sm text-muted-foreground">Upload Favicon</span>
-                      </>
+                  <div className="mt-2 relative">
+                    <div 
+                      className="w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors"
+                      onClick={() => faviconInputRef.current?.click()}
+                    >
+                      {faviconPreview ? (
+                        <img src={faviconPreview} alt="Favicon" className="max-w-full max-h-full object-contain" />
+                      ) : (
+                        <>
+                          <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                          <span className="text-sm text-muted-foreground">Upload Favicon</span>
+                        </>
+                      )}
+                    </div>
+                    {faviconPreview && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute top-2 right-2 h-6 w-6"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveImage("favicon");
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     )}
                   </div>
                   <input
