@@ -17,6 +17,8 @@ import {
   agencyCommissions,
   creditTransactions,
   agencyInvitations,
+  creditPackages,
+  creditAlerts,
   type User,
   type UpsertUser,
   type Organization,
@@ -50,9 +52,13 @@ import {
   type InsertCreditTransaction,
   type AgencyInvitation,
   type InsertAgencyInvitation,
+  type CreditPackage,
+  type InsertCreditPackage,
+  type CreditAlert,
+  type InsertCreditAlert,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, count, sum, avg, max, or, inArray } from "drizzle-orm";
+import { eq, and, desc, count, sum, avg, max, or, inArray, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -186,10 +192,24 @@ export interface IStorage {
   getAgencyCommissions(agencyOrganizationId: string): Promise<AgencyCommission[]>;
   createAgencyCommission(commission: InsertAgencyCommission): Promise<AgencyCommission>;
   updateAgencyCommission(id: string, updates: Partial<AgencyCommission>): Promise<AgencyCommission>;
-  
-  getCreditTransactions(organizationId: string): Promise<CreditTransaction[]>;
+
+  // Credit package operations
+  getCreditPackages(targetAudience?: "agency" | "end_customer"): Promise<CreditPackage[]>;
+  getCreditPackage(id: string): Promise<CreditPackage | undefined>;
+  createCreditPackage(creditPackage: InsertCreditPackage): Promise<CreditPackage>;
+  updateCreditPackage(id: string, updates: Partial<InsertCreditPackage>): Promise<CreditPackage>;
+  deleteCreditPackage(id: string): Promise<void>;
+
+  // Credit transaction operations
   createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction>;
-  
+  getCreditTransactions(organizationId: string, limit?: number): Promise<CreditTransaction[]>;
+  purchaseCredits(organizationId: string, packageId: string, paymentId: string): Promise<{ success: boolean; newBalance: number }>;
+  consumeCredits(organizationId: string, amount: number, callId?: string): Promise<{ success: boolean; remainingBalance: number }>;
+
+  // Credit alert operations
+  checkAndCreateCreditAlerts(organizationId: string): Promise<void>;
+  getCreditAlerts(organizationId: string, unacknowledged?: boolean): Promise<CreditAlert[]>;
+  acknowledgeCreditAlert(alertId: string, userId: string): Promise<void>;
   getAgencyInvitations(organizationId: string): Promise<AgencyInvitation[]>;
   getAgencyInvitationByCode(code: string): Promise<AgencyInvitation | undefined>;
   createAgencyInvitation(invitation: InsertAgencyInvitation): Promise<AgencyInvitation>;
@@ -1060,43 +1080,7 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
-  async getCreditTransactions(organizationId: string): Promise<CreditTransaction[]> {
-    return await db()
-      .select()
-      .from(creditTransactions)
-      .where(eq(creditTransactions.organizationId, organizationId))
-      .orderBy(desc(creditTransactions.createdAt));
-  }
-
-  async createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction> {
-    // Get current balance
-    const [org] = await db()
-      .select()
-      .from(organizations)
-      .where(eq(organizations.id, transaction.organizationId));
-    
-    const currentBalance = Number(org?.creditBalance || 0);
-    const transactionAmount = Number(transaction.amount);
-    const newBalance = currentBalance + transactionAmount;
-
-    // Create transaction with balance tracking
-    const [result] = await db()
-      .insert(creditTransactions)
-      .values({
-        ...transaction,
-        balanceBefore: String(currentBalance),
-        balanceAfter: String(newBalance),
-      })
-      .returning();
-
-    // Update organization credit balance
-    await db()
-      .update(organizations)
-      .set({ creditBalance: String(newBalance), updatedAt: new Date() })
-      .where(eq(organizations.id, transaction.organizationId));
-
-    return result;
-  }
+  // Credit transaction methods are implemented in the credit management section below
 
   async getAgencyInvitations(organizationId: string): Promise<AgencyInvitation[]> {
     return await db()
@@ -1139,6 +1123,267 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Agency invitation not found");
     }
     return result;
+  }
+
+  // Credit package operations
+  async getCreditPackages(targetAudience?: "agency" | "end_customer"): Promise<CreditPackage[]> {
+    let query = db().select().from(creditPackages).where(eq(creditPackages.isActive, true));
+    
+    if (targetAudience) {
+      const result = await db()
+        .select()
+        .from(creditPackages)
+        .where(and(
+          eq(creditPackages.isActive, true),
+          eq(creditPackages.targetAudience, targetAudience)
+        ))
+        .orderBy(creditPackages.sortOrder);
+      return result;
+    }
+    
+    const result = await db()
+      .select()
+      .from(creditPackages)
+      .where(eq(creditPackages.isActive, true))
+      .orderBy(creditPackages.sortOrder);
+    return result;
+  }
+
+  async getCreditPackage(id: string): Promise<CreditPackage | undefined> {
+    const [result] = await db()
+      .select()
+      .from(creditPackages)
+      .where(eq(creditPackages.id, id));
+    return result;
+  }
+
+  async createCreditPackage(creditPackage: InsertCreditPackage): Promise<CreditPackage> {
+    const [result] = await db()
+      .insert(creditPackages)
+      .values(creditPackage)
+      .returning();
+    return result;
+  }
+
+  async updateCreditPackage(id: string, updates: Partial<InsertCreditPackage>): Promise<CreditPackage> {
+    const [result] = await db()
+      .update(creditPackages)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(creditPackages.id, id))
+      .returning();
+    if (!result) {
+      throw new Error("Credit package not found");
+    }
+    return result;
+  }
+
+  async deleteCreditPackage(id: string): Promise<void> {
+    await db()
+      .update(creditPackages)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(creditPackages.id, id));
+  }
+
+  // Credit transaction operations
+  async createCreditTransaction(transaction: InsertCreditTransaction): Promise<CreditTransaction> {
+    const [result] = await db()
+      .insert(creditTransactions)
+      .values(transaction)
+      .returning();
+    return result;
+  }
+
+  async getCreditTransactions(organizationId: string, limit: number = 100): Promise<CreditTransaction[]> {
+    const result = await db()
+      .select()
+      .from(creditTransactions)
+      .where(eq(creditTransactions.organizationId, organizationId))
+      .orderBy(desc(creditTransactions.createdAt))
+      .limit(limit);
+    return result;
+  }
+
+  async purchaseCredits(organizationId: string, packageId: string, paymentId: string): Promise<{ success: boolean; newBalance: number }> {
+    // Get the credit package
+    const creditPackage = await this.getCreditPackage(packageId);
+    if (!creditPackage) {
+      throw new Error("Credit package not found");
+    }
+
+    // Get the organization
+    const org = await this.getOrganization(organizationId);
+    if (!org) {
+      throw new Error("Organization not found");
+    }
+
+    const totalCredits = creditPackage.credits + (creditPackage.bonusCredits || 0);
+    const currentBalance = Number(org.creditBalance || 0);
+    const newBalance = currentBalance + totalCredits;
+
+    // Update organization credit balance
+    await db()
+      .update(organizations)
+      .set({
+        creditBalance: String(newBalance),
+        billingStatus: "active",
+        creditAlertStatus: "normal",
+        lastPaymentDate: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(organizations.id, organizationId));
+
+    // Create credit transaction
+    await this.createCreditTransaction({
+      organizationId,
+      type: "purchase",
+      amount: creditPackage.price,
+      creditAmount: totalCredits,
+      balanceBefore: String(currentBalance),
+      balanceAfter: String(newBalance),
+      relatedPaymentId: paymentId,
+      description: `Purchased ${creditPackage.name} package`,
+    });
+
+    return { success: true, newBalance };
+  }
+
+  async consumeCredits(organizationId: string, amount: number, callId?: string): Promise<{ success: boolean; remainingBalance: number }> {
+    // Get the organization
+    const org = await this.getOrganization(organizationId);
+    if (!org) {
+      throw new Error("Organization not found");
+    }
+
+    const currentBalance = Number(org.creditBalance || 0);
+    const remainingBalance = currentBalance - amount;
+
+    if (remainingBalance < 0) {
+      // Update organization to paused status
+      await db()
+        .update(organizations)
+        .set({
+          creditBalance: "0",
+          billingStatus: "paused",
+          creditAlertStatus: "depleted",
+          servicePausedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(organizations.id, organizationId));
+
+      return { success: false, remainingBalance: 0 };
+    }
+
+    // Update organization credit balance
+    await db()
+      .update(organizations)
+      .set({
+        creditBalance: String(remainingBalance),
+        usedCredits: (org.usedCredits || 0) + amount,
+        updatedAt: new Date(),
+      })
+      .where(eq(organizations.id, organizationId));
+
+    // Create credit transaction
+    await this.createCreditTransaction({
+      organizationId,
+      type: "usage",
+      amount: String(-amount),
+      creditAmount: -amount,
+      balanceBefore: String(currentBalance),
+      balanceAfter: String(remainingBalance),
+      relatedCallId: callId,
+      description: `Call usage${callId ? ` for call ${callId}` : ""}`,
+    });
+
+    // Check if we need to create alerts
+    await this.checkAndCreateCreditAlerts(organizationId);
+
+    return { success: true, remainingBalance };
+  }
+
+  // Credit alert operations
+  async checkAndCreateCreditAlerts(organizationId: string): Promise<void> {
+    const org = await this.getOrganization(organizationId);
+    if (!org) return;
+
+    const currentBalance = Number(org.creditBalance || 0);
+    const monthlyCredits = org.monthlyCredits || 0;
+    const totalAvailable = currentBalance + monthlyCredits;
+    
+    if (totalAvailable === 0) return;
+
+    const percentage = (currentBalance / totalAvailable) * 100;
+    let alertType: "normal" | "warning_25" | "warning_10" | "critical_5" | "depleted" = "normal";
+    let message = "";
+
+    if (percentage <= 0) {
+      alertType = "depleted";
+      message = "Your credits have been depleted. Service is paused until you refill credits.";
+    } else if (percentage <= 5) {
+      alertType = "critical_5";
+      message = `Critical: Only ${currentBalance} credits remaining (${percentage.toFixed(1)}%). Service will pause soon.`;
+    } else if (percentage <= 10) {
+      alertType = "warning_10";
+      message = `Urgent: Only ${currentBalance} credits remaining (${percentage.toFixed(1)}%). Please refill soon.`;
+    } else if (percentage <= 25) {
+      alertType = "warning_25";
+      message = `Warning: ${currentBalance} credits remaining (${percentage.toFixed(1)}%). Consider refilling.`;
+    }
+
+    // Update organization alert status
+    if (alertType !== "normal" && alertType !== org.creditAlertStatus) {
+      await db()
+        .update(organizations)
+        .set({
+          creditAlertStatus: alertType,
+          lastAlertSentAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(organizations.id, organizationId));
+
+      // Create alert record
+      await db()
+        .insert(creditAlerts)
+        .values({
+          organizationId,
+          alertType,
+          creditPercentage: String(percentage),
+          creditsRemaining: currentBalance,
+          message,
+        });
+    }
+  }
+
+  async getCreditAlerts(organizationId: string, unacknowledged: boolean = false): Promise<CreditAlert[]> {
+    if (unacknowledged) {
+      const result = await db()
+        .select()
+        .from(creditAlerts)
+        .where(and(
+          eq(creditAlerts.organizationId, organizationId),
+          isNull(creditAlerts.acknowledgedAt)
+        ))
+        .orderBy(desc(creditAlerts.createdAt));
+      return result;
+    }
+
+    const result = await db()
+      .select()
+      .from(creditAlerts)
+      .where(eq(creditAlerts.organizationId, organizationId))
+      .orderBy(desc(creditAlerts.createdAt))
+      .limit(100);
+    return result;
+  }
+
+  async acknowledgeCreditAlert(alertId: string, userId: string): Promise<void> {
+    await db()
+      .update(creditAlerts)
+      .set({
+        acknowledgedAt: new Date(),
+        acknowledgedBy: userId,
+      })
+      .where(eq(creditAlerts.id, alertId));
   }
 
   async acceptAgencyInvitation(code: string, userId: string): Promise<Organization> {
