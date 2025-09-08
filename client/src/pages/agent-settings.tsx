@@ -25,7 +25,8 @@ import {
   Shield,
   Settings,
   Variable,
-  Clock
+  Clock,
+  Users
 } from "lucide-react";
 import type { Agent, User } from "@shared/schema";
 
@@ -87,6 +88,39 @@ export default function AgentSettings() {
   // Evaluation criteria
   const [evaluationEnabled, setEvaluationEnabled] = useState(false);
   const [evaluationCriteria, setEvaluationCriteria] = useState("");
+  
+  // Multi-voice configuration
+  const [multiVoiceEnabled, setMultiVoiceEnabled] = useState(false);
+  const [voiceSwitchingMode, setVoiceSwitchingMode] = useState<"keyword" | "character" | "manual">("keyword");
+  const [voiceProfiles, setVoiceProfiles] = useState<Array<{
+    voiceId: string;
+    name: string;
+    character?: string;
+    description?: string;
+    triggerKeywords?: string[];
+    triggerCondition?: string;
+    stability?: number;
+    similarityBoost?: number;
+  }>>([{ voiceId: "", name: "", description: "" }]);
+  const [defaultVoice, setDefaultVoice] = useState("");
+  
+  // Helper functions for multi-voice
+  const addVoiceProfile = () => {
+    setVoiceProfiles([...voiceProfiles, { voiceId: "", name: "", description: "" }]);
+    setHasChanges(true);
+  };
+  
+  const removeVoiceProfile = (index: number) => {
+    setVoiceProfiles(voiceProfiles.filter((_, i) => i !== index));
+    setHasChanges(true);
+  };
+  
+  const updateVoiceProfile = (index: number, field: string, value: any) => {
+    const updated = [...voiceProfiles];
+    updated[index] = { ...updated[index], [field]: value };
+    setVoiceProfiles(updated);
+    setHasChanges(true);
+  };
   
   // Check if user has advanced settings permission
   const hasAdvancedSettingsPermission = user?.isAdmin || user?.permissions?.includes("advanced_agent_settings");
@@ -219,6 +253,12 @@ Always maintain a professional yet conversational tone, and ensure all responses
         enabled: evaluationEnabled,
         criteria: evaluationCriteria.split('\n').filter(c => c.trim()),
       },
+      multiVoiceConfig: multiVoiceEnabled ? {
+        enabled: multiVoiceEnabled,
+        voices: voiceProfiles.filter(p => p.voiceId),
+        defaultVoice,
+        switchingMode: voiceSwitchingMode,
+      } : undefined,
     };
     saveMutation.mutate(settings);
   };
@@ -340,7 +380,7 @@ Always maintain a professional yet conversational tone, and ensure all responses
           </TabsTrigger>
         </TabsList>
         
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger 
             value="privacy" 
             className="flex items-center gap-2"
@@ -370,6 +410,10 @@ Always maintain a professional yet conversational tone, and ensure all responses
             <Settings className="h-4 w-4" />
             <span className="hidden md:inline">Advanced</span>
             {!hasAdvancedSettingsPermission && <span className="text-xs">🔒</span>}
+          </TabsTrigger>
+          <TabsTrigger value="multivoice" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            <span className="hidden md:inline">Multi-Voice</span>
           </TabsTrigger>
         </TabsList>
 
@@ -1184,6 +1228,208 @@ Always maintain a professional yet conversational tone, and ensure all responses
                     </p>
                   </div>
                 )}
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Multi-Voice Settings */}
+        <TabsContent value="multivoice" className="space-y-6">
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold mb-4">Multi-Voice Configuration</h2>
+            
+            <div className="space-y-6">
+              {/* Enable Multi-Voice */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Enable Multi-Voice Support</Label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Allow your agent to dynamically switch between different voices during conversations
+                  </p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={multiVoiceEnabled}
+                  onChange={(e) => {
+                    setMultiVoiceEnabled(e.target.checked);
+                    setHasChanges(true);
+                  }}
+                  className="toggle"
+                />
+              </div>
+
+              {multiVoiceEnabled && (
+                <>
+                  <Separator />
+
+                  {/* Voice Switching Mode */}
+                  <div>
+                    <Label htmlFor="switchingMode">Voice Switching Mode</Label>
+                    <Select 
+                      value={voiceSwitchingMode} 
+                      onValueChange={(value) => {
+                        setVoiceSwitchingMode(value as "keyword" | "character" | "manual");
+                        setHasChanges(true);
+                      }}
+                    >
+                      <SelectTrigger id="switchingMode" className="mt-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="keyword">Keyword-based Switching</SelectItem>
+                        <SelectItem value="character">Character-based (Story Mode)</SelectItem>
+                        <SelectItem value="manual">Manual Control via API</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Choose how the agent switches between voices
+                    </p>
+                  </div>
+
+                  <Separator />
+
+                  {/* Voice Profiles */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-sm font-medium">Voice Profiles</h3>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={addVoiceProfile}
+                      >
+                        Add Voice
+                      </Button>
+                    </div>
+
+                    <div className="space-y-4">
+                      {voiceProfiles.map((profile, index) => (
+                        <div key={index} className="border rounded-lg p-4 space-y-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1 space-y-3">
+                              {/* Voice Selection */}
+                              <div>
+                                <Label>Voice {index + 1}</Label>
+                                <Select 
+                                  value={profile.voiceId} 
+                                  onValueChange={(value) => updateVoiceProfile(index, "voiceId", value)}
+                                >
+                                  <SelectTrigger className="mt-1">
+                                    <SelectValue placeholder="Select a voice" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {voices && Array.isArray(voices) ? (
+                                      voices.map((voice: any) => (
+                                        <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                                          {voice.name}
+                                        </SelectItem>
+                                      ))
+                                    ) : (
+                                      <SelectItem value="rachel">Rachel</SelectItem>
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Character Name (for story mode) */}
+                              {voiceSwitchingMode === "character" && (
+                                <div>
+                                  <Label>Character Name</Label>
+                                  <Input
+                                    value={profile.character || ""}
+                                    onChange={(e) => updateVoiceProfile(index, "character", e.target.value)}
+                                    placeholder="e.g., Narrator, Hero, Villain"
+                                    className="mt-1"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Trigger Keywords (for keyword mode) */}
+                              {voiceSwitchingMode === "keyword" && (
+                                <div>
+                                  <Label>Trigger Keywords</Label>
+                                  <Input
+                                    value={profile.triggerKeywords?.join(", ") || ""}
+                                    onChange={(e) => updateVoiceProfile(
+                                      index, 
+                                      "triggerKeywords", 
+                                      e.target.value.split(",").map(k => k.trim()).filter(k => k)
+                                    )}
+                                    placeholder="e.g., technical, sales, support (comma-separated)"
+                                    className="mt-1"
+                                  />
+                                </div>
+                              )}
+
+                              {/* Description */}
+                              <div>
+                                <Label>Description</Label>
+                                <Input
+                                  value={profile.description || ""}
+                                  onChange={(e) => updateVoiceProfile(index, "description", e.target.value)}
+                                  placeholder="When should this voice be used?"
+                                  className="mt-1"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Remove Button */}
+                            {voiceProfiles.length > 1 && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => removeVoiceProfile(index)}
+                                className="ml-2"
+                              >
+                                Remove
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Default Voice */}
+                  <div>
+                    <Label htmlFor="defaultVoice">Default Voice</Label>
+                    <Select 
+                      value={defaultVoice} 
+                      onValueChange={(value) => {
+                        setDefaultVoice(value);
+                        setHasChanges(true);
+                      }}
+                    >
+                      <SelectTrigger id="defaultVoice" className="mt-2">
+                        <SelectValue placeholder="Select default voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {voiceProfiles.map((profile, index) => (
+                          profile.voiceId && (
+                            <SelectItem key={index} value={profile.voiceId}>
+                              {profile.character || profile.description || `Voice ${index + 1}`}
+                            </SelectItem>
+                          )
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The voice to use when no specific trigger is matched
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Multi-Voice Examples */}
+              <div className="bg-muted/50 p-4 rounded-lg">
+                <h4 className="text-sm font-medium mb-2">Use Cases</h4>
+                <div className="space-y-2 text-xs text-muted-foreground">
+                  <p>• <strong>Story Telling:</strong> Different voices for narrator and characters</p>
+                  <p>• <strong>Role-based Support:</strong> Technical vs sales vs customer service voices</p>
+                  <p>• <strong>Language Detection:</strong> Switch voices based on detected language</p>
+                  <p>• <strong>Emotional Context:</strong> Adapt voice tone based on conversation mood</p>
+                </div>
               </div>
             </div>
           </Card>

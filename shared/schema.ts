@@ -251,6 +251,21 @@ export const agents = pgTable("agents", {
     style?: number;
     useSpeakerBoost?: boolean;
   }>(),
+  multiVoiceConfig: json("multi_voice_config").$type<{
+    enabled?: boolean;
+    voices?: Array<{
+      voiceId: string;
+      name: string;
+      character?: string;
+      description?: string;
+      triggerKeywords?: string[];
+      triggerCondition?: string;
+      stability?: number;
+      similarityBoost?: number;
+    }>;
+    defaultVoice?: string;
+    switchingMode?: "keyword" | "character" | "manual";
+  }>(),
   llmSettings: json("llm_settings").$type<{
     model?: string;
     temperature?: number;
