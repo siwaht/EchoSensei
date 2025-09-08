@@ -8,6 +8,7 @@ import crypto from "crypto";
 import type { RequestHandler } from "express";
 import { seedAdminUser } from "./seedAdmin";
 import { checkPermission, checkRoutePermission } from "./middleware/permissions";
+import ElevenLabsService from "./services/elevenlabs";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
