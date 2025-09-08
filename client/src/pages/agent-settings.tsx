@@ -661,25 +661,38 @@ Always maintain a professional yet conversational tone, and ensure all responses
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* Google Models - Newest First */}
+                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Google</div>
+                    <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash (Latest)</SelectItem>
+                    <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash</SelectItem>
+                    <SelectItem value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite</SelectItem>
+                    <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
+                    <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                    
                     {/* OpenAI Models */}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">OpenAI</div>
+                    <SelectItem value="gpt-4.1">GPT-4.1 (Latest)</SelectItem>
+                    <SelectItem value="gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+                    <SelectItem value="gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
                     <SelectItem value="gpt-4o">GPT-4o (Recommended)</SelectItem>
                     <SelectItem value="gpt-4o-mini">GPT-4o Mini</SelectItem>
                     <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
                     <SelectItem value="gpt-4">GPT-4</SelectItem>
                     <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo</SelectItem>
                     
-                    {/* Google Models */}
-                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Google</div>
-                    <SelectItem value="gemini-2.0-flash">Gemini 2.0 Flash (Latest)</SelectItem>
-                    <SelectItem value="gemini-1.5-flash">Gemini 1.5 Flash</SelectItem>
-                    <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                    
                     {/* Anthropic Models */}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Anthropic</div>
-                    <SelectItem value="claude-3-5-sonnet">Claude 3.5 Sonnet (Latest)</SelectItem>
-                    <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
-                    <SelectItem value="claude-3-opus">Claude 3 Opus</SelectItem>
+                    <SelectItem value="claude-sonnet-4">Claude Sonnet 4 (Latest)</SelectItem>
+                    <SelectItem value="claude-3.7-sonnet">Claude 3.7 Sonnet</SelectItem>
+                    <SelectItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</SelectItem>
+                    <SelectItem value="claude-3.5-sonnet-v1">Claude 3.5 Sonnet v1</SelectItem>
+                    <SelectItem value="claude-3.0-haiku">Claude 3.0 Haiku</SelectItem>
+                    
+                    {/* ElevenLabs Experimental Models */}
+                    <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">ElevenLabs (Experimental)</div>
+                    <SelectItem value="gpt-oss-120b">GPT-OSS-120B</SelectItem>
+                    <SelectItem value="gpt-oss-20b">GPT-OSS-20B</SelectItem>
+                    <SelectItem value="qwen3-30b-a3b">Qwen3-30B-A3B</SelectItem>
                     
                     {/* Custom Models */}
                     <div className="px-2 py-1 text-xs font-semibold text-muted-foreground">Other</div>
