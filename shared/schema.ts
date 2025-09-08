@@ -988,6 +988,23 @@ export const agencyInvitations = pgTable("agency_invitations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User Invitations table for inviting users to organizations
+export const userInvitations = pgTable("user_invitations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(),
+  email: varchar("email").notNull(),
+  role: varchar("role").default("user"),
+  permissions: jsonb("permissions").$type<string[]>().default([]),
+  invitedBy: varchar("invited_by").notNull(),
+  status: invitationStatusEnum("status").notNull().default("pending"),
+  code: varchar("code").notNull().unique(),
+  expiresAt: timestamp("expires_at"),
+  acceptedAt: timestamp("accepted_at"),
+  acceptedBy: varchar("accepted_by"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Credit packages table for prepaid credit bundles
 export const creditPackages = pgTable("credit_packages", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1196,6 +1213,13 @@ export const insertAgencyInvitationSchema = createInsertSchema(agencyInvitations
   createdAt: true,
 });
 
+export const insertUserInvitationSchema = createInsertSchema(userInvitations).omit({
+  id: true,
+  code: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertCreditPackageSchema = createInsertSchema(creditPackages).omit({
   id: true,
   createdAt: true,
@@ -1330,5 +1354,7 @@ export type CreditTransaction = typeof creditTransactions.$inferSelect;
 export type InsertCreditTransaction = z.infer<typeof insertCreditTransactionSchema>;
 export type AgencyInvitation = typeof agencyInvitations.$inferSelect;
 export type InsertAgencyInvitation = z.infer<typeof insertAgencyInvitationSchema>;
+export type UserInvitation = typeof userInvitations.$inferSelect;
+export type InsertUserInvitation = z.infer<typeof insertUserInvitationSchema>;
 export type WhitelabelConfig = typeof whitelabelConfigs.$inferSelect;
 export type InsertWhitelabelConfig = z.infer<typeof insertWhitelabelConfigSchema>;

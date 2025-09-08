@@ -17,6 +17,7 @@ import {
   agencyCommissions,
   creditTransactions,
   agencyInvitations,
+  userInvitations,
   creditPackages,
   creditAlerts,
   whitelabelConfigs,
@@ -53,6 +54,8 @@ import {
   type InsertCreditTransaction,
   type AgencyInvitation,
   type InsertAgencyInvitation,
+  type UserInvitation,
+  type InsertUserInvitation,
   type CreditPackage,
   type InsertCreditPackage,
   type CreditAlert,
@@ -69,6 +72,23 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUser(user: Partial<User>): Promise<User>;
+  
+  // Agency user management operations
+  getOrganizationUsers(organizationId: string): Promise<User[]>;
+  updateUserPermissions(userId: string, organizationId: string, permissions: string[]): Promise<User>;
+  updateUserRole(userId: string, organizationId: string, role: "admin" | "manager" | "user"): Promise<User>;
+  removeUserFromOrganization(userId: string, organizationId: string): Promise<void>;
+  assignAgentsToUser(userId: string, organizationId: string, agentIds: string[]): Promise<void>;
+  getUserAssignedAgents(userId: string, organizationId: string): Promise<Agent[]>;
+  
+  // User invitation operations
+  createInvitation(invitation: InsertUserInvitation): Promise<UserInvitation>;
+  getOrganizationInvitations(organizationId: string): Promise<UserInvitation[]>;
+  getInvitation(id: string): Promise<UserInvitation | undefined>;
+  getInvitationByCode(code: string): Promise<UserInvitation | undefined>;
+  updateInvitation(id: string, updates: Partial<UserInvitation>): Promise<UserInvitation>;
+  deleteInvitation(id: string): Promise<void>;
+  acceptInvitation(invitationId: string, userId: string): Promise<void>;
 
   // Organization operations
   createOrganization(org: InsertOrganization): Promise<Organization>;
@@ -291,6 +311,139 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Agency user management operations
+  async getOrganizationUsers(organizationId: string): Promise<User[]> {
+    return await db()
+      .select()
+      .from(users)
+      .where(eq(users.organizationId, organizationId));
+  }
+
+  async updateUserPermissions(userId: string, organizationId: string, permissions: string[]): Promise<User> {
+    const [user] = await db()
+      .update(users)
+      .set({ permissions, updatedAt: new Date() })
+      .where(and(eq(users.id, userId), eq(users.organizationId, organizationId)))
+      .returning();
+    if (!user) throw new Error("User not found");
+    return user;
+  }
+
+  async updateUserRole(userId: string, organizationId: string, role: "admin" | "manager" | "user"): Promise<User> {
+    const [user] = await db()
+      .update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(and(eq(users.id, userId), eq(users.organizationId, organizationId)))
+      .returning();
+    if (!user) throw new Error("User not found");
+    return user;
+  }
+
+  async removeUserFromOrganization(userId: string, organizationId: string): Promise<void> {
+    await db()
+      .delete(users)
+      .where(and(eq(users.id, userId), eq(users.organizationId, organizationId)));
+  }
+
+  async assignAgentsToUser(userId: string, organizationId: string, agentIds: string[]): Promise<void> {
+    // First, remove existing assignments
+    await db()
+      .delete(userAgents)
+      .where(eq(userAgents.userId, userId));
+    
+    // Then add new assignments
+    if (agentIds.length > 0) {
+      await db()
+        .insert(userAgents)
+        .values(agentIds.map(agentId => ({ userId, agentId })));
+    }
+  }
+
+  async getUserAssignedAgents(userId: string, organizationId: string): Promise<Agent[]> {
+    const result = await db()
+      .select({ agent: agents })
+      .from(userAgents)
+      .innerJoin(agents, eq(userAgents.agentId, agents.id))
+      .where(and(
+        eq(userAgents.userId, userId),
+        eq(agents.organizationId, organizationId)
+      ));
+    
+    return result.map(r => r.agent);
+  }
+
+  // User invitation operations
+  async createInvitation(invitation: InsertUserInvitation): Promise<UserInvitation> {
+    const [inv] = await db()
+      .insert(userInvitations)
+      .values(invitation)
+      .returning();
+    return inv;
+  }
+
+  async getOrganizationInvitations(organizationId: string): Promise<UserInvitation[]> {
+    return await db()
+      .select()
+      .from(userInvitations)
+      .where(eq(userInvitations.organizationId, organizationId))
+      .orderBy(desc(userInvitations.createdAt));
+  }
+
+  async getInvitation(id: string): Promise<UserInvitation | undefined> {
+    const [invitation] = await db()
+      .select()
+      .from(userInvitations)
+      .where(eq(userInvitations.id, id));
+    return invitation;
+  }
+
+  async getInvitationByCode(code: string): Promise<UserInvitation | undefined> {
+    const [invitation] = await db()
+      .select()
+      .from(userInvitations)
+      .where(eq(userInvitations.code, code));
+    return invitation;
+  }
+
+  async updateInvitation(id: string, updates: Partial<UserInvitation>): Promise<UserInvitation> {
+    const [invitation] = await db()
+      .update(userInvitations)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(userInvitations.id, id))
+      .returning();
+    if (!invitation) throw new Error("Invitation not found");
+    return invitation;
+  }
+
+  async deleteInvitation(id: string): Promise<void> {
+    await db()
+      .delete(userInvitations)
+      .where(eq(userInvitations.id, id));
+  }
+
+  async acceptInvitation(invitationId: string, userId: string): Promise<void> {
+    const invitation = await this.getInvitation(invitationId);
+    if (!invitation) throw new Error("Invitation not found");
+    
+    // Update user's organization and permissions
+    await db()
+      .update(users)
+      .set({
+        organizationId: invitation.organizationId,
+        role: invitation.role,
+        permissions: invitation.permissions,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+    
+    // Mark invitation as accepted
+    await this.updateInvitation(invitationId, { 
+      status: "accepted",
+      acceptedAt: new Date(),
+      acceptedBy: userId
+    });
   }
 
   // Organization operations

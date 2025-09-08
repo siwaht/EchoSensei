@@ -7172,6 +7172,261 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Agency User Management Routes
+  
+  // Get organization users
+  app.get("/api/agency/users", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: "No organization found" });
+      }
+      
+      const users = await storage.getOrganizationUsers(organizationId);
+      
+      // Format user data for frontend
+      const formattedUsers = users.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        role: user.role || "user",
+        status: user.status || "active",
+        createdAt: user.createdAt?.toISOString(),
+        lastLoginAt: user.lastLoginAt?.toISOString(),
+        permissions: user.permissions || [],
+        assignedAgentIds: []  // Will be populated later
+      }));
+      
+      // Get assigned agents for each user
+      for (const user of formattedUsers) {
+        const assignedAgents = await storage.getUserAssignedAgents(user.id, organizationId);
+        user.assignedAgentIds = assignedAgents.map(a => a.id);
+      }
+      
+      res.json(formattedUsers);
+    } catch (error) {
+      console.error("Error fetching organization users:", error);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // Update user (permissions, role, status)
+  app.patch("/api/agency/users/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: "No organization found" });
+      }
+      
+      const { userId } = req.params;
+      const { role, status, permissions } = req.body;
+      
+      let updatedUser;
+      
+      if (role) {
+        updatedUser = await storage.updateUserRole(userId, organizationId, role);
+      }
+      
+      if (permissions) {
+        updatedUser = await storage.updateUserPermissions(userId, organizationId, permissions);
+      }
+      
+      if (status) {
+        updatedUser = await storage.toggleUserStatus(userId, status);
+      }
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ error: "Failed to update user" });
+    }
+  });
+
+  // Remove user from organization
+  app.delete("/api/agency/users/:userId", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: "No organization found" });
+      }
+      
+      const { userId } = req.params;
+      await storage.removeUserFromOrganization(userId, organizationId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing user:", error);
+      res.status(500).json({ error: "Failed to remove user" });
+    }
+  });
+
+  // Assign agents to user
+  app.post("/api/agency/users/:userId/agents", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: "No organization found" });
+      }
+      
+      const { userId } = req.params;
+      const { agentIds } = req.body;
+      
+      await storage.assignAgentsToUser(userId, organizationId, agentIds);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error assigning agents:", error);
+      res.status(500).json({ error: "Failed to assign agents" });
+    }
+  });
+
+  // Get organization invitations
+  app.get("/api/agency/invitations", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user?.organizationId;
+      if (!organizationId) {
+        return res.status(400).json({ error: "No organization found" });
+      }
+      
+      const invitations = await storage.getOrganizationInvitations(organizationId);
+      
+      const formattedInvitations = invitations.map(inv => ({
+        id: inv.id,
+        email: inv.email,
+        role: inv.role || "user",
+        status: inv.status || "pending",
+        invitedAt: inv.createdAt?.toISOString(),
+        expiresAt: inv.expiresAt?.toISOString(),
+        permissions: inv.permissions || []
+      }));
+      
+      res.json(formattedInvitations);
+    } catch (error) {
+      console.error("Error fetching invitations:", error);
+      res.status(500).json({ error: "Failed to fetch invitations" });
+    }
+  });
+
+  // Send user invitation
+  app.post("/api/agency/users/invite", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user?.organizationId;
+      const invitedBy = req.user?.id;
+      
+      if (!organizationId || !invitedBy) {
+        return res.status(400).json({ error: "No organization or user found" });
+      }
+      
+      const { email, role, permissions } = req.body;
+      
+      // Check if user already exists in organization
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser && existingUser.organizationId === organizationId) {
+        return res.status(400).json({ error: "User already exists in organization" });
+      }
+      
+      // Create invitation with expiry date (7 days)
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      const invitation = await storage.createInvitation({
+        organizationId,
+        email,
+        role: role || "user",
+        permissions: permissions || [],
+        invitedBy,
+        status: "pending",
+        expiresAt,
+        code: crypto.randomBytes(16).toString("hex")
+      });
+      
+      // TODO: Send invitation email
+      console.log(`Invitation created for ${email} with code: ${invitation.code}`);
+      
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error creating invitation:", error);
+      res.status(500).json({ error: "Failed to create invitation" });
+    }
+  });
+
+  // Resend invitation
+  app.post("/api/agency/invitations/:invitationId/resend", isAuthenticated, async (req: any, res) => {
+    try {
+      const { invitationId } = req.params;
+      
+      // Update expiry date
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      
+      const invitation = await storage.updateInvitation(invitationId, { expiresAt });
+      
+      // TODO: Resend invitation email
+      console.log(`Invitation resent for ${invitation.email} with code: ${invitation.code}`);
+      
+      res.json(invitation);
+    } catch (error) {
+      console.error("Error resending invitation:", error);
+      res.status(500).json({ error: "Failed to resend invitation" });
+    }
+  });
+
+  // Cancel invitation
+  app.delete("/api/agency/invitations/:invitationId", isAuthenticated, async (req: any, res) => {
+    try {
+      const { invitationId } = req.params;
+      
+      await storage.deleteInvitation(invitationId);
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error canceling invitation:", error);
+      res.status(500).json({ error: "Failed to cancel invitation" });
+    }
+  });
+
+  // Accept invitation (public route for invited users)
+  app.post("/api/invitations/accept", async (req: any, res) => {
+    try {
+      const { code } = req.body;
+      
+      if (!code) {
+        return res.status(400).json({ error: "Invitation code required" });
+      }
+      
+      const invitation = await storage.getInvitationByCode(code);
+      if (!invitation) {
+        return res.status(404).json({ error: "Invalid invitation code" });
+      }
+      
+      if (invitation.status !== "pending") {
+        return res.status(400).json({ error: "Invitation already used or expired" });
+      }
+      
+      if (invitation.expiresAt && new Date(invitation.expiresAt) < new Date()) {
+        return res.status(400).json({ error: "Invitation has expired" });
+      }
+      
+      // If user is authenticated, accept the invitation
+      if (req.isAuthenticated()) {
+        await storage.acceptInvitation(invitation.id, req.user.id);
+        return res.json({ success: true, message: "Invitation accepted" });
+      }
+      
+      // Otherwise, return invitation details for signup
+      res.json({
+        email: invitation.email,
+        organizationId: invitation.organizationId,
+        role: invitation.role,
+        permissions: invitation.permissions
+      });
+    } catch (error) {
+      console.error("Error accepting invitation:", error);
+      res.status(500).json({ error: "Failed to accept invitation" });
+    }
+  });
+
   // Testing endpoints (simplified implementation)
   // Store test scenarios in memory for now (can be moved to database later)
   const testScenarios = new Map<string, any[]>();
