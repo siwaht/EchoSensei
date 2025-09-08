@@ -173,67 +173,72 @@ export function AgencyManagement() {
       <div key={org.id} className={`${level > 0 ? 'ml-8' : ''}`}>
         <Card className={`mb-3 ${isAgency ? 'border-primary/50 bg-primary/5' : ''}`}>
           <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3 flex-1">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3 flex-1 min-w-0">
+                {/* Expand/Collapse button */}
                 {hasChildren && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleExpanded(org.id)}
-                    className="p-1 h-auto"
+                    className="p-1 h-auto flex-shrink-0 mt-1"
                   >
                     {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </Button>
                 )}
-                {!hasChildren && <div className="w-6" />}
+                {!hasChildren && <div className="w-6 flex-shrink-0" />}
                 
-                <div className="flex items-center gap-3">
+                {/* Organization icon */}
+                <div className="flex-shrink-0 mt-1">
                   {isAgency ? (
                     <Briefcase className="w-5 h-5 text-primary" />
                   ) : (
                     <Store className="w-4 h-4 text-muted-foreground" />
                   )}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{org.name}</span>
-                      <Badge variant={isAgency ? "default" : "secondary"} className="text-xs">
-                        {isAgency ? "Agency" : "Customer"}
+                </div>
+                
+                {/* Organization details */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center flex-wrap gap-2 mb-1">
+                    <span className="font-semibold truncate">{org.name}</span>
+                    <Badge variant={isAgency ? "default" : "secondary"} className="text-xs">
+                      {isAgency ? "Agency" : "Customer"}
+                    </Badge>
+                    {org.billingPackage && (
+                      <Badge variant="outline" className="text-xs">
+                        {org.billingPackage}
                       </Badge>
-                      {org.billingPackage && (
-                        <Badge variant="outline" className="text-xs">
-                          {org.billingPackage}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {org.userCount || 0} users
-                      </span>
-                      {isAgency && (
-                        <>
-                          <span className="flex items-center gap-1">
-                            <Store className="w-3 h-3" />
-                            {org.customerCount || 0} customers
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Percent className="w-3 h-3" />
-                            {org.commissionRate || 30}% commission
-                          </span>
-                        </>
-                      )}
-                      {org.creditBalance && Number(org.creditBalance) > 0 && (
-                        <span className="flex items-center gap-1">
-                          <CreditCard className="w-3 h-3" />
-                          ${org.creditBalance} credits
+                    )}
+                  </div>
+                  <div className="flex items-center flex-wrap gap-3 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Users className="w-3 h-3 flex-shrink-0" />
+                      <span>{org.userCount || 0} users</span>
+                    </span>
+                    {isAgency && (
+                      <>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Store className="w-3 h-3 flex-shrink-0" />
+                          <span>{org.customerCount || 0} customers</span>
                         </span>
-                      )}
-                    </div>
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Percent className="w-3 h-3 flex-shrink-0" />
+                          <span>{org.commissionRate || 30}% commission</span>
+                        </span>
+                      </>
+                    )}
+                    {org.creditBalance && Number(org.creditBalance) > 0 && (
+                      <span className="flex items-center gap-1 whitespace-nowrap">
+                        <CreditCard className="w-3 h-3 flex-shrink-0" />
+                        <span>${org.creditBalance} credits</span>
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              {/* Action buttons */}
+              <div className="flex items-center gap-2 flex-shrink-0">
                 {isAgency && (
                   <Button
                     size="sm"
@@ -243,17 +248,20 @@ export function AgencyManagement() {
                       setCreateType("customer");
                       setShowCreateDialog(true);
                     }}
+                    className="whitespace-nowrap"
                   >
                     <Plus className="w-4 h-4 mr-1" />
-                    Add Customer
+                    <span className="hidden sm:inline">Add Customer</span>
+                    <span className="sm:hidden">Add</span>
                   </Button>
                 )}
-                <Button size="sm" variant="ghost">
-                  <Eye className="w-4 h-4 mr-1" />
-                  View
+                <Button size="sm" variant="ghost" title="View Details">
+                  <Eye className="w-4 h-4" />
+                  <span className="sr-only">View</span>
                 </Button>
-                <Button size="sm" variant="ghost">
+                <Button size="sm" variant="ghost" title="Settings">
                   <Settings className="w-4 h-4" />
+                  <span className="sr-only">Settings</span>
                 </Button>
               </div>
             </div>
