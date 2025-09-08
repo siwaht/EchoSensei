@@ -441,6 +441,46 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.delete('/api/admin/organizations/:orgId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      await storage.deleteOrganization(req.params.orgId);
+      res.json({ message: "Organization deleted successfully" });
+    } catch (error: any) {
+      console.error("Error deleting organization:", error);
+      res.status(error.message.includes("existing users") ? 400 : 500).json({ 
+        message: error.message || "Failed to delete organization" 
+      });
+    }
+  });
+
+  app.patch('/api/admin/users/:userId/status', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { status } = req.body;
+      if (!['active', 'inactive', 'pending'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      const updatedUser = await storage.toggleUserStatus(req.params.userId, status);
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user status:", error);
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
+  app.patch('/api/admin/organizations/:orgId/status', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { isActive } = req.body;
+      if (typeof isActive !== 'boolean') {
+        return res.status(400).json({ message: "Invalid isActive value" });
+      }
+      const updatedOrg = await storage.toggleOrganizationStatus(req.params.orgId, isActive);
+      res.json(updatedOrg);
+    } catch (error) {
+      console.error("Error updating organization status:", error);
+      res.status(500).json({ message: "Failed to update organization status" });
+    }
+  });
+
   // Admin API Sync endpoints
   app.get('/api/admin/sync/status', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

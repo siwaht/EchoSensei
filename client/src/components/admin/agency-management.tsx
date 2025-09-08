@@ -12,7 +12,8 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Building2, Users, DollarSign, Plus, ChevronRight, ChevronDown,
   UserPlus, TrendingUp, CreditCard, Briefcase, Store, Settings,
-  Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent, Palette, Wand2
+  Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent, Palette, Wand2,
+  Power, Ban, AlertTriangle
 } from "lucide-react";
 import type { Organization, User } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
@@ -25,6 +26,7 @@ interface OrganizationWithDetails extends Organization {
   totalRevenue?: number;
   children?: OrganizationWithDetails[];
   users?: User[];
+  isActive?: boolean;
 }
 
 export function AgencyManagement() {
@@ -37,6 +39,8 @@ export function AgencyManagement() {
   const [selectedOrgForView, setSelectedOrgForView] = useState<OrganizationWithDetails | null>(null);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [orgToDelete, setOrgToDelete] = useState<OrganizationWithDetails | null>(null);
   
   // New agency form state
   const [newAgency, setNewAgency] = useState({
@@ -104,6 +108,80 @@ export function AgencyManagement() {
   };
 
   const hierarchicalOrgs = buildHierarchy();
+
+  // Delete organization mutation
+  const deleteOrgMutation = useMutation({
+    mutationFn: async (orgId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/organizations/${orgId}`, {});
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete organization");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Organization Deleted",
+        description: "The organization has been successfully deleted.",
+      });
+      setShowDeleteDialog(false);
+      setOrgToDelete(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete organization",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Toggle organization status mutation
+  const toggleOrgStatusMutation = useMutation({
+    mutationFn: async ({ orgId, isActive }: { orgId: string; isActive: boolean }) => {
+      return await apiRequest("PATCH", `/api/admin/organizations/${orgId}/status`, {
+        isActive,
+      });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      toast({
+        title: variables.isActive ? "Organization Enabled" : "Organization Disabled",
+        description: `The organization has been ${variables.isActive ? "enabled" : "disabled"}.`,
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Status Update Failed",
+        description: "Failed to update organization status",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update organization mutation
+  const updateOrgMutation = useMutation({
+    mutationFn: async ({ orgId, updates }: { orgId: string; updates: Partial<Organization> }) => {
+      return await apiRequest("PATCH", `/api/admin/organizations/${orgId}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      toast({
+        title: "Settings Updated",
+        description: "Organization settings have been saved successfully.",
+      });
+      setShowSettingsDialog(false);
+    },
+    onError: () => {
+      toast({
+        title: "Update Failed",
+        description: "Failed to update organization settings",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Create agency mutation
   const createAgencyMutation = useMutation({
@@ -287,14 +365,45 @@ export function AgencyManagement() {
                 <Button 
                   size="sm" 
                   variant="ghost" 
-                  title="Settings"
+                  title="Edit Settings"
                   onClick={() => {
                     setSelectedOrgForView(org);
                     setShowSettingsDialog(true);
                   }}
                 >
-                  <Settings className="w-4 h-4" />
-                  <span className="sr-only">Settings</span>
+                  <Edit className="w-4 h-4" />
+                  <span className="sr-only">Edit</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  title={org.isActive ? "Disable Organization" : "Enable Organization"}
+                  onClick={() => {
+                    toggleOrgStatusMutation.mutate({ 
+                      orgId: org.id, 
+                      isActive: !org.isActive 
+                    });
+                  }}
+                >
+                  {org.isActive ? (
+                    <Ban className="w-4 h-4 text-orange-500" />
+                  ) : (
+                    <Power className="w-4 h-4 text-green-500" />
+                  )}
+                  <span className="sr-only">{org.isActive ? "Disable" : "Enable"}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  title="Delete Organization"
+                  onClick={() => {
+                    setOrgToDelete(org);
+                    setShowDeleteDialog(true);
+                  }}
+                  className="hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="sr-only">Delete</span>
                 </Button>
               </div>
             </div>
@@ -790,14 +899,99 @@ export function AgencyManagement() {
             </Button>
             <Button 
               onClick={() => {
-                toast({
-                  title: "Settings updated",
-                  description: "Organization settings have been saved successfully.",
+                if (!selectedOrgForView) return;
+                
+                // Get form values
+                const nameInput = document.getElementById('org-name') as HTMLInputElement;
+                const commissionInput = document.getElementById('commission-rate') as HTMLInputElement;
+                const creditInput = document.getElementById('credit-balance') as HTMLInputElement;
+                const maxAgentsInput = document.getElementById('max-agents') as HTMLInputElement;
+                const maxUsersInput = document.getElementById('max-users') as HTMLInputElement;
+                const billingSelect = document.querySelector('[id="billing-package"]') as HTMLElement;
+                
+                const updates: any = {
+                  name: nameInput?.value,
+                  maxAgents: parseInt(maxAgentsInput?.value || '5'),
+                  maxUsers: parseInt(maxUsersInput?.value || '10'),
+                  billingPackage: billingSelect?.getAttribute('data-value') || 'starter',
+                };
+                
+                if (selectedOrgForView.organizationType === 'agency') {
+                  updates.commissionRate = parseFloat(commissionInput?.value || '30');
+                  updates.creditBalance = parseFloat(creditInput?.value || '0');
+                }
+                
+                updateOrgMutation.mutate({ 
+                  orgId: selectedOrgForView.id, 
+                  updates 
                 });
-                setShowSettingsDialog(false);
               }}
             >
               Save Settings
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              Delete Organization
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{orgToDelete?.name}</strong>?
+            </DialogDescription>
+          </DialogHeader>
+          
+          {orgToDelete && (
+            <div className="space-y-4">
+              {orgToDelete.userCount && orgToDelete.userCount > 0 && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded p-3">
+                  <p className="text-sm text-destructive">
+                    <strong>Warning:</strong> This organization has {orgToDelete.userCount} user(s). 
+                    You must remove all users before deleting the organization.
+                  </p>
+                </div>
+              )}
+              
+              {orgToDelete.organizationType === 'agency' && orgToDelete.customerCount && orgToDelete.customerCount > 0 && (
+                <div className="bg-orange-500/10 border border-orange-500/20 rounded p-3">
+                  <p className="text-sm text-orange-700 dark:text-orange-400">
+                    <strong>Note:</strong> This agency has {orgToDelete.customerCount} customer(s). 
+                    Consider reassigning them before deletion.
+                  </p>
+                </div>
+              )}
+              
+              <div className="text-sm text-muted-foreground">
+                This action cannot be undone. All data associated with this organization will be permanently deleted.
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setOrgToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive"
+              onClick={() => {
+                if (orgToDelete) {
+                  deleteOrgMutation.mutate(orgToDelete.id);
+                }
+              }}
+              disabled={deleteOrgMutation.isPending || !!(orgToDelete?.userCount && orgToDelete.userCount > 0)}
+            >
+              {deleteOrgMutation.isPending ? "Deleting..." : "Delete Organization"}
             </Button>
           </DialogFooter>
         </DialogContent>

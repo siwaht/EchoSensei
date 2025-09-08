@@ -42,7 +42,9 @@ import {
   Store,
   CheckSquare,
   Square,
-  MailOpen
+  MailOpen,
+  Power,
+  Ban
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDistanceToNow } from "date-fns";
@@ -181,6 +183,55 @@ export function UserManagementPage() {
     },
   });
 
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`, {});
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete user");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User deleted",
+        description: "User has been removed successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Delete failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Toggle user status mutation
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, status }: { userId: string; status: 'active' | 'inactive' | 'pending' }) => {
+      return apiRequest("PATCH", `/api/admin/users/${userId}/status`, { status });
+    },
+    onSuccess: (_, variables) => {
+      toast({
+        title: "Status updated",
+        description: `User has been ${variables.status === 'active' ? 'activated' : variables.status === 'inactive' ? 'deactivated' : 'set to pending'}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Status update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Agent assignment mutations
   const assignAgentMutation = useMutation({
     mutationFn: async ({ userId, agentId }: { userId: string; agentId: string }) => {
@@ -221,27 +272,6 @@ export function UserManagementPage() {
       setPendingAgentAssignments(assignedIds);
       setOriginalAgentAssignments(assignedIds);
       return agents;
-    },
-  });
-
-  // Delete user mutation
-  const deleteUserMutation = useMutation({
-    mutationFn: async (userId: string) => {
-      return apiRequest("DELETE", `/api/users/${userId}`);
-    },
-    onSuccess: () => {
-      toast({
-        title: "User deleted",
-        description: "The user has been removed from the organization",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Delete failed",
-        description: error.message,
-        variant: "destructive",
-      });
     },
   });
 
@@ -763,16 +793,35 @@ export function UserManagementPage() {
                                   Edit User
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                  onClick={() => {
+                                    const newStatus = user.status === 'active' ? 'inactive' : 'active';
+                                    toggleUserStatusMutation.mutate({ userId: user.id, status: newStatus });
+                                  }}
+                                >
+                                  {user.status === 'active' ? (
+                                    <>
+                                      <Ban className="mr-2 h-4 w-4 text-orange-500" />
+                                      Deactivate User
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Power className="mr-2 h-4 w-4 text-green-500" />
+                                      Activate User
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
                                   className="text-red-600"
                                   onClick={() => {
-                                    if (confirm(`Are you sure you want to remove ${user.email}?`)) {
+                                    if (confirm(`Are you sure you want to permanently delete ${user.email}? This action cannot be undone.`)) {
                                       deleteUserMutation.mutate(user.id);
                                     }
                                   }}
                                   disabled={user.id === (currentUser as any)?.id}
                                 >
                                   <Trash2 className="mr-2 h-4 w-4" />
-                                  Remove User
+                                  Delete User
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>

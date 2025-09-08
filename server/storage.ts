@@ -129,6 +129,9 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   getAllOrganizations(): Promise<Organization[]>;
   updateOrganization(id: string, updates: Partial<Organization>): Promise<Organization>;
+  deleteOrganization(id: string): Promise<void>;
+  toggleUserStatus(id: string, status: 'active' | 'inactive' | 'pending'): Promise<User>;
+  toggleOrganizationStatus(id: string, isActive: boolean): Promise<Organization>;
   getAdminBillingData(): Promise<{
     totalUsers: number;
     totalOrganizations: number;
@@ -613,6 +616,46 @@ export class DatabaseStorage implements IStorage {
     const [updatedOrg] = await db()
       .update(organizations)
       .set({ ...updates, updatedAt: new Date() })
+      .where(eq(organizations.id, id))
+      .returning();
+    if (!updatedOrg) {
+      throw new Error("Organization not found");
+    }
+    return updatedOrg;
+  }
+
+  async deleteOrganization(id: string): Promise<void> {
+    // First check if organization has users
+    const orgUsers = await db().select().from(users).where(eq(users.organizationId, id));
+    if (orgUsers.length > 0) {
+      throw new Error("Cannot delete organization with existing users");
+    }
+    
+    // Delete related data
+    await db().delete(integrations).where(eq(integrations.organizationId, id));
+    await db().delete(agents).where(eq(agents.organizationId, id));
+    await db().delete(callLogs).where(eq(callLogs.organizationId, id));
+    
+    // Finally delete the organization
+    await db().delete(organizations).where(eq(organizations.id, id));
+  }
+
+  async toggleUserStatus(id: string, status: 'active' | 'inactive' | 'pending'): Promise<User> {
+    const [updatedUser] = await db()
+      .update(users)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    if (!updatedUser) {
+      throw new Error("User not found");
+    }
+    return updatedUser;
+  }
+
+  async toggleOrganizationStatus(id: string, isActive: boolean): Promise<Organization> {
+    const [updatedOrg] = await db()
+      .update(organizations)
+      .set({ isActive, updatedAt: new Date() })
       .where(eq(organizations.id, id))
       .returning();
     if (!updatedOrg) {
