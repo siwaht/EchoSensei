@@ -82,6 +82,7 @@ export interface IStorage {
   
   // Whitelabel configuration operations
   getWhitelabelConfig(organizationId: string): Promise<WhitelabelConfig | undefined>;
+  getAllWhitelabelConfigs(): Promise<WhitelabelConfig[]>;
   createWhitelabelConfig(config: InsertWhitelabelConfig): Promise<WhitelabelConfig>;
   updateWhitelabelConfig(organizationId: string, config: Partial<InsertWhitelabelConfig>): Promise<WhitelabelConfig>;
   
@@ -1450,6 +1451,15 @@ export class DatabaseStorage implements IStorage {
         eq(whitelabelConfigs.isActive, true)
       ));
     return config;
+  }
+  
+  async getAllWhitelabelConfigs(): Promise<WhitelabelConfig[]> {
+    const configs = await db()
+      .select()
+      .from(whitelabelConfigs)
+      .where(eq(whitelabelConfigs.isActive, true))
+      .limit(10); // Limit for safety
+    return configs;
   }
 
   async createWhitelabelConfig(config: InsertWhitelabelConfig): Promise<WhitelabelConfig> {

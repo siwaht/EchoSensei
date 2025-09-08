@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/theme-provider";
@@ -68,6 +68,42 @@ export default function AppShell({ children }: AppShellProps) {
   
   const isAgency = organization?.organizationType === "agency";
   
+  // Fetch whitelabel configuration
+  const { data: whitelabelConfig } = useQuery<{
+    appName?: string;
+    companyName?: string;
+    logoUrl?: string;
+    faviconUrl?: string;
+    primaryColor?: string;
+    removePlatformBranding?: boolean;
+  }>({
+    queryKey: ["/api/whitelabel"],
+    enabled: !!user,
+  });
+  
+  // Apply whitelabel settings to document
+  useEffect(() => {
+    if (whitelabelConfig) {
+      // Update document title
+      if (whitelabelConfig.appName) {
+        document.title = whitelabelConfig.appName;
+      }
+      
+      // Update favicon
+      if (whitelabelConfig.faviconUrl) {
+        const favicon = document.querySelector("link[rel='icon']") as HTMLLinkElement;
+        if (favicon) {
+          favicon.href = whitelabelConfig.faviconUrl;
+        } else {
+          const newFavicon = document.createElement('link');
+          newFavicon.rel = 'icon';
+          newFavicon.href = whitelabelConfig.faviconUrl;
+          document.head.appendChild(newFavicon);
+        }
+      }
+    }
+  }, [whitelabelConfig]);
+  
   // Filter navigation based on permissions
   const filteredNavigation = navigation.filter(item => {
     // Admin users can see everything
@@ -136,10 +172,20 @@ export default function AppShell({ children }: AppShellProps) {
       )}>
         <div className="flex items-center h-16 px-4 lg:px-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center space-x-2 lg:space-x-3">
-            <div className="w-8 h-8 gradient-purple rounded-lg flex items-center justify-center shadow-lg">
-              <Mic className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-base lg:text-lg font-bold gradient-text truncate" data-testid="text-app-title">VoiceAI</span>
+            {whitelabelConfig?.logoUrl ? (
+              <img 
+                src={whitelabelConfig.logoUrl} 
+                alt="Logo" 
+                className="w-8 h-8 object-contain rounded" 
+              />
+            ) : (
+              <div className="w-8 h-8 gradient-purple rounded-lg flex items-center justify-center shadow-lg">
+                <Mic className="w-4 h-4 text-white" />
+              </div>
+            )}
+            <span className="text-base lg:text-lg font-bold gradient-text truncate" data-testid="text-app-title">
+              {whitelabelConfig?.appName || "VoiceAI"}
+            </span>
           </div>
         </div>
 

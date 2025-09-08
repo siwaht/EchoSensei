@@ -4,9 +4,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTheme } from "@/components/theme-provider";
 import { Moon, Sun, Shield, TrendingUp, Users, Mic, LogIn, Mail, Lock } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -16,6 +16,42 @@ export default function Landing() {
   const [password, setPassword] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  
+  // Fetch public whitelabel configuration
+  const { data: whitelabelConfig } = useQuery<{
+    appName?: string;
+    companyName?: string;
+    logoUrl?: string;
+    faviconUrl?: string;
+    primaryColor?: string;
+    removePlatformBranding?: boolean;
+  }>({
+    queryKey: ["/api/whitelabel/public"],
+    retry: false,
+  });
+  
+  // Apply whitelabel settings to document
+  useEffect(() => {
+    if (whitelabelConfig) {
+      // Update document title
+      if (whitelabelConfig.appName) {
+        document.title = whitelabelConfig.appName;
+      }
+      
+      // Update favicon
+      if (whitelabelConfig.faviconUrl) {
+        const favicon = document.querySelector("link[rel='icon']") as HTMLLinkElement;
+        if (favicon) {
+          favicon.href = whitelabelConfig.faviconUrl;
+        } else {
+          const newFavicon = document.createElement('link');
+          newFavicon.rel = 'icon';
+          newFavicon.href = whitelabelConfig.faviconUrl;
+          document.head.appendChild(newFavicon);
+        }
+      }
+    }
+  }, [whitelabelConfig]);
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
@@ -50,10 +86,20 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <Mic className="w-4 h-4 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold text-card-foreground">VoiceAI Dashboard</span>
+              {whitelabelConfig?.logoUrl ? (
+                <img 
+                  src={whitelabelConfig.logoUrl} 
+                  alt="Logo" 
+                  className="w-8 h-8 object-contain rounded" 
+                />
+              ) : (
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <Mic className="w-4 h-4 text-primary-foreground" />
+                </div>
+              )}
+              <span className="text-xl font-bold text-card-foreground">
+                {whitelabelConfig?.appName || "VoiceAI Dashboard"}
+              </span>
             </div>
             <div className="flex items-center">
               <Button 
@@ -74,11 +120,23 @@ export default function Landing() {
         <div className="w-full max-w-md">
           <Card className="p-8 bg-card/95 backdrop-blur-sm border-border shadow-2xl">
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Mic className="w-8 h-8 text-primary-foreground" />
-              </div>
+              {whitelabelConfig?.logoUrl ? (
+                <img 
+                  src={whitelabelConfig.logoUrl} 
+                  alt="Logo" 
+                  className="w-16 h-16 object-contain rounded-2xl mx-auto mb-4" 
+                />
+              ) : (
+                <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Mic className="w-8 h-8 text-primary-foreground" />
+                </div>
+              )}
               <h1 id="login-heading" className="text-3xl font-bold text-card-foreground mb-2">Welcome Back</h1>
-              <p className="text-muted-foreground">Sign in to access your VoiceAI Dashboard</p>
+              <p className="text-muted-foreground">
+                {whitelabelConfig?.companyName 
+                  ? `Sign in to access ${whitelabelConfig.companyName}` 
+                  : "Sign in to access your VoiceAI Dashboard"}
+              </p>
             </div>
 
             <form 
@@ -145,13 +203,17 @@ export default function Landing() {
 
           {/* Info Section */}
           <div className="mt-8 text-center">
-            <h3 className="text-lg font-semibold text-card-foreground mb-4">
-              What is VoiceAI Dashboard?
-            </h3>
-            <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto" data-testid="text-info-description">
-              A comprehensive monitoring platform for voice AI agents with enterprise-grade security, 
-              real-time analytics, and multi-tenant support.
-            </p>
+            {!whitelabelConfig?.removePlatformBranding && (
+              <>
+                <h3 className="text-lg font-semibold text-card-foreground mb-4">
+                  What is {whitelabelConfig?.appName || "VoiceAI Dashboard"}?
+                </h3>
+                <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto" data-testid="text-info-description">
+                  A comprehensive monitoring platform for voice AI agents with enterprise-grade security, 
+                  real-time analytics, and multi-tenant support.
+                </p>
+              </>
+            )}
 
             {/* Feature Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">

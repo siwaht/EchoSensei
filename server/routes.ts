@@ -5234,6 +5234,45 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Public whitelabel endpoint for login page
+  app.get("/api/whitelabel/public", async (req: any, res) => {
+    try {
+      // Get the first whitelabel config (for single-tenant deployments)
+      // In multi-tenant, you might want to use domain-based detection
+      const allConfigs = await storage.getAllWhitelabelConfigs();
+      
+      if (allConfigs && allConfigs.length > 0) {
+        const config = allConfigs[0];
+        // Return public-safe fields only
+        res.json({
+          appName: config.appName,
+          companyName: config.companyName,
+          logoUrl: config.logoUrl,
+          faviconUrl: config.faviconUrl,
+          primaryColor: config.primaryColor,
+          removePlatformBranding: config.removePlatformBranding,
+        });
+      } else {
+        // Return default config
+        res.json({
+          appName: "VoiceAI Dashboard",
+          companyName: "",
+          primaryColor: "#7C3AED",
+          removePlatformBranding: false,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching public whitelabel config:", error);
+      // Return default config on error
+      res.json({
+        appName: "VoiceAI Dashboard",
+        companyName: "",
+        primaryColor: "#7C3AED",
+        removePlatformBranding: false,
+      });
+    }
+  });
+
   // Whitelabel configuration endpoints
   app.get("/api/whitelabel", isAuthenticated, async (req: any, res) => {
     try {
