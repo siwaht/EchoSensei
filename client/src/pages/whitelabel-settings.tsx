@@ -396,18 +396,25 @@ export default function WhitelabelSettings() {
           type,
         });
         
-        if (type === "favicon") {
-          setFaviconPreview(base64);
+        // Parse the JSON response
+        const result = await response.json();
+        
+        if (result.success) {
+          if (type === "favicon") {
+            setFaviconPreview(base64);
+          } else {
+            setLogoPreview(base64);
+          }
+          
+          setHasChanges(true);
+          
+          toast({
+            title: "Success",
+            description: `${type === "favicon" ? "Favicon" : "Logo"} uploaded successfully`,
+          });
         } else {
-          setLogoPreview(base64);
+          throw new Error(result.message || "Upload failed");
         }
-        
-        setHasChanges(true);
-        
-        toast({
-          title: "Success",
-          description: `${type === "favicon" ? "Favicon" : "Logo"} uploaded successfully`,
-        });
       } catch (error: any) {
         toast({
           title: "Upload failed",
