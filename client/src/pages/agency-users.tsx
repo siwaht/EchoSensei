@@ -376,14 +376,15 @@ export default function AgencyUsers() {
                 Invite User
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+              <DialogHeader className="flex-shrink-0">
                 <DialogTitle>Invite New User</DialogTitle>
                 <DialogDescription>
                   Send an invitation to add a new user to your organization
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
+              <div className="flex-1 overflow-y-auto px-1 py-4">
+                <div className="space-y-4 pr-2">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email Address</Label>
                   <Input
@@ -437,8 +438,9 @@ export default function AgencyUsers() {
                     </div>
                   </div>
                 </div>
+                </div>
               </div>
-              <DialogFooter>
+              <DialogFooter className="flex-shrink-0">
                 <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>
                   Cancel
                 </Button>
@@ -636,15 +638,16 @@ export default function AgencyUsers() {
 
       {/* Edit User Dialog */}
       <Dialog open={editUserDialogOpen} onOpenChange={setEditUserDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Edit User Settings</DialogTitle>
             <DialogDescription>
               Update user role and permissions
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto px-1 py-4">
+              <div className="space-y-4 pr-2">
               <div className="space-y-2">
                 <Label>User</Label>
                 <div className="text-sm">
@@ -724,9 +727,10 @@ export default function AgencyUsers() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setEditUserDialogOpen(false)}>
               Cancel
             </Button>
@@ -753,15 +757,16 @@ export default function AgencyUsers() {
 
       {/* Assign Agents Dialog */}
       <Dialog open={assignAgentsDialogOpen} onOpenChange={setAssignAgentsDialogOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Assign Agents</DialogTitle>
             <DialogDescription>
               Select which agents this user can access
             </DialogDescription>
           </DialogHeader>
           {selectedUser && (
-            <div className="space-y-4 py-4">
+            <div className="flex-1 overflow-y-auto px-1 py-4">
+              <div className="space-y-4 pr-2">
               <div className="space-y-2">
                 <Label>User</Label>
                 <div className="text-sm">
@@ -802,9 +807,10 @@ export default function AgencyUsers() {
                   </div>
                 </div>
               </div>
+              </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setAssignAgentsDialogOpen(false)}>
               Cancel
             </Button>
