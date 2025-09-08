@@ -19,8 +19,25 @@ app.use(compression({
 }));
 
 // Increase body size limit to 10MB for image uploads
-app.use(express.json({ limit: '10mb' }));
+// Also increase timeout for large uploads
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    // Store raw body for debugging if needed
+    (req as any).rawBody = buf.toString('utf8');
+  }
+}));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Set longer timeout for upload endpoints
+app.use((req, res, next) => {
+  if (req.path.includes('/upload') || req.path.includes('/whitelabel')) {
+    // 30 second timeout for uploads
+    req.setTimeout(30000);
+    res.setTimeout(30000);
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
