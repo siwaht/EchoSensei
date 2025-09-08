@@ -32,6 +32,9 @@ export function AgencyManagement() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedAgency, setSelectedAgency] = useState<string | null>(null);
   const [createType, setCreateType] = useState<"agency" | "customer">("agency");
+  const [selectedOrgForView, setSelectedOrgForView] = useState<OrganizationWithDetails | null>(null);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   
   // New agency form state
   const [newAgency, setNewAgency] = useState({
@@ -255,11 +258,27 @@ export function AgencyManagement() {
                     <span className="sm:hidden">Add</span>
                   </Button>
                 )}
-                <Button size="sm" variant="ghost" title="View Details">
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  title="View Details"
+                  onClick={() => {
+                    setSelectedOrgForView(org);
+                    setShowViewDialog(true);
+                  }}
+                >
                   <Eye className="w-4 h-4" />
                   <span className="sr-only">View</span>
                 </Button>
-                <Button size="sm" variant="ghost" title="Settings">
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  title="Settings"
+                  onClick={() => {
+                    setSelectedOrgForView(org);
+                    setShowSettingsDialog(true);
+                  }}
+                >
                   <Settings className="w-4 h-4" />
                   <span className="sr-only">Settings</span>
                 </Button>
@@ -540,6 +559,195 @@ export function AgencyManagement() {
               disabled={!newAgency.name || !newAgency.email || !newAgency.password}
             >
               Create {createType === "agency" ? "Agency" : "Customer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Organization Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Organization Details: {selectedOrgForView?.name}
+            </DialogTitle>
+            <DialogDescription>
+              View detailed information about this organization
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrgForView && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm text-muted-foreground">Organization Type</Label>
+                  <p className="font-medium">
+                    {selectedOrgForView.organizationType === 'agency' ? 'Agency' : 
+                     selectedOrgForView.organizationType === 'platform_owner' ? 'Platform Owner' : 'End Customer'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Billing Package</Label>
+                  <p className="font-medium">{selectedOrgForView.billingPackage || 'Starter'}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Total Users</Label>
+                  <p className="font-medium">{selectedOrgForView.userCount || 0}</p>
+                </div>
+                {selectedOrgForView.organizationType === 'agency' && (
+                  <>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Total Customers</Label>
+                      <p className="font-medium">{selectedOrgForView.customerCount || 0}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Commission Rate</Label>
+                      <p className="font-medium">{selectedOrgForView.commissionRate || 30}%</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Credit Balance</Label>
+                      <p className="font-medium">${selectedOrgForView.creditBalance || 0}</p>
+                    </div>
+                  </>
+                )}
+                <div>
+                  <Label className="text-sm text-muted-foreground">Max Agents</Label>
+                  <p className="font-medium">{selectedOrgForView.maxAgents || 5}</p>
+                </div>
+                <div>
+                  <Label className="text-sm text-muted-foreground">Max Users</Label>
+                  <p className="font-medium">{selectedOrgForView.maxUsers || 10}</p>
+                </div>
+              </div>
+
+              {selectedOrgForView.users && selectedOrgForView.users.length > 0 && (
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Team Members</h4>
+                  <div className="space-y-2">
+                    {selectedOrgForView.users.map(user => (
+                      <div key={user.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium">{user.firstName} {user.lastName}</span>
+                          <span className="text-muted-foreground">({user.email})</span>
+                        </div>
+                        <div className="flex gap-2">
+                          {user.isAdmin && <Badge variant="outline" className="text-xs">Admin</Badge>}
+                          {user.role === 'agency' && <Badge variant="outline" className="text-xs">Agency Owner</Badge>}
+                          <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                            {user.status || 'active'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowViewDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Settings Dialog */}
+      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              Settings: {selectedOrgForView?.name}
+            </DialogTitle>
+            <DialogDescription>
+              Configure organization settings and preferences
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrgForView && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="org-name">Organization Name</Label>
+                <Input id="org-name" defaultValue={selectedOrgForView.name} />
+              </div>
+
+              {selectedOrgForView.organizationType === 'agency' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="commission-rate">Commission Rate (%)</Label>
+                    <Input 
+                      id="commission-rate" 
+                      type="number" 
+                      defaultValue={selectedOrgForView.commissionRate || 30}
+                      min="0"
+                      max="100"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="credit-balance">Credit Balance ($)</Label>
+                    <Input 
+                      id="credit-balance" 
+                      type="number" 
+                      defaultValue={selectedOrgForView.creditBalance || 0}
+                      min="0"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="max-agents">Max Agents</Label>
+                <Input 
+                  id="max-agents" 
+                  type="number" 
+                  defaultValue={selectedOrgForView.maxAgents || 5}
+                  min="1"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="max-users">Max Users</Label>
+                <Input 
+                  id="max-users" 
+                  type="number" 
+                  defaultValue={selectedOrgForView.maxUsers || 10}
+                  min="1"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="billing-package">Billing Package</Label>
+                <Select defaultValue={selectedOrgForView.billingPackage || 'starter'}>
+                  <SelectTrigger id="billing-package">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="starter">Starter</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                    <SelectItem value="enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                toast({
+                  title: "Settings updated",
+                  description: "Organization settings have been saved successfully.",
+                });
+                setShowSettingsDialog(false);
+              }}
+            >
+              Save Settings
             </Button>
           </DialogFooter>
         </DialogContent>
