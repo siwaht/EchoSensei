@@ -563,8 +563,8 @@ export function AgencyManagement() {
 
       {/* Create Agency/Customer Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               {createType === "agency" ? "Create New Agency" : "Create New Customer"}
             </DialogTitle>
@@ -575,7 +575,8 @@ export function AgencyManagement() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="flex-1 overflow-y-auto px-1 py-4">
+            <div className="grid gap-4 pr-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="name">
@@ -704,8 +705,9 @@ export function AgencyManagement() {
               />
             </div>
           </div>
+          </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
               Cancel
             </Button>
@@ -724,8 +726,8 @@ export function AgencyManagement() {
 
       {/* View Organization Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               Organization Details: {selectedOrgForView?.name}
             </DialogTitle>
@@ -735,7 +737,8 @@ export function AgencyManagement() {
           </DialogHeader>
 
           {selectedOrgForView && (
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto px-1 py-4">
+              <div className="space-y-4 pr-2">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-sm text-muted-foreground">Organization Type</Label>
@@ -801,10 +804,11 @@ export function AgencyManagement() {
                   </div>
                 </div>
               )}
+              </div>
             </div>
           )}
 
-          <DialogFooter>
+          <DialogFooter className="flex-shrink-0">
             <Button variant="outline" onClick={() => setShowViewDialog(false)}>
               Close
             </Button>
