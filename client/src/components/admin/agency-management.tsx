@@ -41,6 +41,8 @@ export function AgencyManagement() {
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [orgToDelete, setOrgToDelete] = useState<OrganizationWithDetails | null>(null);
+  const [selectedUserForReset, setSelectedUserForReset] = useState<string>("");
+  const [newPassword, setNewPassword] = useState<string>("");
   
   // New agency form state
   const [newAgency, setNewAgency] = useState({
@@ -178,6 +180,29 @@ export function AgencyManagement() {
       toast({
         title: "Update Failed",
         description: "Failed to update organization settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Update user mutation for password reset
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ userId, updates }: { userId: string; updates: { password?: string } }) => {
+      return await apiRequest("PATCH", `/api/admin/users/${userId}`, updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "Success",
+        description: "User password has been reset successfully",
+      });
+      setNewPassword("");
+      setSelectedUserForReset("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to reset password",
         variant: "destructive",
       });
     },
@@ -812,7 +837,16 @@ export function AgencyManagement() {
       </Dialog>
 
       {/* Settings Dialog */}
-      <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+      <Dialog 
+        open={showSettingsDialog} 
+        onOpenChange={(open) => {
+          setShowSettingsDialog(open);
+          if (!open) {
+            setSelectedUserForReset("");
+            setNewPassword("");
+          }
+        }}
+      >
         <DialogContent className="max-w-xl max-h-[85vh] flex flex-col">
           <DialogHeader className="flex-shrink-0">
             <DialogTitle>
@@ -891,33 +925,69 @@ export function AgencyManagement() {
                 </div>
                 
                 <div className="border-t pt-4 mt-4 col-span-full">
-                  <Label className="text-base font-semibold mb-2 block">User Management</Label>
+                  <Label className="text-base font-semibold mb-2 block">Reset User Password</Label>
                   <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      To manage users and reset passwords for this organization:
-                    </p>
-                    <Button 
-                      variant="outline" 
-                      className="w-full"
-                      onClick={() => {
-                        setShowSettingsDialog(false);
-                        // Navigate to user management
-                        window.location.href = '/user-management';
-                      }}
-                    >
-                      <Users className="mr-2 h-4 w-4" />
-                      Manage Users & Reset Passwords
-                    </Button>
-                    <div className="text-xs text-muted-foreground space-y-1">
-                      <p className="font-medium">From User Management you can:</p>
-                      <ul className="list-disc list-inside space-y-0.5 ml-2">
-                        <li>View all users in this organization</li>
-                        <li>Reset any user's password</li>
-                        <li>Activate or deactivate users</li>
-                        <li>Edit user permissions and roles</li>
-                        <li>Delete users from the organization</li>
-                      </ul>
-                    </div>
+                    {users.filter(user => user.organizationId === selectedOrgForView?.id).length > 0 ? (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="user-select">Select User</Label>
+                          <Select 
+                            value={selectedUserForReset} 
+                            onValueChange={setSelectedUserForReset}
+                          >
+                            <SelectTrigger id="user-select">
+                              <SelectValue placeholder="Choose a user to reset password" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {users
+                                .filter(user => user.organizationId === selectedOrgForView?.id)
+                                .map((user) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.firstName} {user.lastName} ({user.email})
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                    
+                        {selectedUserForReset && (
+                          <div className="space-y-2">
+                            <Label htmlFor="new-password">New Password</Label>
+                            <Input 
+                              id="new-password"
+                              type="password"
+                              placeholder="Enter new password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                            />
+                          </div>
+                        )}
+                        
+                        <Button 
+                          className="w-full"
+                          disabled={!selectedUserForReset || !newPassword}
+                          onClick={() => {
+                            if (selectedUserForReset && newPassword) {
+                              updateUserMutation.mutate({
+                                userId: selectedUserForReset,
+                                updates: { password: newPassword }
+                              });
+                              setNewPassword("");
+                              setSelectedUserForReset("");
+                            }
+                          }}
+                        >
+                          <Shield className="mr-2 h-4 w-4" />
+                          Reset Password
+                        </Button>
+                      </>
+                    ) : (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        <Users className="mx-auto h-8 w-8 mb-2 text-muted-foreground/50" />
+                        <p>No users found in this organization.</p>
+                        <p className="text-xs mt-1">Add users to this organization to manage their passwords.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
