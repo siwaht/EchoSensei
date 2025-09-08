@@ -121,12 +121,21 @@ export default function AgencyUsers() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
+  const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [editUserDialogOpen, setEditUserDialogOpen] = useState(false);
   const [assignAgentsDialogOpen, setAssignAgentsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
-  // Form states
+  // Form states for direct user creation
+  const [createEmail, setCreateEmail] = useState("");
+  const [createPassword, setCreatePassword] = useState("");
+  const [createFirstName, setCreateFirstName] = useState("");
+  const [createLastName, setCreateLastName] = useState("");
+  const [createRole, setCreateRole] = useState<"admin" | "manager" | "user">("user");
+  const [createPermissions, setCreatePermissions] = useState<string[]>([]);
+  
+  // Form states for invitations
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"admin" | "manager" | "user">("user");
   const [invitePermissions, setInvitePermissions] = useState<string[]>([]);
@@ -145,6 +154,52 @@ export default function AgencyUsers() {
   // Fetch agents for assignment
   const { data: agents = [] } = useQuery<Agent[]>({
     queryKey: ["/api/agents"],
+  });
+
+  // Fetch organization data for plan limits
+  const { data: orgData } = useQuery<any>({
+    queryKey: ["/api/organization/current"],
+  });
+
+  // Create user directly mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (data: { 
+      email: string; 
+      firstName: string;
+      lastName: string;
+      password: string;
+      role: string; 
+      permissions: string[] 
+    }) => {
+      const response = await apiRequest("POST", "/api/agency/users", data);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to create user");
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "User created",
+        description: `User has been created successfully. (${data.currentUsers}/${data.maxUsers} users)`,
+      });
+      setCreateUserDialogOpen(false);
+      setCreateEmail("");
+      setCreatePassword("");
+      setCreateFirstName("");
+      setCreateLastName("");
+      setCreateRole("user");
+      setCreatePermissions([]);
+      queryClient.invalidateQueries({ queryKey: ["/api/agency/users"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/organization/current"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to create user",
+        description: error.message || "Could not create user",
+        variant: "destructive",
+      });
+    },
   });
 
   // Send invitation mutation
@@ -311,6 +366,32 @@ export default function AgencyUsers() {
     }
   };
 
+  const handleCreateUser = () => {
+    if (!createEmail || !createPassword || !createFirstName || !createLastName) {
+      toast({
+        title: "Missing information",
+        description: "Please provide all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const permissions = createPermissions.length > 0 ? createPermissions : rolePermissions[createRole];
+    createUserMutation.mutate({ 
+      email: createEmail, 
+      firstName: createFirstName,
+      lastName: createLastName,
+      password: createPassword,
+      role: createRole, 
+      permissions 
+    });
+  };
+
+  const handleCreateRoleChange = (role: "admin" | "manager" | "user") => {
+    setCreateRole(role);
+    setCreatePermissions(rolePermissions[role]);
+  };
+
   const handleRoleChange = (role: "admin" | "manager" | "user") => {
     setInviteRole(role);
     setInvitePermissions(rolePermissions[role]);
@@ -360,6 +441,16 @@ export default function AgencyUsers() {
           <p className="text-muted-foreground mt-2">
             Manage your organization's users and permissions
           </p>
+          {orgData && (
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant={users.length >= (orgData.maxUsers || 10) ? "destructive" : "secondary"}>
+                {users.length} / {orgData.maxUsers || 10} Users
+              </Badge>
+              <span className="text-sm text-muted-foreground">
+                {users.length >= (orgData.maxUsers || 10) ? "User limit reached" : `${(orgData.maxUsers || 10) - users.length} seats available`}
+              </span>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <Button
@@ -369,10 +460,127 @@ export default function AgencyUsers() {
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
+          <Dialog open={createUserDialogOpen} onOpenChange={setCreateUserDialogOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={orgData && users.length >= (orgData.maxUsers || 10)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Create User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+              <DialogHeader className="flex-shrink-0">
+                <DialogTitle>Create New User</DialogTitle>
+                <DialogDescription>
+                  Create a new user account for your organization
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-y-auto px-1 py-4">
+                <div className="space-y-4 pr-2">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-firstName">First Name</Label>
+                      <Input
+                        id="create-firstName"
+                        placeholder="John"
+                        value={createFirstName}
+                        onChange={(e) => setCreateFirstName(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="create-lastName">Last Name</Label>
+                      <Input
+                        id="create-lastName"
+                        placeholder="Doe"
+                        value={createLastName}
+                        onChange={(e) => setCreateLastName(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="create-email">Email Address</Label>
+                    <Input
+                      id="create-email"
+                      type="email"
+                      placeholder="user@example.com"
+                      value={createEmail}
+                      onChange={(e) => setCreateEmail(e.target.value)}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="create-password">Password</Label>
+                    <Input
+                      id="create-password"
+                      type="password"
+                      placeholder="Enter a secure password"
+                      value={createPassword}
+                      onChange={(e) => setCreatePassword(e.target.value)}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      User will be able to change this password after first login
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="create-role">Role</Label>
+                    <Select value={createRole} onValueChange={handleCreateRoleChange}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin - Full access</SelectItem>
+                        <SelectItem value="manager">Manager - Moderate access</SelectItem>
+                        <SelectItem value="user">User - Limited access</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Permissions</Label>
+                    <div className="border rounded-lg p-4 max-h-60 overflow-y-auto">
+                      <div className="space-y-3">
+                        {availablePermissions.map((permission) => (
+                          <div key={permission.id} className="flex items-start space-x-2">
+                            <Checkbox
+                              id={`create-${permission.id}`}
+                              checked={createPermissions.includes(permission.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setCreatePermissions([...createPermissions, permission.id]);
+                                } else {
+                                  setCreatePermissions(createPermissions.filter(p => p !== permission.id));
+                                }
+                              }}
+                            />
+                            <div className="flex-1">
+                              <Label htmlFor={`create-${permission.id}`} className="text-sm font-medium cursor-pointer">
+                                {permission.name}
+                              </Label>
+                              <p className="text-xs text-muted-foreground">{permission.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter className="flex-shrink-0">
+                <Button variant="outline" onClick={() => setCreateUserDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateUser} disabled={createUserMutation.isPending}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Create User
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
+              <Button variant="outline">
+                <Mail className="h-4 w-4 mr-2" />
                 Invite User
               </Button>
             </DialogTrigger>

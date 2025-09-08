@@ -1590,6 +1590,74 @@ export function registerRoutes(app: Express): Server {
   // Multi-tier Agency Management Routes
   // ==========================================
   
+  // Create a new user directly for agency (with plan limit validation)
+  app.post('/api/agency/users', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can create users for their organization
+      if (org.organizationType !== 'agency') {
+        return res.status(403).json({ message: "Only agencies can create users" });
+      }
+      
+      // Check if user has permission to manage users
+      if (user.role !== 'admin' && user.role !== 'agency' && !user.permissions?.includes('manage_users')) {
+        return res.status(403).json({ message: "You don't have permission to manage users" });
+      }
+      
+      const { email, firstName, lastName, password, role, permissions } = req.body;
+      
+      // Check if email already exists
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "User with this email already exists" });
+      }
+      
+      // Check plan limits - get current user count
+      const orgUsers = await storage.getOrganizationUsers(user.organizationId);
+      if (orgUsers.length >= (org.maxUsers || 10)) {
+        return res.status(403).json({ 
+          message: `User limit reached. Your plan allows ${org.maxUsers || 10} users. Current: ${orgUsers.length}`,
+          currentUsers: orgUsers.length,
+          maxUsers: org.maxUsers || 10
+        });
+      }
+      
+      // Hash password before creating user
+      const hashedPassword = await hashPassword(password);
+      
+      // Create new user for the agency
+      const newUser = await storage.createUser({
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        organizationId: user.organizationId,
+        role: role || 'user',
+        permissions: permissions || [],
+        status: 'active',
+        invitedBy: user.id
+      });
+      
+      res.json({
+        ...newUser,
+        currentUsers: orgUsers.length + 1,
+        maxUsers: org.maxUsers || 10
+      });
+    } catch (error) {
+      console.error("Error creating agency user:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // Get agency invitations for the current organization
   app.get('/api/agency/invitations', isAuthenticated, async (req: any, res) => {
     try {
