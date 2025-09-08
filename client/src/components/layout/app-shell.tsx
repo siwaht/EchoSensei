@@ -23,7 +23,8 @@ import {
   MessageSquare,
   Brain,
   Users,
-  Palette
+  Palette,
+  Volume2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
@@ -33,6 +34,7 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard }, // Dashboard is always visible
   { name: "Agents", href: "/agents", icon: Bot }, // Visible to all users (backend filters agents)
   { name: "Voices", href: "/voices", icon: Mic, permission: "manage_voices" },
+  { name: "Voice Configuration", href: "/voice-configuration", icon: Volume2, permission: "manage_voices" },
   { name: "Phone Numbers", href: "/phone-numbers", icon: Phone, permission: "manage_phone_numbers" },
   { name: "Outbound Calling", href: "/outbound-calling", icon: PhoneOutgoing, permission: "make_outbound_calls" },
   { name: "Tools", href: "/tools", icon: Wrench, permission: "configure_tools" },
@@ -61,7 +63,7 @@ export default function AppShell({ children }: AppShellProps) {
   const isAdmin = (user as any)?.isAdmin || false;
   
   // Fetch organization details to check if it's an agency
-  const { data: organization } = useQuery({
+  const { data: organization } = useQuery<{ organizationType?: string }>({
     queryKey: ["/api/organization/current"],
     enabled: !!user,
   });
@@ -134,6 +136,9 @@ export default function AppShell({ children }: AppShellProps) {
     
     // Check for voices route
     if (location === "/voices") return "Voices";
+    
+    // Check for voice configuration route
+    if (location === "/voice-configuration") return "Voice Configuration";
     
     // Check for phone numbers route
     if (location === "/phone-numbers") return "Phone Numbers";

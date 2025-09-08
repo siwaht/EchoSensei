@@ -33,6 +33,7 @@ const AgentSettings = lazy(() => import("@/pages/agent-settings"));
 const AgentTesting = lazy(() => import("@/pages/agent-testing"));
 const WhitelabelSettings = lazy(() => import("@/pages/whitelabel-settings"));
 const AgencyUsers = lazy(() => import("@/pages/agency-users"));
+const VoiceConfiguration = lazy(() => import("@/pages/voice-configuration"));
 
 // Loading fallback component
 function PageLoader() {
@@ -75,6 +76,9 @@ function Router() {
           <Route path="/agent-testing" component={AgentTesting} />
           <Route path="/voices">
             <PermissionGuard><Voices /></PermissionGuard>
+          </Route>
+          <Route path="/voice-configuration">
+            <PermissionGuard><VoiceConfiguration /></PermissionGuard>
           </Route>
           <Route path="/phone-numbers">
             <PermissionGuard><PhoneNumbers /></PermissionGuard>

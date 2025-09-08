@@ -3789,6 +3789,63 @@ Generate the complete prompt now:`;
     }
   });
 
+  // Preview voice endpoint for testing voices
+  app.post("/api/elevenlabs/preview-voice", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const { voiceId, text } = req.body;
+      if (!voiceId) {
+        return res.status(400).json({ message: "Voice ID is required" });
+      }
+
+      const integration = await storage.getIntegration(user.organizationId, "elevenlabs");
+      if (!integration || !integration.apiKey) {
+        return res.status(400).json({ message: "API key not configured" });
+      }
+
+      const decryptedKey = decryptApiKey(integration.apiKey);
+      const previewText = text || "Hello! This is a preview of how I sound. I'm excited to help you with your voice AI needs.";
+      
+      // Use ElevenLabs text-to-speech API for preview
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: "POST",
+        headers: {
+          "xi-api-key": decryptedKey,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: previewText,
+          model_id: "eleven_monolingual_v1",
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("ElevenLabs preview error:", errorText);
+        throw new Error(`Failed to generate preview: ${response.statusText}`);
+      }
+
+      // Get the audio data as a buffer
+      const audioBuffer = await response.arrayBuffer();
+      const base64Audio = Buffer.from(audioBuffer).toString('base64');
+      const audioUrl = `data:audio/mpeg;base64,${base64Audio}`;
+      
+      res.json({ audioUrl });
+    } catch (error: any) {
+      console.error("Error generating voice preview:", error);
+      res.status(500).json({ message: error.message || "Failed to generate voice preview" });
+    }
+  });
+
   // Phone number routes
   app.get("/api/phone-numbers", isAuthenticated, checkPermission('manage_phone_numbers'), async (req: any, res) => {
     try {
