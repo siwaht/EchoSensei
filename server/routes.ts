@@ -441,6 +441,34 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  app.post('/api/admin/organizations', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const org = await storage.createOrganization(req.body);
+      res.json(org);
+    } catch (error) {
+      console.error("Error creating organization:", error);
+      res.status(500).json({ message: "Failed to create organization" });
+    }
+  });
+
+  app.delete('/api/admin/organizations/:orgId', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { orgId } = req.params;
+      // First delete all users in the organization
+      const users = await storage.getAllUsers();
+      const orgUsers = users.filter(u => u.organizationId === orgId);
+      for (const user of orgUsers) {
+        await storage.deleteUser(user.id);
+      }
+      // Then delete the organization
+      await storage.deleteOrganization(orgId);
+      res.json({ message: "Organization deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting organization:", error);
+      res.status(500).json({ message: "Failed to delete organization" });
+    }
+  });
+
   // Admin API Sync endpoints
   app.get('/api/admin/sync/status', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
