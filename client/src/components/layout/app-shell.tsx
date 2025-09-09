@@ -114,6 +114,9 @@ export default function AppShell({ children }: AppShellProps) {
     // Admin users can see everything
     if (isAdmin) return true;
     
+    // Agency owners can see all agency features
+    if (userRole === 'agency' && isAgency) return true;
+    
     // Dashboard is always visible
     if (!item.permission) return true;
     
