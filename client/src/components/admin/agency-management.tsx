@@ -52,7 +52,14 @@ export function AgencyManagement() {
     password: "",
     commissionRate: "30",
     creditBalance: "0",
-    maxCustomers: "10",
+    maxAgents: "5",
+    maxUsers: "10",
+    subdomain: "",
+    customDomain: "",
+    billingPackage: "starter",
+    perCallRate: "0.30",
+    perMinuteRate: "0.30",
+    monthlyCredits: "0",
     whiteLabel: false,
     notes: "",
   });
@@ -196,6 +203,15 @@ export function AgencyManagement() {
         companyName: data.name,
         organizationType: createType === "agency" ? "agency" : "end_customer",
         commissionRate: createType === "agency" ? parseFloat(data.commissionRate) : undefined,
+        creditBalance: createType === "agency" ? parseFloat(data.creditBalance) : undefined,
+        billingPackage: createType === "agency" ? data.billingPackage : undefined,
+        perCallRate: createType === "agency" ? parseFloat(data.perCallRate) : undefined,
+        perMinuteRate: createType === "agency" ? parseFloat(data.perMinuteRate) : undefined,
+        monthlyCredits: createType === "agency" ? parseInt(data.monthlyCredits) : undefined,
+        maxAgents: parseInt(data.maxAgents),
+        maxUsers: parseInt(data.maxUsers),
+        subdomain: createType === "agency" ? data.subdomain : undefined,
+        customDomain: createType === "agency" ? data.customDomain : undefined,
         isAdmin: false, // Agency owners are not system admins
         role: createType === "agency" ? "agency" : "user",
         parentOrganizationId: data.parentOrganizationId,
@@ -230,7 +246,14 @@ export function AgencyManagement() {
       password: "",
       commissionRate: "30",
       creditBalance: "0",
-      maxCustomers: "10",
+      maxAgents: "5",
+      maxUsers: "10",
+      subdomain: "",
+      customDomain: "",
+      billingPackage: "starter",
+      perCallRate: "0.30",
+      perMinuteRate: "0.30",
+      monthlyCredits: "0",
       whiteLabel: false,
       notes: "",
     });
@@ -650,48 +673,148 @@ export function AgencyManagement() {
             </div>
 
             {createType === "agency" && (
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">Agency Settings</h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label htmlFor="whiteLabel">White Label Mode</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Hide platform branding for this agency's customers
-                      </p>
+              <>
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Branding & Domain</h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="whiteLabel">White Label Mode</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Hide platform branding for this agency's customers
+                        </p>
+                      </div>
+                      <Switch
+                        id="whiteLabel"
+                        checked={newAgency.whiteLabel}
+                        onCheckedChange={(checked) => setNewAgency({...newAgency, whiteLabel: checked})}
+                      />
                     </div>
-                    <Switch
-                      id="whiteLabel"
-                      checked={newAgency.whiteLabel}
-                      onCheckedChange={(checked) => setNewAgency({...newAgency, whiteLabel: checked})}
-                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="subdomain">Subdomain</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id="subdomain"
+                            value={newAgency.subdomain}
+                            onChange={(e) => setNewAgency({...newAgency, subdomain: e.target.value})}
+                            placeholder="agency-name"
+                          />
+                          <span className="text-sm text-muted-foreground">.voiceai.com</span>
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="customDomain">Custom Domain (Optional)</Label>
+                        <Input
+                          id="customDomain"
+                          value={newAgency.customDomain}
+                          onChange={(e) => setNewAgency({...newAgency, customDomain: e.target.value})}
+                          placeholder="dashboard.agency.com"
+                        />
+                      </div>
+                    </div>
                   </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Billing & Pricing</h4>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="billingPackage">Billing Package</Label>
+                        <Select
+                          value={newAgency.billingPackage}
+                          onValueChange={(value) => setNewAgency({...newAgency, billingPackage: value})}
+                        >
+                          <SelectTrigger id="billingPackage">
+                            <SelectValue placeholder="Select package" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="starter">Starter</SelectItem>
+                            <SelectItem value="professional">Professional</SelectItem>
+                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            <SelectItem value="custom">Custom</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="monthlyCredits">Monthly Credits</Label>
+                        <Input
+                          id="monthlyCredits"
+                          type="number"
+                          value={newAgency.monthlyCredits}
+                          onChange={(e) => setNewAgency({...newAgency, monthlyCredits: e.target.value})}
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="perCallRate">Per Call Rate ($)</Label>
+                        <Input
+                          id="perCallRate"
+                          type="number"
+                          step="0.01"
+                          value={newAgency.perCallRate}
+                          onChange={(e) => setNewAgency({...newAgency, perCallRate: e.target.value})}
+                          placeholder="0.30"
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="perMinuteRate">Per Minute Rate ($)</Label>
+                        <Input
+                          id="perMinuteRate"
+                          type="number"
+                          step="0.01"
+                          value={newAgency.perMinuteRate}
+                          onChange={(e) => setNewAgency({...newAgency, perMinuteRate: e.target.value})}
+                          placeholder="0.30"
+                          min="0"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="creditBalance">Initial Credit Balance ($)</Label>
+                        <Input
+                          id="creditBalance"
+                          type="number"
+                          value={newAgency.creditBalance}
+                          onChange={(e) => setNewAgency({...newAgency, creditBalance: e.target.value})}
+                          placeholder="0"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Resource Limits</h4>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="creditBalance">Initial Credit Balance ($)</Label>
+                      <Label htmlFor="maxAgents">Max Agents</Label>
                       <Input
-                        id="creditBalance"
+                        id="maxAgents"
                         type="number"
-                        value={newAgency.creditBalance}
-                        onChange={(e) => setNewAgency({...newAgency, creditBalance: e.target.value})}
-                        placeholder="0"
-                        min="0"
+                        value={newAgency.maxAgents}
+                        onChange={(e) => setNewAgency({...newAgency, maxAgents: e.target.value})}
+                        placeholder="5"
+                        min="1"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="maxCustomers">Max Customers</Label>
+                      <Label htmlFor="maxUsers">Max Users</Label>
                       <Input
-                        id="maxCustomers"
+                        id="maxUsers"
                         type="number"
-                        value={newAgency.maxCustomers}
-                        onChange={(e) => setNewAgency({...newAgency, maxCustomers: e.target.value})}
+                        value={newAgency.maxUsers}
+                        onChange={(e) => setNewAgency({...newAgency, maxUsers: e.target.value})}
                         placeholder="10"
                         min="1"
                       />
                     </div>
                   </div>
                 </div>
-              </div>
+              </>
             )}
 
             <div>

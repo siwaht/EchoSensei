@@ -780,7 +780,12 @@ export function registerRoutes(app: Express): Server {
   // Admin routes - Create new user
   app.post('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const { email, firstName, lastName, password, companyName, isAdmin, organizationType, commissionRate, role, parentOrganizationId } = req.body;
+      const { 
+        email, firstName, lastName, password, companyName, isAdmin, organizationType, 
+        commissionRate, role, parentOrganizationId, creditBalance, billingPackage,
+        perCallRate, perMinuteRate, monthlyCredits, maxAgents, maxUsers,
+        subdomain, customDomain
+      } = req.body;
       
       // Check if user exists
       const existingUser = await storage.getUserByEmail(email);
@@ -805,6 +810,15 @@ export function registerRoutes(app: Express): Server {
             name: companyName,
             organizationType: organizationType || 'end_customer',
             commissionRate: organizationType === 'agency' ? (commissionRate || 30) : undefined,
+            creditBalance: organizationType === 'agency' ? (creditBalance || 0) : undefined,
+            billingPackage: organizationType === 'agency' ? (billingPackage || 'starter') : 'starter',
+            perCallRate: organizationType === 'agency' ? (perCallRate || 0.30) : 0.30,
+            perMinuteRate: organizationType === 'agency' ? (perMinuteRate || 0.30) : 0.30,
+            monthlyCredits: organizationType === 'agency' ? (monthlyCredits || 0) : 0,
+            maxAgents: maxAgents || 5,
+            maxUsers: maxUsers || 10,
+            subdomain: organizationType === 'agency' ? subdomain : undefined,
+            customDomain: organizationType === 'agency' ? customDomain : undefined,
             parentOrganizationId: parentOrganizationId
           });
           organizationId = newOrg.id;
