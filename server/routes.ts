@@ -445,18 +445,26 @@ export function registerRoutes(app: Express): Server {
   // Update agency permissions
   app.patch('/api/admin/organizations/:orgId/permissions', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
-      const { permissions } = req.body;
+      const { permissions, role } = req.body;
       if (!Array.isArray(permissions)) {
         return res.status(400).json({ message: "Permissions must be an array" });
       }
       
-      const updatedOrg = await storage.updateOrganization(req.params.orgId, {
+      const updateData: any = {
         agencyPermissions: permissions
-      });
+      };
+      
+      // Also save the role if provided
+      if (role) {
+        updateData.agencyRole = role;
+      }
+      
+      const updatedOrg = await storage.updateOrganization(req.params.orgId, updateData);
       
       res.json({
         message: "Agency permissions updated successfully",
-        permissions: updatedOrg.agencyPermissions
+        permissions: updatedOrg.agencyPermissions,
+        role: updatedOrg.agencyRole
       });
     } catch (error) {
       console.error("Error updating agency permissions:", error);
@@ -476,6 +484,7 @@ export function registerRoutes(app: Express): Server {
         organizationId: org.id,
         organizationName: org.name,
         permissions: org.agencyPermissions || [],
+        role: org.agencyRole || null,
         organizationType: org.organizationType,
         billingPackage: org.billingPackage
       });

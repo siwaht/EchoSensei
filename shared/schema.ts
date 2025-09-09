@@ -112,6 +112,7 @@ export const organizations = pgTable("organizations", {
     maxConcurrentCalls?: number;
   }>(),
   agencyPermissions: jsonb("agency_permissions").$type<string[]>().default([]), // Agency-level permissions
+  agencyRole: varchar("agency_role"), // Role template for agency permissions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
