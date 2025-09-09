@@ -198,22 +198,37 @@ export default function WhitelabelSettings() {
   // Save mutation
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const formData = new FormData();
+      let logoUrl = whitelabelData?.logoUrl || "";
+      
+      // Handle logo upload if there's a new logo
       if (logo) {
-        formData.append("logo", logo);
+        const reader = new FileReader();
+        const base64Logo = await new Promise((resolve) => {
+          reader.onloadend = () => resolve(reader.result);
+          reader.readAsDataURL(logo);
+        });
+        logoUrl = base64Logo as string;
+      } else if (logoPreview === "" && whitelabelData?.logoUrl) {
+        // If logo was removed, set to empty string
+        logoUrl = "";
       }
-      formData.append("appName", appName);
-      formData.append("companyName", companyName);
-      formData.append("primaryColor", useCustomColor ? customPrimaryColor : selectedTheme.primary);
-      formData.append("secondaryColor", useCustomColor ? customPrimaryColor : selectedTheme.secondary);
-      formData.append("accentColor", useCustomColor ? customPrimaryColor : selectedTheme.accent);
-      formData.append("removeBranding", removeBranding.toString());
-      formData.append("subdomain", subdomain);
-      formData.append("customDomain", customDomain);
-      formData.append("supportUrl", supportUrl);
-      formData.append("documentationUrl", documentationUrl);
 
-      return apiRequest("POST", "/api/whitelabel/save", formData);
+      const data = {
+        appName,
+        companyName,
+        primaryColor: useCustomColor ? customPrimaryColor : selectedTheme.primary,
+        secondaryColor: useCustomColor ? customPrimaryColor : selectedTheme.secondary,
+        accentColor: useCustomColor ? customPrimaryColor : selectedTheme.accent,
+        removePlatformBranding: removeBranding,
+        subdomain,
+        customDomain,
+        supportUrl,
+        documentationUrl,
+        logoUrl,
+        faviconUrl: whitelabelData?.faviconUrl || ""
+      };
+
+      return apiRequest("POST", "/api/whitelabel", data);
     },
     onSuccess: () => {
       toast({
@@ -243,6 +258,15 @@ export default function WhitelabelSettings() {
         setHasChanges(true);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogo(null);
+    setLogoPreview("");
+    setHasChanges(true);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -313,12 +337,22 @@ export default function WhitelabelSettings() {
                         <Upload className="h-6 w-6 text-muted-foreground" />
                       </div>
                     )}
-                    <Button
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Upload Logo
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {logoPreview ? "Change Logo" : "Upload Logo"}
+                      </Button>
+                      {logoPreview && (
+                        <Button
+                          variant="outline"
+                          onClick={handleRemoveLogo}
+                        >
+                          Remove Logo
+                        </Button>
+                      )}
+                    </div>
                     <input
                       ref={fileInputRef}
                       type="file"
