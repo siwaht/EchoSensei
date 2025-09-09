@@ -13,7 +13,7 @@ import {
   Building2, Users, DollarSign, Plus, ChevronRight, ChevronDown,
   UserPlus, TrendingUp, CreditCard, Briefcase, Store, Settings,
   Eye, Edit, Trash2, Shield, AlertCircle, PackageIcon, Percent, Palette, Wand2,
-  Power, Ban, AlertTriangle
+  Power, Ban, AlertTriangle, X
 } from "lucide-react";
 import type { Organization, User } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
@@ -193,6 +193,40 @@ export function AgencyManagement() {
       toast({
         title: "Update Failed",
         description: "Failed to update organization settings",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Delete user mutation
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => {
+      const response = await apiRequest("DELETE", `/api/admin/users/${userId}`, {});
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to delete user");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/organizations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      toast({
+        title: "User Deleted",
+        description: "The user has been successfully removed.",
+      });
+      // Refresh the organization details to update user count
+      if (selectedOrgForView) {
+        const updatedOrg = hierarchicalOrgs.find(org => org.id === selectedOrgForView.id);
+        if (updatedOrg) {
+          setSelectedOrgForView(updatedOrg);
+        }
+      }
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Delete Failed",
+        description: error.message || "Failed to delete user",
         variant: "destructive",
       });
     },
@@ -972,21 +1006,39 @@ export function AgencyManagement() {
 
               {selectedOrgForView.users && selectedOrgForView.users.length > 0 && (
                 <div className="border-t pt-4">
-                  <h4 className="font-medium mb-3">Team Members</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium">Team Members ({selectedOrgForView.users.length})</h4>
+                    {selectedOrgForView.users.length > 0 && (
+                      <p className="text-xs text-muted-foreground">Remove all users before deleting organization</p>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {selectedOrgForView.users.map(user => (
-                      <div key={user.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded">
+                      <div key={user.id} className="flex items-center justify-between text-sm p-2 bg-muted/50 rounded group hover:bg-muted/70 transition-colors">
                         <div className="flex items-center gap-2">
                           <Users className="w-4 h-4 text-muted-foreground" />
                           <span className="font-medium">{user.firstName} {user.lastName}</span>
                           <span className="text-muted-foreground">({user.email})</span>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                           {user.isAdmin && <Badge variant="outline" className="text-xs">Admin</Badge>}
                           {user.role === 'agency' && <Badge variant="outline" className="text-xs">Agency Owner</Badge>}
                           <Badge variant={user.status === 'active' ? 'default' : 'secondary'} className="text-xs">
                             {user.status || 'active'}
                           </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to delete ${user.email}? This action cannot be undone.`)) {
+                                deleteUserMutation.mutate(user.id);
+                              }
+                            }}
+                            disabled={deleteUserMutation.isPending}
+                          >
+                            <X className="w-4 h-4 text-destructive" />
+                          </Button>
                         </div>
                       </div>
                     ))}
