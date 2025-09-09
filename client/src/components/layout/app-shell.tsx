@@ -246,38 +246,39 @@ export default function AppShell({ children }: AppShellProps) {
                   <span>Admin</span>
                 </Link>
               )}
-              {/* Only show whitelabel for agency organizations, not admin users */}
-              {isAgency && !isAdmin && (
-                <>
-                  <Link
-                    href={buildPath("/whitelabel-settings")}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                      location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/whitelabel-settings"
-                        ? "gradient-purple text-white shadow-lg"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
-                    )}
-                    data-testid="nav-whitelabel"
-                  >
-                    <Palette className="w-5 h-5" />
-                    <span>Whitelabel</span>
-                  </Link>
-                  <Link
-                    href={buildPath("/agency-users")}
-                    onClick={() => setSidebarOpen(false)}
-                    className={cn(
-                      "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                      location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/agency-users"
-                        ? "gradient-purple text-white shadow-lg"
-                        : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
-                    )}
-                    data-testid="nav-agency-users"
-                  >
-                    <Users className="w-5 h-5" />
-                    <span>User Management</span>
-                  </Link>
-                </>
+              {/* Show whitelabel settings only to agency users with manage_branding permission */}
+              {isAgency && !isAdmin && userPermissions.includes('manage_branding') && (
+                <Link
+                  href={buildPath("/whitelabel-settings")}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
+                    location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/whitelabel-settings"
+                      ? "gradient-purple text-white shadow-lg"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
+                  )}
+                  data-testid="nav-whitelabel"
+                >
+                  <Palette className="w-5 h-5" />
+                  <span>Whitelabel</span>
+                </Link>
+              )}
+              {/* Show user management only to agency users with manage_users permission */}
+              {isAgency && !isAdmin && userPermissions.includes('manage_users') && (
+                <Link
+                  href={buildPath("/agency-users")}
+                  onClick={() => setSidebarOpen(false)}
+                  className={cn(
+                    "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
+                    location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/agency-users"
+                      ? "gradient-purple text-white shadow-lg"
+                      : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
+                  )}
+                  data-testid="nav-agency-users"
+                >
+                  <Users className="w-5 h-5" />
+                  <span>User Management</span>
+                </Link>
               )}
               {secondaryNavigation.map((item) => {
                 const Icon = item.icon;
