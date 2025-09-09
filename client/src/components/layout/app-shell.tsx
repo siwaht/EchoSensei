@@ -60,9 +60,10 @@ export default function AppShell({ children }: AppShellProps) {
   const { user } = useAuth();
   const { buildPath } = useAgencyPath();
   
-  // Get user permissions
+  // Get user permissions and role
   const userPermissions = (user as any)?.permissions || [];
   const isAdmin = (user as any)?.isAdmin || false;
+  const userRole = (user as any)?.role || 'user';
   
   // Fetch organization details to check if it's an agency
   const { data: organization } = useQuery<{ organizationType?: string }>({
@@ -246,8 +247,8 @@ export default function AppShell({ children }: AppShellProps) {
                   <span>Admin</span>
                 </Link>
               )}
-              {/* Show whitelabel settings only to agency users with manage_branding permission */}
-              {isAgency && !isAdmin && userPermissions.includes('manage_branding') && (
+              {/* Show whitelabel settings to agency owners or users with manage_branding permission */}
+              {isAgency && !isAdmin && (userRole === 'agency' || userPermissions.includes('manage_branding')) && (
                 <Link
                   href={buildPath("/whitelabel-settings")}
                   onClick={() => setSidebarOpen(false)}
@@ -263,8 +264,8 @@ export default function AppShell({ children }: AppShellProps) {
                   <span>Whitelabel</span>
                 </Link>
               )}
-              {/* Show user management only to agency users with manage_users permission */}
-              {isAgency && !isAdmin && userPermissions.includes('manage_users') && (
+              {/* Show user management to agency owners or users with manage_users permission */}
+              {isAgency && !isAdmin && (userRole === 'agency' || userPermissions.includes('manage_users')) && (
                 <Link
                   href={buildPath("/agency-users")}
                   onClick={() => setSidebarOpen(false)}
