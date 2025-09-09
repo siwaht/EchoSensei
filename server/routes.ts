@@ -1919,6 +1919,318 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Agency Payment Configuration routes
+  app.get('/api/agency/payment-config', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can manage payment configurations
+      if (org.organizationType !== 'agency' || user.role !== 'agency') {
+        return res.status(403).json({ message: "Only agency owners can manage payment configurations" });
+      }
+      
+      const config = await storage.getAgencyPaymentConfig(user.organizationId);
+      res.json(config || null);
+    } catch (error) {
+      console.error("Error fetching agency payment config:", error);
+      res.status(500).json({ message: "Failed to fetch payment configuration" });
+    }
+  });
+
+  app.post('/api/agency/payment-config', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can manage payment configurations
+      if (org.organizationType !== 'agency' || user.role !== 'agency') {
+        return res.status(403).json({ message: "Only agency owners can manage payment configurations" });
+      }
+      
+      const configData = {
+        organizationId: user.organizationId,
+        ...req.body
+      };
+      
+      const config = await storage.createAgencyPaymentConfig(configData);
+      res.json(config);
+    } catch (error) {
+      console.error("Error creating agency payment config:", error);
+      res.status(500).json({ message: "Failed to create payment configuration" });
+    }
+  });
+
+  app.patch('/api/agency/payment-config', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can manage payment configurations
+      if (org.organizationType !== 'agency' || user.role !== 'agency') {
+        return res.status(403).json({ message: "Only agency owners can manage payment configurations" });
+      }
+      
+      const config = await storage.updateAgencyPaymentConfig(user.organizationId, req.body);
+      res.json(config);
+    } catch (error) {
+      console.error("Error updating agency payment config:", error);
+      res.status(500).json({ message: "Failed to update payment configuration" });
+    }
+  });
+
+  // Agency Pricing Plans routes
+  app.get('/api/agency/pricing-plans', async (req: any, res) => {
+    try {
+      // Allow public access to view pricing plans
+      const { agencyDomain } = req.query;
+      
+      if (!agencyDomain) {
+        return res.status(400).json({ message: "Agency domain is required" });
+      }
+      
+      // Find agency by subdomain or custom domain
+      const org = await storage.getOrganizationBySubdomain(agencyDomain) || 
+                  await storage.getOrganizationByCustomDomain(agencyDomain);
+      
+      if (!org) {
+        return res.status(404).json({ message: "Agency not found" });
+      }
+      
+      const plans = await storage.getAgencyPricingPlans(org.id);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching agency pricing plans:", error);
+      res.status(500).json({ message: "Failed to fetch pricing plans" });
+    }
+  });
+
+  app.post('/api/agency/pricing-plans', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can manage pricing plans
+      if (org.organizationType !== 'agency' || user.role !== 'agency') {
+        return res.status(403).json({ message: "Only agency owners can manage pricing plans" });
+      }
+      
+      const planData = {
+        organizationId: user.organizationId,
+        ...req.body
+      };
+      
+      const plan = await storage.createAgencyPricingPlan(planData);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error creating agency pricing plan:", error);
+      res.status(500).json({ message: "Failed to create pricing plan" });
+    }
+  });
+
+  app.patch('/api/agency/pricing-plans/:planId', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can manage pricing plans
+      if (org.organizationType !== 'agency' || user.role !== 'agency') {
+        return res.status(403).json({ message: "Only agency owners can manage pricing plans" });
+      }
+      
+      const plan = await storage.updateAgencyPricingPlan(req.params.planId, req.body);
+      res.json(plan);
+    } catch (error) {
+      console.error("Error updating agency pricing plan:", error);
+      res.status(500).json({ message: "Failed to update pricing plan" });
+    }
+  });
+
+  app.delete('/api/agency/pricing-plans/:planId', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can manage pricing plans
+      if (org.organizationType !== 'agency' || user.role !== 'agency') {
+        return res.status(403).json({ message: "Only agency owners can manage pricing plans" });
+      }
+      
+      await storage.deleteAgencyPricingPlan(req.params.planId);
+      res.json({ message: "Pricing plan deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting agency pricing plan:", error);
+      res.status(500).json({ message: "Failed to delete pricing plan" });
+    }
+  });
+
+  // Agency Subscription routes
+  app.get('/api/agency/subscriptions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Agencies see all their client subscriptions
+      // End customers see their own subscriptions
+      let subscriptions: any[] = [];
+      if (org.organizationType === 'agency') {
+        subscriptions = await storage.getAgencySubscriptions(user.organizationId);
+      } else {
+        // Get user's subscription from parent agency
+        if (org.parentOrganizationId) {
+          const userSubscription = await storage.getUserSubscription(user.id, org.parentOrganizationId);
+          subscriptions = userSubscription ? [userSubscription] : [];
+        } else {
+          subscriptions = [];
+        }
+      }
+      
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching agency subscriptions:", error);
+      res.status(500).json({ message: "Failed to fetch subscriptions" });
+    }
+  });
+
+  app.post('/api/agency/subscriptions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const subscriptionData = {
+        userId: user.id,
+        agencyOrganizationId: req.body.agencyOrganizationId,
+        planId: req.body.planId,
+        status: 'active' as const,
+        ...req.body
+      };
+      
+      const subscription = await storage.createAgencySubscription(subscriptionData);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error creating agency subscription:", error);
+      res.status(500).json({ message: "Failed to create subscription" });
+    }
+  });
+
+  app.patch('/api/agency/subscriptions/:subscriptionId', isAuthenticated, async (req: any, res) => {
+    try {
+      const subscription = await storage.updateAgencySubscription(req.params.subscriptionId, req.body);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error updating agency subscription:", error);
+      res.status(500).json({ message: "Failed to update subscription" });
+    }
+  });
+
+  app.post('/api/agency/subscriptions/:subscriptionId/cancel', isAuthenticated, async (req: any, res) => {
+    try {
+      await storage.cancelAgencySubscription(req.params.subscriptionId);
+      res.json({ message: "Subscription cancelled successfully" });
+    } catch (error) {
+      console.error("Error cancelling agency subscription:", error);
+      res.status(500).json({ message: "Failed to cancel subscription" });
+    }
+  });
+
+  // Agency Transaction routes
+  app.get('/api/agency/transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      // Only agencies can view their transactions
+      if (org.organizationType !== 'agency') {
+        return res.status(403).json({ message: "Only agencies can view transactions" });
+      }
+      
+      const limit = req.query.limit ? parseInt(req.query.limit) : undefined;
+      const transactions = await storage.getAgencyTransactions(user.organizationId, limit);
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching agency transactions:", error);
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post('/api/agency/transactions', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const transactionData = {
+        agencyOrganizationId: user.organizationId,
+        ...req.body
+      };
+      
+      const transaction = await storage.createAgencyTransaction(transactionData);
+      res.json(transaction);
+    } catch (error) {
+      console.error("Error creating agency transaction:", error);
+      res.status(500).json({ message: "Failed to create transaction" });
+    }
+  });
+
   // Quick Action Buttons routes - Users (for their own buttons)
   app.get('/api/quick-action-buttons', isAuthenticated, async (req: any, res) => {
     try {

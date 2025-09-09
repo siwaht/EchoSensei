@@ -34,6 +34,7 @@ const AgentSettings = lazy(() => import("@/pages/agent-settings"));
 const AgentTesting = lazy(() => import("@/pages/agent-testing"));
 const WhitelabelSettings = lazy(() => import("@/pages/whitelabel-settings"));
 const AgencyUsers = lazy(() => import("@/pages/agency-users"));
+const AgencyBillingSettings = lazy(() => import("@/pages/agency-billing-settings"));
 const VoiceConfiguration = lazy(() => import("@/pages/voice-configuration"));
 
 // Loading fallback component
@@ -113,6 +114,9 @@ function AgencyRouter() {
           </Route>
           <Route path="/agency/:subdomain/agency-users">
             <PermissionGuard><AgencyUsers /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/agency-billing-settings">
+            <PermissionGuard><AgencyBillingSettings /></PermissionGuard>
           </Route>
         </Switch>
       </Suspense>
@@ -195,6 +199,9 @@ function Router() {
           </Route>
           <Route path="/agency-users">
             <PermissionGuard><AgencyUsers /></PermissionGuard>
+          </Route>
+          <Route path="/agency-billing-settings">
+            <PermissionGuard><AgencyBillingSettings /></PermissionGuard>
           </Route>
           <Route component={NotFound} />
         </Switch>
