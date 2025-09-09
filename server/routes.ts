@@ -784,7 +784,7 @@ export function registerRoutes(app: Express): Server {
         email, firstName, lastName, password, companyName, isAdmin, organizationType, 
         commissionRate, role, parentOrganizationId, creditBalance, billingPackage,
         perCallRate, perMinuteRate, monthlyCredits, maxAgents, maxUsers,
-        subdomain, customDomain
+        subdomain, customDomain, permissions
       } = req.body;
       
       // Check if user exists
@@ -819,6 +819,7 @@ export function registerRoutes(app: Express): Server {
             maxUsers: maxUsers || 10,
             subdomain: organizationType === 'agency' ? subdomain : undefined,
             customDomain: organizationType === 'agency' ? customDomain : undefined,
+            agencyPermissions: organizationType === 'agency' ? (permissions || []) : undefined,
             parentOrganizationId: parentOrganizationId
           });
           organizationId = newOrg.id;
@@ -828,7 +829,7 @@ export function registerRoutes(app: Express): Server {
       // Hash password before creating user
       const hashedPassword = await hashPassword(password);
       
-      // Create new user with role
+      // Create new user with role and permissions
       const newUser = await storage.createUser({
         email,
         firstName,
@@ -837,6 +838,7 @@ export function registerRoutes(app: Express): Server {
         organizationId,
         isAdmin: isAdmin || false,
         role: role || (organizationType === 'agency' ? 'agency' : 'user'),
+        permissions: permissions || [],
       });
 
       res.json(newUser);

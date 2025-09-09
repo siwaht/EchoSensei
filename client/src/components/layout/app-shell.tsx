@@ -66,12 +66,13 @@ export default function AppShell({ children }: AppShellProps) {
   const userRole = (user as any)?.role || 'user';
   
   // Fetch organization details to check if it's an agency
-  const { data: organization } = useQuery<{ organizationType?: string }>({
+  const { data: organization } = useQuery<{ organizationType?: string; agencyPermissions?: string[] }>({
     queryKey: ["/api/organization/current"],
     enabled: !!user,
   });
   
   const isAgency = organization?.organizationType === "agency";
+  const orgPermissions = organization?.agencyPermissions || [];
   
   // Fetch whitelabel configuration
   const { data: whitelabelConfig } = useQuery<{
@@ -120,8 +121,8 @@ export default function AppShell({ children }: AppShellProps) {
     // Dashboard is always visible
     if (!item.permission) return true;
     
-    // Check if user has the required permission
-    return userPermissions.includes(item.permission);
+    // Check if user has the required permission OR organization has it
+    return userPermissions.includes(item.permission) || orgPermissions.includes(item.permission);
   });
 
   const getPageTitle = () => {

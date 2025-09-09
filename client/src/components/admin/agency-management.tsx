@@ -19,6 +19,8 @@ import type { Organization, User } from "@shared/schema";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocation } from "wouter";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AGENCY_PERMISSIONS_BY_CATEGORY, DEFAULT_AGENCY_PERMISSIONS } from "@shared/constants/agency-permissions";
 
 interface OrganizationWithDetails extends Organization {
   userCount?: number;
@@ -63,6 +65,11 @@ export function AgencyManagement() {
     whiteLabel: false,
     notes: "",
   });
+
+  // Track selected permissions
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(
+    DEFAULT_AGENCY_PERMISSIONS.starter
+  );
 
   // Fetch organizations with hierarchy
   const { data: organizations = [], isLoading } = useQuery<Organization[]>({
@@ -193,7 +200,7 @@ export function AgencyManagement() {
 
   // Create agency mutation
   const createAgencyMutation = useMutation({
-    mutationFn: async (data: typeof newAgency & { parentOrganizationId?: string }) => {
+    mutationFn: async (data: typeof newAgency & { permissions?: string[], parentOrganizationId?: string }) => {
       // Create the organization and admin user in one request
       return await apiRequest("POST", "/api/admin/users", {
         email: data.email,
@@ -212,6 +219,7 @@ export function AgencyManagement() {
         maxUsers: parseInt(data.maxUsers),
         subdomain: createType === "agency" ? data.subdomain : undefined,
         customDomain: createType === "agency" ? data.customDomain : undefined,
+        permissions: createType === "agency" ? data.permissions : [],
         isAdmin: false, // Agency owners are not system admins
         role: createType === "agency" ? "agency" : "user",
         parentOrganizationId: data.parentOrganizationId,
@@ -257,6 +265,7 @@ export function AgencyManagement() {
       whiteLabel: false,
       notes: "",
     });
+    setSelectedPermissions(DEFAULT_AGENCY_PERMISSIONS.starter);
     setSelectedAgency(null);
     setCreateType("agency");
   };
@@ -724,7 +733,18 @@ export function AgencyManagement() {
                         <Label htmlFor="billingPackage">Billing Package</Label>
                         <Select
                           value={newAgency.billingPackage}
-                          onValueChange={(value) => setNewAgency({...newAgency, billingPackage: value})}
+                          onValueChange={(value) => {
+                            setNewAgency({...newAgency, billingPackage: value});
+                            // Auto-update permissions based on package
+                            if (value === 'starter') {
+                              setSelectedPermissions(DEFAULT_AGENCY_PERMISSIONS.starter);
+                            } else if (value === 'professional') {
+                              setSelectedPermissions(DEFAULT_AGENCY_PERMISSIONS.professional);
+                            } else if (value === 'enterprise') {
+                              setSelectedPermissions(DEFAULT_AGENCY_PERMISSIONS.enterprise);
+                            }
+                            // Custom keeps current selection
+                          }}
                         >
                           <SelectTrigger id="billingPackage">
                             <SelectValue placeholder="Select package" />
@@ -814,6 +834,51 @@ export function AgencyManagement() {
                     </div>
                   </div>
                 </div>
+
+                <div className="border-t pt-4">
+                  <h4 className="font-medium mb-3">Agency Permissions</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Permissions are auto-selected based on billing package. Choose Custom package to manually configure.
+                  </p>
+                  <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                    {Object.entries(AGENCY_PERMISSIONS_BY_CATEGORY).map(([category, permissions]) => (
+                      <div key={category} className="space-y-2">
+                        <h5 className="text-sm font-medium text-muted-foreground">{category}</h5>
+                        <div className="space-y-2">
+                          {permissions.map((permission) => (
+                            <div key={permission.id} className="flex items-start space-x-2">
+                              <Checkbox
+                                id={permission.id}
+                                checked={selectedPermissions.includes(permission.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setSelectedPermissions([...selectedPermissions, permission.id]);
+                                  } else {
+                                    setSelectedPermissions(selectedPermissions.filter(p => p !== permission.id));
+                                  }
+                                  // If user manually changes permissions, switch to custom package
+                                  if (newAgency.billingPackage !== 'custom') {
+                                    setNewAgency({...newAgency, billingPackage: 'custom'});
+                                  }
+                                }}
+                                disabled={newAgency.billingPackage !== 'custom'}
+                              />
+                              <div className="flex-1">
+                                <Label 
+                                  htmlFor={permission.id} 
+                                  className="text-sm font-normal cursor-pointer"
+                                >
+                                  {permission.name}
+                                </Label>
+                                <p className="text-xs text-muted-foreground">{permission.description}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
@@ -837,6 +902,7 @@ export function AgencyManagement() {
             <Button 
               onClick={() => createAgencyMutation.mutate({
                 ...newAgency,
+                permissions: selectedPermissions,
                 parentOrganizationId: selectedAgency || undefined
               })}
               disabled={!newAgency.name || !newAgency.email || !newAgency.password}
