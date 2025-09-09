@@ -10,6 +10,11 @@ export default function Billing() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/analytics/organization"],
   });
+  
+  // Get user's organization information
+  const { data: orgInfo } = useQuery({
+    queryKey: ["/api/organization"],
+  });
 
   // Define plan limits based on current plan
   const planLimits = {
@@ -122,13 +127,25 @@ export default function Billing() {
           <div className="text-sm text-gray-600 dark:text-gray-400 mb-4" data-testid="text-plan-price">
             $49/month + usage
           </div>
-          <Button 
-            className="w-full" 
-            data-testid="button-manage-plan"
-            onClick={() => setLocation("/checkout")}
-          >
-            Manage Plan
-          </Button>
+          {(orgInfo as any)?.parentOrganizationId ? (
+            // User is under an agency - show agency checkout
+            <Button 
+              className="w-full" 
+              data-testid="button-manage-plan"
+              onClick={() => setLocation("/agency-checkout")}
+            >
+              View Plans
+            </Button>
+          ) : (
+            // Regular user - show platform checkout
+            <Button 
+              className="w-full" 
+              data-testid="button-manage-plan"
+              onClick={() => setLocation("/checkout")}
+            >
+              Manage Plan
+            </Button>
+          )}
         </Card>
       </div>
 
