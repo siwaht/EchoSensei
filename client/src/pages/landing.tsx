@@ -112,7 +112,7 @@ export default function Landing() {
   };
 
   return (
-    <main className="h-screen bg-background flex flex-col overflow-hidden" role="main">
+    <main className="min-h-screen bg-background flex flex-col" role="main">
       {/* Navigation */}
       <header className="bg-card/80 backdrop-blur-sm border-b border-border" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
