@@ -9,6 +9,7 @@ import { useLocation } from "wouter";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useAgencyPath } from "@/hooks/useAgencyPath";
 
 export default function Landing() {
   const { theme, setTheme } = useTheme();
@@ -16,27 +17,33 @@ export default function Landing() {
   const [password, setPassword] = useState("");
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { agencySubdomain, buildPath } = useAgencyPath();
   const [subdomain, setSubdomain] = useState<string | null>(null);
   
-  // Detect subdomain from URL or query parameter (for development)
+  // Detect subdomain from URL path, query parameter, or hostname
   useEffect(() => {
-    // Check for subdomain in query parameter first (development mode)
-    const urlParams = new URLSearchParams(window.location.search);
-    const querySubdomain = urlParams.get('subdomain');
-    
-    if (querySubdomain) {
-      setSubdomain(querySubdomain);
+    // First priority: agency path
+    if (agencySubdomain) {
+      setSubdomain(agencySubdomain);
     } else {
-      // Check hostname for subdomain
-      const hostname = window.location.hostname;
-      const parts = hostname.split('.');
+      // Check for subdomain in query parameter (development mode)
+      const urlParams = new URLSearchParams(window.location.search);
+      const querySubdomain = urlParams.get('subdomain');
       
-      // Check if we have a subdomain (not www, not localhost)
-      if (parts.length >= 2 && parts[0] !== 'www' && parts[0] !== 'localhost') {
-        setSubdomain(parts[0]);
+      if (querySubdomain) {
+        setSubdomain(querySubdomain);
+      } else {
+        // Check hostname for subdomain
+        const hostname = window.location.hostname;
+        const parts = hostname.split('.');
+        
+        // Check if we have a subdomain (not www, not localhost)
+        if (parts.length >= 2 && parts[0] !== 'www' && parts[0] !== 'localhost') {
+          setSubdomain(parts[0]);
+        }
       }
     }
-  }, []);
+  }, [agencySubdomain]);
   
   // Fetch public whitelabel configuration based on subdomain
   const { data: whitelabelConfig } = useQuery<{
@@ -87,7 +94,8 @@ export default function Landing() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      setLocation("/");
+      // Use buildPath to maintain agency context after login
+      setLocation(buildPath("/"));
     },
     onError: (error: Error) => {
       toast({
