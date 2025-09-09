@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import AppShell from "@/components/layout/app-shell";
 import { PermissionGuard } from "@/components/auth/permission-guard";
 import { AgentProvider } from "@/contexts/agent-context";
+import { WhitelabelProvider } from "@/contexts/whitelabel-context";
 
 // Eagerly load critical pages
 import Landing from "@/pages/landing";
@@ -44,8 +45,91 @@ function PageLoader() {
   );
 }
 
+// Agency-specific routing wrapper
+function AgencyRouter() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading spinner while authentication is being checked
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  // Redirect to landing page if not authenticated
+  if (!isAuthenticated) {
+    return <Landing />;
+  }
+
+  return (
+    <AgentProvider>
+      <AppShell>
+        <Suspense fallback={<PageLoader />}>
+          <Switch>
+          <Route path="/agency/:subdomain" component={Dashboard} />
+          <Route path="/agency/:subdomain/agents">
+            <PermissionGuard><Agents /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/agents/:id">
+            <PermissionGuard><AgentSettings /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/agent-testing" component={AgentTesting} />
+          <Route path="/agency/:subdomain/voices">
+            <PermissionGuard><Voices /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/voice-configuration">
+            <PermissionGuard><VoiceConfiguration /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/phone-numbers">
+            <PermissionGuard><PhoneNumbers /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/outbound-calling">
+            <PermissionGuard><OutboundCalling /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/tools">
+            <PermissionGuard><Tools /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/playground">
+            <PermissionGuard><Playground /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/history">
+            <PermissionGuard><History /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/integrations">
+            <PermissionGuard><Integrations /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/billing">
+            <PermissionGuard><Billing /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/checkout" component={Checkout} />
+          <Route path="/agency/:subdomain/settings" component={Settings} />
+          <Route path="/agency/:subdomain/admin">
+            <PermissionGuard permission="manage_users"><Admin /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/whitelabel-settings">
+            <PermissionGuard><WhitelabelSettings /></PermissionGuard>
+          </Route>
+          <Route path="/agency/:subdomain/agency-users">
+            <PermissionGuard><AgencyUsers /></PermissionGuard>
+          </Route>
+        </Switch>
+      </Suspense>
+    </AppShell>
+    </AgentProvider>
+  );
+}
+
 function Router() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [location] = useLocation();
+  const isAgencyPath = location.startsWith('/agency/');
+
+  // For agency paths, use the agency router
+  if (isAgencyPath) {
+    return <AgencyRouter />;
+  }
 
   // Show loading spinner while authentication is being checked
   if (isLoading) {
@@ -125,12 +209,14 @@ function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
-          <TooltipProvider>
-            <Toaster />
-            <ErrorBoundary>
-              <Router />
-            </ErrorBoundary>
-          </TooltipProvider>
+          <WhitelabelProvider>
+            <TooltipProvider>
+              <Toaster />
+              <ErrorBoundary>
+                <Router />
+              </ErrorBoundary>
+            </TooltipProvider>
+          </WhitelabelProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </ErrorBoundary>

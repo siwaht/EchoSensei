@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Eye, Save, Check, Users, Palette } from "lucide-react";
+import { ArrowLeft, Upload, Eye, Save, Check, Users, Palette, Copy, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 
 // Preset themes with predefined color combinations
@@ -526,12 +526,12 @@ export default function WhitelabelSettings() {
               <CardHeader>
                 <CardTitle>Custom Domain</CardTitle>
                 <CardDescription>
-                  Set up your agency's custom subdomain for branded access
+                  Set up your agency's unique identifier and custom domain for branded access
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label htmlFor="subdomain">Subdomain</Label>
+                  <Label htmlFor="subdomain">Agency Identifier</Label>
                   <div className="flex gap-2 mt-2">
                     <div className="relative flex-1">
                       <Input
@@ -558,13 +558,40 @@ export default function WhitelabelSettings() {
                         </span>
                       )}
                     </div>
-                    <span className="text-sm text-muted-foreground flex items-center">
-                      .{baseDomain}
-                    </span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Your clients will access the platform at: {subdomain || 'agency-name'}.{baseDomain}
-                  </p>
+                  {subdomain && (
+                    <div className="mt-3 p-3 bg-muted rounded-md space-y-2">
+                      <p className="text-sm font-medium">Your Agency Access URL:</p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm bg-background px-2 py-1 rounded flex-1">
+                          {window.location.origin}/agency/{subdomain}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/agency/${subdomain}`);
+                            toast({
+                              title: "URL Copied",
+                              description: "Agency URL has been copied to clipboard",
+                            });
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(`/agency/${subdomain}`, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Share this URL with your clients to access your branded dashboard
+                      </p>
+                    </div>
+                  )}
                 </div>
                 
                 <div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
+import { useAgencyPath } from "@/hooks/useAgencyPath";
 import { useTheme } from "@/components/theme-provider";
 import { useAuth } from "@/hooks/useAuth";
 import { 
@@ -57,6 +58,7 @@ export default function AppShell({ children }: AppShellProps) {
   const [location] = useLocation();
   const { theme, setTheme } = useTheme();
   const { user } = useAuth();
+  const { buildPath } = useAgencyPath();
   
   // Get user permissions
   const userPermissions = (user as any)?.permissions || [];
@@ -119,44 +121,47 @@ export default function AppShell({ children }: AppShellProps) {
   });
 
   const getPageTitle = () => {
-    const currentNav = filteredNavigation.find(item => item.href === location);
+    // Remove agency prefix from location if present
+    const cleanLocation = location.replace(/^\/agency\/[a-z0-9-]+/, '');
+    
+    const currentNav = filteredNavigation.find(item => item.href === cleanLocation || item.href === '/' && cleanLocation === '');
     if (currentNav) return currentNav.name;
     
     // Check for dynamic agent settings route
-    if (location.startsWith("/agents/")) return "Agent Settings";
+    if (cleanLocation.startsWith("/agents/")) return "Agent Settings";
     
     // Check for admin route
-    if (location === "/admin") return "Admin";
+    if (cleanLocation === "/admin") return "Admin";
     
     // Check for settings route
-    if (location === "/settings") return "Settings";
+    if (cleanLocation === "/settings") return "Settings";
     
     // Check for checkout route
-    if (location === "/checkout") return "Checkout";
+    if (cleanLocation === "/checkout") return "Checkout";
     
     // Check for voices route
-    if (location === "/voices") return "Voices";
+    if (cleanLocation === "/voices") return "Voices";
     
     // Check for voice configuration route
-    if (location === "/voice-configuration") return "Voice Configuration";
+    if (cleanLocation === "/voice-configuration") return "Voice Configuration";
     
     // Check for phone numbers route
-    if (location === "/phone-numbers") return "Phone Numbers";
+    if (cleanLocation === "/phone-numbers") return "Phone Numbers";
     
     // Check for outbound calling route
-    if (location === "/outbound-calling") return "Outbound Calling";
+    if (cleanLocation === "/outbound-calling") return "Outbound Calling";
     
     // Check for tools route
-    if (location === "/tools") return "Tools";
+    if (cleanLocation === "/tools") return "Tools";
     
     // Check for conversations route
-    if (location === "/conversations") return "Conversations";
+    if (cleanLocation === "/conversations") return "Conversations";
     
     // Check for whitelabel settings route
-    if (location === "/whitelabel-settings") return "Whitelabel Settings";
+    if (cleanLocation === "/whitelabel-settings") return "Whitelabel Settings";
     
     // Check for agency users route
-    if (location === "/agency-users") return "User Management";
+    if (cleanLocation === "/agency-users") return "User Management";
     
     
     // Default to "Page Not Found" for unknown routes
@@ -201,11 +206,12 @@ export default function AppShell({ children }: AppShellProps) {
           <div className="space-y-1">
             {filteredNavigation.map((item) => {
               const Icon = item.icon;
-              const isActive = location === item.href;
+              const cleanLocation = location.replace(/^\/agency\/[a-z0-9-]+/, '');
+              const isActive = cleanLocation === item.href || (item.href === '/' && cleanLocation === '');
               return (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={buildPath(item.href)}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
@@ -226,11 +232,11 @@ export default function AppShell({ children }: AppShellProps) {
             <div className="space-y-1">
               {user?.isAdmin && (
                 <Link
-                  href="/admin"
+                  href={buildPath("/admin")}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                    location === "/admin"
+                    location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/admin"
                       ? "gradient-purple text-white shadow-lg"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
                   )}
@@ -244,11 +250,11 @@ export default function AppShell({ children }: AppShellProps) {
               {isAgency && !isAdmin && (
                 <>
                   <Link
-                    href="/whitelabel-settings"
+                    href={buildPath("/whitelabel-settings")}
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
                       "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                      location === "/whitelabel-settings"
+                      location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/whitelabel-settings"
                         ? "gradient-purple text-white shadow-lg"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
                     )}
@@ -258,11 +264,11 @@ export default function AppShell({ children }: AppShellProps) {
                     <span>Whitelabel</span>
                   </Link>
                   <Link
-                    href="/agency-users"
+                    href={buildPath("/agency-users")}
                     onClick={() => setSidebarOpen(false)}
                     className={cn(
                       "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                      location === "/agency-users"
+                      location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/agency-users"
                         ? "gradient-purple text-white shadow-lg"
                         : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
                     )}
@@ -278,7 +284,7 @@ export default function AppShell({ children }: AppShellProps) {
                 return (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    href={buildPath(item.href)}
                     onClick={() => setSidebarOpen(false)}
                     className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     data-testid={`nav-${item.name.toLowerCase()}`}

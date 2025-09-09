@@ -5434,8 +5434,39 @@ Generate the complete prompt now:`;
   // Public whitelabel endpoint for login page
   app.get("/api/whitelabel/public", async (req: any, res) => {
     try {
-      // Get the first whitelabel config (for single-tenant deployments)
-      // In multi-tenant, you might want to use domain-based detection
+      const { subdomain } = req.query;
+      
+      // If subdomain is provided, look up the specific organization
+      if (subdomain) {
+        const org = await storage.getOrganizationBySubdomain(subdomain as string);
+        
+        if (org) {
+          const config = await storage.getWhitelabelConfig(org.id);
+          
+          if (config) {
+            // Return public-safe fields only
+            return res.json({
+              appName: config.appName,
+              companyName: config.companyName,
+              logoUrl: config.logoUrl,
+              faviconUrl: config.faviconUrl,
+              primaryColor: config.primaryColor,
+              removePlatformBranding: config.removePlatformBranding,
+            });
+          }
+        }
+        
+        // If subdomain not found, return 404
+        return res.status(404).json({
+          error: "Agency not found",
+          appName: "VoiceAI Dashboard",
+          companyName: "",
+          primaryColor: "#7C3AED",
+          removePlatformBranding: false,
+        });
+      }
+      
+      // Default behavior: Get the first whitelabel config (for single-tenant deployments)
       const allConfigs = await storage.getAllWhitelabelConfigs();
       
       if (allConfigs && allConfigs.length > 0) {
