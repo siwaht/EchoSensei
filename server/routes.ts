@@ -442,6 +442,49 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Update agency permissions
+  app.patch('/api/admin/organizations/:orgId/permissions', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { permissions } = req.body;
+      if (!Array.isArray(permissions)) {
+        return res.status(400).json({ message: "Permissions must be an array" });
+      }
+      
+      const updatedOrg = await storage.updateOrganization(req.params.orgId, {
+        agencyPermissions: permissions
+      });
+      
+      res.json({
+        message: "Agency permissions updated successfully",
+        permissions: updatedOrg.agencyPermissions
+      });
+    } catch (error) {
+      console.error("Error updating agency permissions:", error);
+      res.status(500).json({ message: "Failed to update agency permissions" });
+    }
+  });
+
+  // Get agency permissions
+  app.get('/api/admin/organizations/:orgId/permissions', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const org = await storage.getOrganization(req.params.orgId);
+      if (!org) {
+        return res.status(404).json({ message: "Organization not found" });
+      }
+      
+      res.json({
+        organizationId: org.id,
+        organizationName: org.name,
+        permissions: org.agencyPermissions || [],
+        organizationType: org.organizationType,
+        billingPackage: org.billingPackage
+      });
+    } catch (error) {
+      console.error("Error fetching agency permissions:", error);
+      res.status(500).json({ message: "Failed to fetch agency permissions" });
+    }
+  });
+
   app.delete('/api/admin/organizations/:orgId', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       await storage.deleteOrganization(req.params.orgId);

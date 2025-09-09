@@ -25,6 +25,7 @@ import { PaymentAnalytics } from "@/components/admin/payment-analytics";
 import { PaymentHistory } from "@/components/admin/payment-history";
 import { UserBulkOperations } from "@/components/admin/user-bulk-operations";
 import { AgencyManagement } from "@/components/admin/agency-management";
+import { AgencyPermissions } from "@/components/admin/agency-permissions";
 
 interface BillingData {
   totalUsers: number;
@@ -89,6 +90,12 @@ export default function AdminDashboard() {
     totalCalls?: number;
     usedCredits?: number;
     estimatedCost?: number;
+  } | null>(null);
+  const [managingPermissionsOrg, setManagingPermissionsOrg] = useState<{
+    id: string;
+    name: string;
+    organizationType?: string;
+    billingPackage?: string;
   } | null>(null);
   const [creatingUser, setCreatingUser] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -661,6 +668,24 @@ export default function AdminDashboard() {
                             >
                               <Eye className="w-3 h-3" />
                             </Button>
+                            {org.organizationType === 'agency' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 w-7 p-0"
+                                title="Manage Permissions"
+                                onClick={() => {
+                                  setManagingPermissionsOrg({
+                                    id: org.id,
+                                    name: org.name,
+                                    organizationType: org.organizationType,
+                                    billingPackage: org.billingPackage
+                                  });
+                                }}
+                              >
+                                <Shield className="w-3 h-3" />
+                              </Button>
+                            )}
                             <Button
                               size="sm"
                               variant="ghost"
@@ -1178,6 +1203,28 @@ export default function AdminDashboard() {
               Save Billing Settings
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Agency Permissions Dialog */}
+      <Dialog open={!!managingPermissionsOrg} onOpenChange={() => setManagingPermissionsOrg(null)}>
+        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle>Manage Agency Permissions</DialogTitle>
+            <DialogDescription>
+              Configure what features and capabilities {managingPermissionsOrg?.name} can access
+            </DialogDescription>
+          </DialogHeader>
+          <div className="overflow-y-auto flex-1 pr-2">
+            {managingPermissionsOrg && (
+              <AgencyPermissions
+                organizationId={managingPermissionsOrg.id}
+                organizationName={managingPermissionsOrg.name}
+                organizationType={managingPermissionsOrg.organizationType}
+                billingPackage={managingPermissionsOrg.billingPackage}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
 

@@ -111,6 +111,7 @@ export const organizations = pgTable("organizations", {
     maxStorageGB?: number;
     maxConcurrentCalls?: number;
   }>(),
+  agencyPermissions: jsonb("agency_permissions").$type<string[]>().default([]), // Agency-level permissions
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
