@@ -148,8 +148,8 @@ export default function Landing() {
       </header>
 
       {/* Login Section */}
-      <section className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-y-auto" aria-labelledby="login-heading">
-        <div className="w-full max-w-md my-auto">
+      <section className="flex-1 overflow-y-auto p-4" aria-labelledby="login-heading">
+        <div className="w-full max-w-md mx-auto mt-8">
           <Card className="p-6 sm:p-8 bg-card/95 backdrop-blur-sm border-border shadow-2xl">
             <div className="text-center mb-6">
               {whitelabelConfig?.logoUrl ? (
