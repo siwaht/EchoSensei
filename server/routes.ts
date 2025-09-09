@@ -1619,7 +1619,14 @@ export function registerRoutes(app: Express): Server {
         return res.status(403).json({ message: "You don't have permission to manage users" });
       }
       
-      const { email, firstName, lastName, password, role, permissions } = req.body;
+      let { email, firstName, lastName, password, role, permissions } = req.body;
+      
+      // Agency users can only create users with 'user' role
+      if (user.role === 'agency' && role && role !== 'user') {
+        return res.status(403).json({ 
+          message: "Agency users can only create users with 'User - Limited access' role" 
+        });
+      }
       
       // Check if email already exists
       const existingUser = await storage.getUserByEmail(email);
@@ -7496,7 +7503,17 @@ Generate the complete prompt now:`;
       }
       
       const { userId } = req.params;
-      const { role, status, permissions } = req.body;
+      let { role, status, permissions } = req.body;
+      
+      // Get current user to check their role
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Agency users can only set role to 'user'
+      if (currentUser?.role === 'agency' && role && role !== 'user') {
+        return res.status(403).json({ 
+          error: "Agency users can only assign 'User - Limited access' role" 
+        });
+      }
       
       let updatedUser;
       
@@ -7594,7 +7611,17 @@ Generate the complete prompt now:`;
         return res.status(400).json({ error: "No organization or user found" });
       }
       
-      const { email, role, permissions } = req.body;
+      let { email, role, permissions } = req.body;
+      
+      // Get current user to check their role
+      const currentUser = await storage.getUser(req.user.id);
+      
+      // Agency users can only invite users with 'user' role
+      if (currentUser?.role === 'agency' && role && role !== 'user') {
+        return res.status(403).json({ 
+          error: "Agency users can only invite users with 'User - Limited access' role" 
+        });
+      }
       
       // Check if user already exists in organization
       const existingUser = await storage.getUserByEmail(email);

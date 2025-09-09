@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +121,7 @@ export default function AgencyUsers() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   const [createUserDialogOpen, setCreateUserDialogOpen] = useState(false);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -529,9 +531,15 @@ export default function AgencyUsers() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="admin">Admin - Full access</SelectItem>
-                        <SelectItem value="manager">Manager - Moderate access</SelectItem>
-                        <SelectItem value="user">User - Limited access</SelectItem>
+                        {user?.role === "agency" ? (
+                          <SelectItem value="user">User - Limited access</SelectItem>
+                        ) : (
+                          <>
+                            <SelectItem value="admin">Admin - Full access</SelectItem>
+                            <SelectItem value="manager">Manager - Moderate access</SelectItem>
+                            <SelectItem value="user">User - Limited access</SelectItem>
+                          </>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
@@ -611,9 +619,15 @@ export default function AgencyUsers() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="admin">Admin - Full access</SelectItem>
-                      <SelectItem value="manager">Manager - Moderate access</SelectItem>
-                      <SelectItem value="user">User - Limited access</SelectItem>
+                      {user?.role === "agency" ? (
+                        <SelectItem value="user">User - Limited access</SelectItem>
+                      ) : (
+                        <>
+                          <SelectItem value="admin">Admin - Full access</SelectItem>
+                          <SelectItem value="manager">Manager - Moderate access</SelectItem>
+                          <SelectItem value="user">User - Limited access</SelectItem>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -875,9 +889,15 @@ export default function AgencyUsers() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="admin">Admin - Full access</SelectItem>
-                    <SelectItem value="manager">Manager - Moderate access</SelectItem>
-                    <SelectItem value="user">User - Limited access</SelectItem>
+                    {user?.role === "agency" ? (
+                      <SelectItem value="user">User - Limited access</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="admin">Admin - Full access</SelectItem>
+                        <SelectItem value="manager">Manager - Moderate access</SelectItem>
+                        <SelectItem value="user">User - Limited access</SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
