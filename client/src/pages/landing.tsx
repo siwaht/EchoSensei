@@ -216,7 +216,7 @@ export default function Landing() {
 
               <Button 
                 type="submit"
-                className="w-full h-11 mt-6" 
+                className="w-full h-11 mt-6 bg-primary text-primary-foreground hover:bg-primary/90" 
                 size="lg" 
                 data-testid="button-login"
                 disabled={loginMutation.isPending}
