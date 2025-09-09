@@ -21,6 +21,10 @@ import {
   creditPackages,
   creditAlerts,
   whitelabelConfigs,
+  agencyPaymentConfig,
+  agencyPricingPlans,
+  agencySubscriptions,
+  agencyTransactions,
   type User,
   type UpsertUser,
   type Organization,
@@ -62,6 +66,14 @@ import {
   type InsertCreditAlert,
   type WhitelabelConfig,
   type InsertWhitelabelConfig,
+  type AgencyPaymentConfig,
+  type InsertAgencyPaymentConfig,
+  type AgencyPricingPlan,
+  type InsertAgencyPricingPlan,
+  type AgencySubscription,
+  type InsertAgencySubscription,
+  type AgencyTransaction,
+  type InsertAgencyTransaction,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sum, avg, max, or, inArray, isNull } from "drizzle-orm";
@@ -188,6 +200,32 @@ export interface IStorage {
   getAllPayments(): Promise<Payment[]>;
   createPayment(data: InsertPayment): Promise<Payment>;
   updatePayment(id: string, data: Partial<Payment>): Promise<Payment>;
+
+  // Agency Payment Configuration operations
+  getAgencyPaymentConfig(organizationId: string): Promise<AgencyPaymentConfig | undefined>;
+  createAgencyPaymentConfig(config: InsertAgencyPaymentConfig): Promise<AgencyPaymentConfig>;
+  updateAgencyPaymentConfig(organizationId: string, updates: Partial<InsertAgencyPaymentConfig>): Promise<AgencyPaymentConfig>;
+  
+  // Agency Pricing Plan operations
+  getAgencyPricingPlans(organizationId: string): Promise<AgencyPricingPlan[]>;
+  getAgencyPricingPlan(id: string): Promise<AgencyPricingPlan | undefined>;
+  createAgencyPricingPlan(plan: InsertAgencyPricingPlan): Promise<AgencyPricingPlan>;
+  updateAgencyPricingPlan(id: string, updates: Partial<InsertAgencyPricingPlan>): Promise<AgencyPricingPlan>;
+  deleteAgencyPricingPlan(id: string): Promise<void>;
+  
+  // Agency Subscription operations
+  getAgencySubscriptions(agencyOrganizationId: string): Promise<AgencySubscription[]>;
+  getAgencySubscription(id: string): Promise<AgencySubscription | undefined>;
+  getUserSubscription(userId: string, agencyOrganizationId: string): Promise<AgencySubscription | undefined>;
+  createAgencySubscription(subscription: InsertAgencySubscription): Promise<AgencySubscription>;
+  updateAgencySubscription(id: string, updates: Partial<InsertAgencySubscription>): Promise<AgencySubscription>;
+  cancelAgencySubscription(id: string): Promise<void>;
+  
+  // Agency Transaction operations
+  getAgencyTransactions(agencyOrganizationId: string, limit?: number): Promise<AgencyTransaction[]>;
+  getAgencyTransaction(id: string): Promise<AgencyTransaction | undefined>;
+  createAgencyTransaction(transaction: InsertAgencyTransaction): Promise<AgencyTransaction>;
+  updateAgencyTransaction(id: string, updates: Partial<InsertAgencyTransaction>): Promise<AgencyTransaction>;
 
   // Batch call operations
   getBatchCalls(organizationId: string): Promise<BatchCall[]>;
@@ -983,6 +1021,167 @@ export class DatabaseStorage implements IStorage {
       .returning();
     if (!updated) {
       throw new Error("Payment not found");
+    }
+    return updated;
+  }
+
+  // Agency Payment Configuration operations
+  async getAgencyPaymentConfig(organizationId: string): Promise<AgencyPaymentConfig | undefined> {
+    const [config] = await db()
+      .select()
+      .from(agencyPaymentConfig)
+      .where(eq(agencyPaymentConfig.organizationId, organizationId));
+    return config;
+  }
+
+  async createAgencyPaymentConfig(config: InsertAgencyPaymentConfig): Promise<AgencyPaymentConfig> {
+    const [newConfig] = await db().insert(agencyPaymentConfig).values(config).returning();
+    return newConfig;
+  }
+
+  async updateAgencyPaymentConfig(organizationId: string, updates: Partial<InsertAgencyPaymentConfig>): Promise<AgencyPaymentConfig> {
+    const [updated] = await db()
+      .update(agencyPaymentConfig)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agencyPaymentConfig.organizationId, organizationId))
+      .returning();
+    if (!updated) {
+      throw new Error("Agency payment config not found");
+    }
+    return updated;
+  }
+  
+  // Agency Pricing Plan operations
+  async getAgencyPricingPlans(organizationId: string): Promise<AgencyPricingPlan[]> {
+    return await db()
+      .select()
+      .from(agencyPricingPlans)
+      .where(eq(agencyPricingPlans.organizationId, organizationId))
+      .orderBy(agencyPricingPlans.displayOrder);
+  }
+
+  async getAgencyPricingPlan(id: string): Promise<AgencyPricingPlan | undefined> {
+    const [plan] = await db()
+      .select()
+      .from(agencyPricingPlans)
+      .where(eq(agencyPricingPlans.id, id));
+    return plan;
+  }
+
+  async createAgencyPricingPlan(plan: InsertAgencyPricingPlan): Promise<AgencyPricingPlan> {
+    const [newPlan] = await db().insert(agencyPricingPlans).values(plan).returning();
+    return newPlan;
+  }
+
+  async updateAgencyPricingPlan(id: string, updates: Partial<InsertAgencyPricingPlan>): Promise<AgencyPricingPlan> {
+    const [updated] = await db()
+      .update(agencyPricingPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agencyPricingPlans.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error("Agency pricing plan not found");
+    }
+    return updated;
+  }
+
+  async deleteAgencyPricingPlan(id: string): Promise<void> {
+    await db().delete(agencyPricingPlans).where(eq(agencyPricingPlans.id, id));
+  }
+  
+  // Agency Subscription operations
+  async getAgencySubscriptions(agencyOrganizationId: string): Promise<AgencySubscription[]> {
+    return await db()
+      .select()
+      .from(agencySubscriptions)
+      .where(eq(agencySubscriptions.agencyOrganizationId, agencyOrganizationId))
+      .orderBy(desc(agencySubscriptions.createdAt));
+  }
+
+  async getAgencySubscription(id: string): Promise<AgencySubscription | undefined> {
+    const [subscription] = await db()
+      .select()
+      .from(agencySubscriptions)
+      .where(eq(agencySubscriptions.id, id));
+    return subscription;
+  }
+
+  async getUserSubscription(userId: string, agencyOrganizationId: string): Promise<AgencySubscription | undefined> {
+    const [subscription] = await db()
+      .select()
+      .from(agencySubscriptions)
+      .where(and(
+        eq(agencySubscriptions.userId, userId),
+        eq(agencySubscriptions.agencyOrganizationId, agencyOrganizationId),
+        eq(agencySubscriptions.status, "active")
+      ));
+    return subscription;
+  }
+
+  async createAgencySubscription(subscription: InsertAgencySubscription): Promise<AgencySubscription> {
+    const [newSubscription] = await db().insert(agencySubscriptions).values(subscription).returning();
+    return newSubscription;
+  }
+
+  async updateAgencySubscription(id: string, updates: Partial<InsertAgencySubscription>): Promise<AgencySubscription> {
+    const [updated] = await db()
+      .update(agencySubscriptions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agencySubscriptions.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error("Agency subscription not found");
+    }
+    return updated;
+  }
+
+  async cancelAgencySubscription(id: string): Promise<void> {
+    await db()
+      .update(agencySubscriptions)
+      .set({ 
+        status: "canceled" as const,
+        canceledAt: new Date(),
+        updatedAt: new Date()
+      })
+      .where(eq(agencySubscriptions.id, id));
+  }
+  
+  // Agency Transaction operations
+  async getAgencyTransactions(agencyOrganizationId: string, limit?: number): Promise<AgencyTransaction[]> {
+    let query = db()
+      .select()
+      .from(agencyTransactions)
+      .where(eq(agencyTransactions.agencyOrganizationId, agencyOrganizationId))
+      .orderBy(desc(agencyTransactions.createdAt));
+    
+    if (limit) {
+      query = query.limit(limit) as any;
+    }
+    
+    return await query;
+  }
+
+  async getAgencyTransaction(id: string): Promise<AgencyTransaction | undefined> {
+    const [transaction] = await db()
+      .select()
+      .from(agencyTransactions)
+      .where(eq(agencyTransactions.id, id));
+    return transaction;
+  }
+
+  async createAgencyTransaction(transaction: InsertAgencyTransaction): Promise<AgencyTransaction> {
+    const [newTransaction] = await db().insert(agencyTransactions).values(transaction).returning();
+    return newTransaction;
+  }
+
+  async updateAgencyTransaction(id: string, updates: Partial<InsertAgencyTransaction>): Promise<AgencyTransaction> {
+    const [updated] = await db()
+      .update(agencyTransactions)
+      .set(updates)
+      .where(eq(agencyTransactions.id, id))
+      .returning();
+    if (!updated) {
+      throw new Error("Agency transaction not found");
     }
     return updated;
   }
