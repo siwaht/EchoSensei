@@ -112,7 +112,7 @@ export default function Landing() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex flex-col" role="main">
+    <main className="h-screen bg-background flex flex-col overflow-hidden" role="main">
       {/* Navigation */}
       <header className="bg-card/80 backdrop-blur-sm border-b border-border" role="banner">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -148,23 +148,23 @@ export default function Landing() {
       </header>
 
       {/* Login Section */}
-      <section className="flex-1 flex items-center justify-center p-4" aria-labelledby="login-heading">
-        <div className="w-full max-w-md">
-          <Card className="p-8 bg-card/95 backdrop-blur-sm border-border shadow-2xl">
-            <div className="text-center mb-8">
+      <section className="flex-1 flex items-center justify-center p-4 min-h-0 overflow-y-auto" aria-labelledby="login-heading">
+        <div className="w-full max-w-md my-auto">
+          <Card className="p-6 sm:p-8 bg-card/95 backdrop-blur-sm border-border shadow-2xl">
+            <div className="text-center mb-6">
               {whitelabelConfig?.logoUrl ? (
                 <img 
                   src={whitelabelConfig.logoUrl} 
                   alt="Logo" 
-                  className="w-16 h-16 object-contain rounded-2xl mx-auto mb-4" 
+                  className="w-14 h-14 object-contain rounded-2xl mx-auto mb-3" 
                 />
               ) : (
-                <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Mic className="w-8 h-8 text-primary-foreground" />
+                <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Mic className="w-7 h-7 text-primary-foreground" />
                 </div>
               )}
-              <h1 id="login-heading" className="text-3xl font-bold text-card-foreground mb-2">Welcome Back</h1>
-              <p className="text-muted-foreground">
+              <h1 id="login-heading" className="text-2xl font-bold text-card-foreground mb-1">Welcome Back</h1>
+              <p className="text-sm text-muted-foreground">
                 {whitelabelConfig?.companyName 
                   ? `Sign in to access ${whitelabelConfig.companyName}` 
                   : "Sign in to access your VoiceAI Dashboard"}
@@ -216,7 +216,7 @@ export default function Landing() {
 
               <Button 
                 type="submit"
-                className="w-full h-11" 
+                className="w-full h-11 mt-6" 
                 size="lg" 
                 data-testid="button-login"
                 disabled={loginMutation.isPending}
@@ -234,7 +234,7 @@ export default function Landing() {
           </Card>
 
           {/* Info Section */}
-          <div className="mt-8 text-center">
+          <div className="mt-6 text-center">
             {!whitelabelConfig?.removePlatformBranding && (
               <>
                 <h3 className="text-lg font-semibold text-card-foreground mb-4">
