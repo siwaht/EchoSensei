@@ -9,6 +9,7 @@ import type { RequestHandler } from "express";
 import { seedAdminUser } from "./seedAdmin";
 import { checkPermission, checkRoutePermission } from "./middleware/permissions";
 import ElevenLabsService from "./services/elevenlabs";
+import Stripe from "stripe";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -2228,6 +2229,182 @@ export function registerRoutes(app: Express): Server {
     } catch (error) {
       console.error("Error creating agency transaction:", error);
       res.status(500).json({ message: "Failed to create transaction" });
+    }
+  });
+  
+  // Agency client payment processing routes
+  app.post('/api/agency/create-payment-intent', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org || !org.parentOrganizationId) {
+        return res.status(400).json({ message: "Invalid organization structure" });
+      }
+      
+      // Get agency's payment config
+      const paymentConfig = await storage.getAgencyPaymentConfig(org.parentOrganizationId);
+      if (!paymentConfig || !paymentConfig.isConfigured || !paymentConfig.stripeSecretKey) {
+        return res.status(400).json({ message: "Stripe is not configured for this agency" });
+      }
+      
+      const { planId, amount } = req.body;
+      
+      // Initialize Stripe with agency's secret key
+      const stripe = new Stripe(paymentConfig.stripeSecretKey, {
+        apiVersion: "2023-10-16",
+      });
+      
+      // Create payment intent
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: Math.round(amount * 100), // Convert to cents
+        currency: "usd",
+        metadata: {
+          userId: user.id,
+          organizationId: user.organizationId,
+          agencyOrganizationId: org.parentOrganizationId,
+          planId: planId
+        }
+      });
+      
+      res.json({ clientSecret: paymentIntent.client_secret });
+    } catch (error: any) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ message: error.message || "Failed to create payment intent" });
+    }
+  });
+  
+  app.post('/api/agency/create-paypal-order', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org || !org.parentOrganizationId) {
+        return res.status(400).json({ message: "Invalid organization structure" });
+      }
+      
+      // Get agency's payment config
+      const paymentConfig = await storage.getAgencyPaymentConfig(org.parentOrganizationId);
+      if (!paymentConfig || !paymentConfig.isConfigured || !paymentConfig.paypalClientId || !paymentConfig.paypalClientSecret) {
+        return res.status(400).json({ message: "PayPal is not configured for this agency" });
+      }
+      
+      const { planId, amount } = req.body;
+      
+      // Create PayPal order using the agency's credentials
+      // This would use the PayPal SDK with the agency's credentials
+      // For now, returning a mock order ID
+      res.json({ orderId: `PAYPAL-ORDER-${Date.now()}` });
+    } catch (error: any) {
+      console.error("Error creating PayPal order:", error);
+      res.status(500).json({ message: error.message || "Failed to create PayPal order" });
+    }
+  });
+  
+  app.post('/api/agency/capture-paypal-order', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org || !org.parentOrganizationId) {
+        return res.status(400).json({ message: "Invalid organization structure" });
+      }
+      
+      const { orderId, planId } = req.body;
+      
+      // Get plan details
+      const plan = await storage.getAgencyPricingPlan(planId);
+      if (!plan) {
+        return res.status(404).json({ message: "Plan not found" });
+      }
+      
+      // Create subscription
+      const subscription = await storage.createAgencySubscription({
+        organizationId: user.organizationId,
+        userId: user.id,
+        agencyOrganizationId: org.parentOrganizationId,
+        planId: planId,
+        status: 'active',
+        stripeSubscriptionId: null,
+        paypalSubscriptionId: orderId,
+        currentPeriodStart: new Date(),
+        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+      });
+      
+      // Create transaction record
+      await storage.createAgencyTransaction({
+        organizationId: user.organizationId,
+        type: 'subscription',
+        agencyOrganizationId: org.parentOrganizationId,
+        userId: user.id,
+        subscriptionId: subscription.id,
+        amount: String(plan.price),
+        currency: 'USD',
+        status: 'completed',
+        paymentMethod: 'paypal',
+        stripePaymentIntentId: null,
+        paypalOrderId: orderId,
+        description: `Subscription to ${plan.name}`,
+      });
+      
+      res.json({ success: true, subscriptionId: subscription.id });
+    } catch (error: any) {
+      console.error("Error capturing PayPal order:", error);
+      res.status(500).json({ message: error.message || "Failed to capture PayPal order" });
+    }
+  });
+  
+  // Get organization's payment config (for clients to check)
+  app.get('/api/organizations/:organizationId/payment-config', isAuthenticated, async (req: any, res) => {
+    try {
+      const config = await storage.getAgencyPaymentConfig(req.params.organizationId);
+      
+      if (!config) {
+        return res.json(null);
+      }
+      
+      // Only return public information
+      res.json({
+        stripeEnabled: !!config.stripeSecretKey,
+        stripePublishableKey: config.stripePublishableKey,
+        paypalEnabled: !!config.paypalClientId,
+        paypalClientId: config.paypalClientId,
+        paypalMode: config.paypalClientId?.includes('sandbox') ? 'sandbox' : 'production',
+        defaultPaymentMethod: config.defaultGateway || 'stripe'
+      });
+    } catch (error) {
+      console.error("Error fetching payment config:", error);
+      res.status(500).json({ message: "Failed to fetch payment configuration" });
+    }
+  });
+  
+  // Get current user's subscription
+  app.get('/api/agency/subscriptions/current', isAuthenticated, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      const org = await storage.getOrganization(user.organizationId);
+      if (!org || !org.parentOrganizationId) {
+        return res.json(null);
+      }
+      
+      const subscription = await storage.getUserSubscription(user.id, org.parentOrganizationId);
+      res.json(subscription);
+    } catch (error) {
+      console.error("Error fetching current subscription:", error);
+      res.status(500).json({ message: "Failed to fetch subscription" });
     }
   });
 

@@ -32,15 +32,17 @@ import { Textarea } from "@/components/ui/textarea";
 interface PaymentConfig {
   id: string;
   organizationId: string;
-  stripeEnabled: boolean;
   stripeSecretKey?: string;
   stripePublishableKey?: string;
   stripeWebhookSecret?: string;
-  paypalEnabled: boolean;
   paypalClientId?: string;
   paypalClientSecret?: string;
-  paypalMode: "sandbox" | "production";
-  defaultPaymentMethod: "stripe" | "paypal";
+  paypalWebhookId?: string;
+  defaultGateway?: "stripe" | "paypal";
+  currency?: string;
+  taxRate?: string;
+  isConfigured?: boolean;
+  lastVerifiedAt?: Date;
 }
 
 interface PricingPlan {
@@ -70,10 +72,10 @@ export default function AgencyBillingSettings() {
   
   // Form state for payment config
   const [paymentConfig, setPaymentConfig] = useState<Partial<PaymentConfig>>({
-    stripeEnabled: false,
-    paypalEnabled: false,
-    paypalMode: "sandbox",
-    defaultPaymentMethod: "stripe"
+    defaultGateway: "stripe",
+    currency: "usd",
+    taxRate: "0",
+    isConfigured: false
   });
   
   // Form state for pricing plan
@@ -325,15 +327,19 @@ export default function AgencyBillingSettings() {
                     </p>
                   </div>
                   <Switch
-                    checked={paymentConfig.stripeEnabled || false}
+                    checked={!!paymentConfig.stripeSecretKey || false}
                     onCheckedChange={(checked) => 
-                      setPaymentConfig(prev => ({ ...prev, stripeEnabled: checked }))
+                      setPaymentConfig(prev => ({ 
+                        ...prev, 
+                        stripeSecretKey: checked ? prev.stripeSecretKey || '' : undefined,
+                        isConfigured: checked || !!prev.paypalClientId
+                      }))
                     }
                     data-testid="switch-stripe"
                   />
                 </div>
                 
-                {paymentConfig.stripeEnabled && (
+                {!!paymentConfig.stripeSecretKey && (
                   <div className="space-y-3 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
                     <div className="space-y-2">
                       <Label htmlFor="stripe-publishable">Publishable Key</Label>
@@ -409,23 +415,32 @@ export default function AgencyBillingSettings() {
                     </p>
                   </div>
                   <Switch
-                    checked={paymentConfig.paypalEnabled || false}
+                    checked={!!paymentConfig.paypalClientId || false}
                     onCheckedChange={(checked) => 
-                      setPaymentConfig(prev => ({ ...prev, paypalEnabled: checked }))
+                      setPaymentConfig(prev => ({ 
+                        ...prev, 
+                        paypalClientId: checked ? prev.paypalClientId || '' : undefined,
+                        isConfigured: checked || !!prev.stripeSecretKey
+                      }))
                     }
                     data-testid="switch-paypal"
                   />
                 </div>
                 
-                {paymentConfig.paypalEnabled && (
+                {!!paymentConfig.paypalClientId && (
                   <div className="space-y-3 pl-4 border-l-2 border-gray-200 dark:border-gray-700">
                     <div className="space-y-2">
                       <Label htmlFor="paypal-mode">Environment</Label>
                       <Select
-                        value={paymentConfig.paypalMode}
-                        onValueChange={(value: "sandbox" | "production") => 
-                          setPaymentConfig(prev => ({ ...prev, paypalMode: value }))
-                        }
+                        value={paymentConfig.paypalClientId?.includes('sandbox') ? 'sandbox' : 'production'}
+                        onValueChange={(value: "sandbox" | "production") => {
+                          // Update the client ID prefix based on environment
+                          const currentId = paymentConfig.paypalClientId || '';
+                          const newId = value === 'sandbox' 
+                            ? currentId.replace(/^live_/, 'sandbox_')
+                            : currentId.replace(/^sandbox_/, 'live_');
+                          setPaymentConfig(prev => ({ ...prev, paypalClientId: newId }));
+                        }}
                       >
                         <SelectTrigger id="paypal-mode" data-testid="select-paypal-mode">
                           <SelectValue />
@@ -491,19 +506,19 @@ export default function AgencyBillingSettings() {
               <div className="space-y-2">
                 <Label htmlFor="default-method">Default Payment Method</Label>
                 <Select
-                  value={paymentConfig.defaultPaymentMethod}
+                  value={paymentConfig.defaultGateway}
                   onValueChange={(value: "stripe" | "paypal") => 
-                    setPaymentConfig(prev => ({ ...prev, defaultPaymentMethod: value }))
+                    setPaymentConfig(prev => ({ ...prev, defaultGateway: value }))
                   }
                 >
                   <SelectTrigger id="default-method" data-testid="select-default-method">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="stripe" disabled={!paymentConfig.stripeEnabled}>
+                    <SelectItem value="stripe" disabled={!paymentConfig.stripeSecretKey}>
                       Stripe
                     </SelectItem>
-                    <SelectItem value="paypal" disabled={!paymentConfig.paypalEnabled}>
+                    <SelectItem value="paypal" disabled={!paymentConfig.paypalClientId}>
                       PayPal
                     </SelectItem>
                   </SelectContent>
