@@ -8592,7 +8592,7 @@ Generate the complete prompt now:`;
         res.json({ 
           valid: true, 
           message: "Payment processor credentials are valid",
-          ...(validationResult.accountInfo && { accountInfo: validationResult.accountInfo }),
+          ...('accountInfo' in validationResult && validationResult.accountInfo ? { accountInfo: validationResult.accountInfo } : {}),
         });
       } else {
         // Update status to invalid
