@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 
@@ -56,14 +56,8 @@ export function WhitelabelProvider({ children }: { children: ReactNode }) {
     retry: false,
   });
 
-  // Apply whitelabel styles
-  useEffect(() => {
-    if (config && isAgencyView) {
-      // Apply primary color to CSS variables
-      const root = document.documentElement;
-      if (config.primaryColor) {
-        // Convert hex to HSL for CSS variables
-        const hexToHSL = (hex: string) => {
+  // Memoize hex to HSL conversion function
+  const hexToHSL = useCallback((hex: string) => {
           const r = parseInt(hex.slice(1, 3), 16) / 255;
           const g = parseInt(hex.slice(3, 5), 16) / 255;
           const b = parseInt(hex.slice(5, 7), 16) / 255;
@@ -92,8 +86,14 @@ export function WhitelabelProvider({ children }: { children: ReactNode }) {
           }
 
           return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-        };
+  }, []);
 
+  // Apply whitelabel styles
+  useEffect(() => {
+    if (config && isAgencyView) {
+      // Apply primary color to CSS variables
+      const root = document.documentElement;
+      if (config.primaryColor) {
         try {
           const hslColor = hexToHSL(config.primaryColor);
           root.style.setProperty("--primary", hslColor);
@@ -124,10 +124,16 @@ export function WhitelabelProvider({ children }: { children: ReactNode }) {
         document.title = "VoiceAI Dashboard";
       }
     };
-  }, [config, isAgencyView]);
+  }, [config, isAgencyView, hexToHSL]);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({ config: config || null, isAgencyView, agencySubdomain, isLoading }),
+    [config, isAgencyView, agencySubdomain, isLoading]
+  );
 
   return (
-    <WhitelabelContext.Provider value={{ config: config || null, isAgencyView, agencySubdomain, isLoading }}>
+    <WhitelabelContext.Provider value={contextValue}>
       {children}
     </WhitelabelContext.Provider>
   );

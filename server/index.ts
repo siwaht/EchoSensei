@@ -60,22 +60,34 @@ app.use((req, res, next) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+  // Only capture response body in development for debugging
+  if (process.env.NODE_ENV === "development") {
+    const originalResJson = res.json;
+    res.json = function (bodyJson, ...args) {
+      // Limit response capture to prevent memory issues
+      const responseStr = JSON.stringify(bodyJson);
+      if (responseStr.length < 500) { // Only capture small responses
+        capturedJsonResponse = bodyJson;
+      } else {
+        capturedJsonResponse = { message: "[Response too large to log]", size: responseStr.length };
+      }
+      return originalResJson.apply(res, [bodyJson, ...args]);
+    };
+  }
 
   res.on("finish", () => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+      
+      // Only add response details in development
+      if (process.env.NODE_ENV === "development" && capturedJsonResponse) {
+        const responseStr = JSON.stringify(capturedJsonResponse);
+        if (responseStr.length > 80) {
+          logLine += ` :: ${responseStr.slice(0, 79)}…`;
+        } else {
+          logLine += ` :: ${responseStr}`;
+        }
       }
 
       log(logLine);

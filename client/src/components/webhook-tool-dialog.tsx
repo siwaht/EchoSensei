@@ -68,26 +68,6 @@ interface WebhookToolDialogProps {
 
 // Webhook templates
 const WEBHOOK_TEMPLATES = {
-  rag: {
-    name: "RAG Knowledge Base Search",
-    description: "Search the custom knowledge base for relevant information",
-    method: 'GET' as const,
-    url: `${window.location.origin}/api/public/rag`,
-    webhookConfig: {
-      responseTimeout: 30,
-      disableInterruptions: false,
-      preToolSpeech: 'auto' as const,
-      queryParameters: [
-        {
-          identifier: 'query',
-          description: 'The search query to find relevant information in the knowledge base',
-          required: true,
-          dataType: 'String' as const,
-          valueType: 'LLM Prompt' as const
-        }
-      ]
-    }
-  },
   custom: {
     name: "",
     description: "",
@@ -365,19 +345,6 @@ export function WebhookToolDialog({ isOpen, onClose, webhook, onSave }: WebhookT
                       variant="outline"
                       size="sm"
                       onClick={() => {
-                        setSelectedTemplate('rag');
-                        applyTemplate('rag');
-                      }}
-                      className={selectedTemplate === 'rag' ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/50' : ''}
-                    >
-                      <Database className="h-4 w-4 mr-2" />
-                      RAG Knowledge Base
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
                         setSelectedTemplate('custom');
                         applyTemplate('custom');
                       }}
@@ -386,12 +353,6 @@ export function WebhookToolDialog({ isOpen, onClose, webhook, onSave }: WebhookT
                       Custom Webhook
                     </Button>
                   </div>
-                  {selectedTemplate === 'rag' && (
-                    <div className="text-xs text-blue-800 dark:text-blue-200 bg-blue-100 dark:bg-blue-800/30 p-2 rounded">
-                      This template configures a webhook to search your RAG knowledge base. 
-                      Make sure you've uploaded documents in the RAG System tab first.
-                    </div>
-                  )}
                 </AlertDescription>
               </Alert>
             )}

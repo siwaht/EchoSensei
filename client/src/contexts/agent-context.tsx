@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Agent } from "@shared/schema";
 
@@ -48,17 +48,24 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   }, [agents]);
 
   // Custom setter that also saves to localStorage
-  const setSelectedAgent = (agent: Agent | null) => {
+  // Memoize to prevent unnecessary re-renders
+  const setSelectedAgent = useCallback((agent: Agent | null) => {
     setSelectedAgentState(agent);
     if (agent) {
       localStorage.setItem("selectedAgentId", agent.id);
     } else {
       localStorage.removeItem("selectedAgentId");
     }
-  };
+  }, []);
+
+  // Memoize context value to prevent unnecessary re-renders
+  const contextValue = useMemo(
+    () => ({ selectedAgent, setSelectedAgent, agents, isLoading }),
+    [selectedAgent, setSelectedAgent, agents, isLoading]
+  );
 
   return (
-    <AgentContext.Provider value={{ selectedAgent, setSelectedAgent, agents, isLoading }}>
+    <AgentContext.Provider value={contextValue}>
       {children}
     </AgentContext.Provider>
   );

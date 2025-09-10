@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,14 +18,25 @@ import {
   Save, X, Eye, Wallet, CheckCircle, AlertCircle, RefreshCw, Briefcase
 } from "lucide-react";
 import type { User, Organization, BillingPackage } from "@shared/schema";
-import ApiSync from "./admin/api-sync";
-import ApprovalTasks from "./admin/approval-tasks";
-import { UserManagementPage } from "./user-management";
-import { PaymentAnalytics } from "@/components/admin/payment-analytics";
-import { PaymentHistory } from "@/components/admin/payment-history";
-import { UserBulkOperations } from "@/components/admin/user-bulk-operations";
-import { AgencyManagement } from "@/components/admin/agency-management";
-import { AgencyPermissions } from "@/components/admin/agency-permissions";
+
+// Lazy load admin components to reduce initial bundle size
+const ApiSync = lazy(() => import("./admin/api-sync"));
+const ApprovalTasks = lazy(() => import("./admin/approval-tasks"));
+const UserManagementPage = lazy(() => import("./user-management").then(module => ({ default: module.UserManagementPage })));
+const PaymentAnalytics = lazy(() => import("@/components/admin/payment-analytics").then(module => ({ default: module.PaymentAnalytics })));
+const PaymentHistory = lazy(() => import("@/components/admin/payment-history").then(module => ({ default: module.PaymentHistory })));
+const UserBulkOperations = lazy(() => import("@/components/admin/user-bulk-operations").then(module => ({ default: module.UserBulkOperations })));
+const AgencyManagement = lazy(() => import("@/components/admin/agency-management").then(module => ({ default: module.AgencyManagement })));
+const AgencyPermissions = lazy(() => import("@/components/admin/agency-permissions").then(module => ({ default: module.AgencyPermissions })));
+
+// Loading component for lazy-loaded sections
+function AdminSectionLoader() {
+  return (
+    <div className="flex items-center justify-center p-8">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
+    </div>
+  );
+}
 
 interface BillingData {
   totalUsers: number;
@@ -382,12 +393,16 @@ export default function AdminDashboard() {
 
         {/* Agencies Tab */}
         <TabsContent value="agencies" className="space-y-4">
-          <AgencyManagement />
+          <Suspense fallback={<AdminSectionLoader />}>
+            <AgencyManagement />
+          </Suspense>
         </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-4">
-          <UserManagementPage />
+          <Suspense fallback={<AdminSectionLoader />}>
+            <UserManagementPage />
+          </Suspense>
         </TabsContent>
 
         {/* Billing & Packages Tab */}
@@ -788,19 +803,23 @@ export default function AdminDashboard() {
         {/* Payment Management Tab */}
         <TabsContent value="payments" className="space-y-6">
           {/* Payment Analytics */}
-          <PaymentAnalytics 
-            transactions={transactions} 
-            organizations={organizations} 
-            billingData={billingData} 
-          />
+          <Suspense fallback={<AdminSectionLoader />}>
+            <PaymentAnalytics 
+              transactions={transactions} 
+              organizations={organizations} 
+              billingData={billingData} 
+            />
+          </Suspense>
           
           {/* Payment History */}
-          <PaymentHistory
-            transactions={transactions}
-            organizations={organizations}
-            onRefresh={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/payments"] })}
-            isLoading={transactionsLoading}
-          />
+          <Suspense fallback={<AdminSectionLoader />}>
+            <PaymentHistory
+              transactions={transactions}
+              organizations={organizations}
+              onRefresh={() => queryClient.invalidateQueries({ queryKey: ["/api/admin/payments"] })}
+              isLoading={transactionsLoading}
+            />
+          </Suspense>
 
           {/* Payment Gateway Configuration */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -882,12 +901,16 @@ export default function AdminDashboard() {
 
         {/* Approval Tasks Tab */}
         <TabsContent value="approval-tasks" className="space-y-4">
-          <ApprovalTasks />
+          <Suspense fallback={<AdminSectionLoader />}>
+            <ApprovalTasks />
+          </Suspense>
         </TabsContent>
 
         {/* API Sync Tab */}
         <TabsContent value="api-sync" className="space-y-4">
-          <ApiSync />
+          <Suspense fallback={<AdminSectionLoader />}>
+            <ApiSync />
+          </Suspense>
         </TabsContent>
       </Tabs>
 
@@ -1220,12 +1243,14 @@ export default function AdminDashboard() {
           </DialogHeader>
           <div className="overflow-y-auto flex-1 pr-2">
             {managingPermissionsOrg && (
-              <AgencyPermissions
-                organizationId={managingPermissionsOrg.id}
-                organizationName={managingPermissionsOrg.name}
-                organizationType={managingPermissionsOrg.organizationType}
-                billingPackage={managingPermissionsOrg.billingPackage}
-              />
+              <Suspense fallback={<AdminSectionLoader />}>
+                <AgencyPermissions
+                  organizationId={managingPermissionsOrg.id}
+                  organizationName={managingPermissionsOrg.name}
+                  organizationType={managingPermissionsOrg.organizationType}
+                  billingPackage={managingPermissionsOrg.billingPackage}
+                />
+              </Suspense>
             )}
           </div>
         </DialogContent>

@@ -3237,7 +3237,7 @@ Generate the complete prompt now:`;
     }
   });
 
-  app.get("/api/agents", isAuthenticated, async (req: any, res) => {
+  app.get("/api/agents", isAuthenticated, cacheMiddleware.agents, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -3381,7 +3381,7 @@ Generate the complete prompt now:`;
   });
 
   // Get a single agent with ElevenLabs sync
-  app.get("/api/agents/:id", isAuthenticated, async (req: any, res) => {
+  app.get("/api/agents/:id", isAuthenticated, cacheMiddleware.standard, async (req: any, res) => {
     try {
       const userId = req.user.id;
       const user = await storage.getUser(userId);
@@ -6024,7 +6024,7 @@ Generate the complete prompt now:`;
   });
 
   // Public whitelabel endpoint by subdomain (no auth required)
-  app.get("/api/whitelabel/subdomain/:subdomain", async (req, res) => {
+  app.get("/api/whitelabel/subdomain/:subdomain", cacheMiddleware.long, async (req, res) => {
     try {
       const { subdomain } = req.params;
       
@@ -6080,7 +6080,7 @@ Generate the complete prompt now:`;
   });
 
   // Public whitelabel endpoint for login page
-  app.get("/api/whitelabel/public", async (req: any, res) => {
+  app.get("/api/whitelabel/public", cacheMiddleware.long, async (req: any, res) => {
     try {
       const { subdomain } = req.query;
       
