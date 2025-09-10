@@ -2090,7 +2090,7 @@ export class DatabaseStorage implements IStorage {
   async getUnifiedBillingPlans(organizationType?: string): Promise<UnifiedBillingPlan[]> {
     const conditions = [];
     if (organizationType) {
-      conditions.push(eq(unifiedBillingPlans.organizationType, organizationType));
+      conditions.push(eq(unifiedBillingPlans.organizationType, organizationType as any));
     }
     conditions.push(eq(unifiedBillingPlans.isActive, true));
     

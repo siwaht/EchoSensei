@@ -43,6 +43,17 @@ export const availablePermissions = [
 ];
 
 // Organization type specific role templates
+// Default permissions for all users
+const defaultPermissions = [
+  "manage_users",
+  "manage_branding",
+  "manage_voices",
+  "manage_agents",
+  "access_playground",
+  "view_call_history",
+  "manage_phone_numbers"
+];
+
 export const roleTemplatesByOrgType = {
   platform_owner: {
     owner: {
@@ -106,7 +117,7 @@ export const roleTemplatesByOrgType = {
     staff: {
       label: "Agency Staff",
       description: "Basic customer support",
-      permissions: ["view_analytics", "view_call_history", "access_playground"],
+      permissions: [...defaultPermissions, "view_analytics"],
       icon: User,
       color: "secondary",
       isDefault: false
@@ -138,8 +149,8 @@ export const roleTemplatesByOrgType = {
       label: "Manager",
       description: "Manage agents and communications",
       permissions: [
-        "view_analytics", "view_call_history", "manage_agents", "configure_tools",
-        "access_playground", "manage_voices", "make_outbound_calls"
+        ...defaultPermissions,
+        "view_analytics", "configure_tools", "make_outbound_calls"
       ],
       icon: Bot,
       color: "default",
@@ -148,7 +159,7 @@ export const roleTemplatesByOrgType = {
     user: {
       label: "User",
       description: "Standard user access",
-      permissions: ["view_analytics", "view_call_history", "access_playground", "access_recordings"],
+      permissions: [...defaultPermissions, "view_analytics", "access_recordings"],
       icon: User,
       color: "secondary",
       isDefault: false
