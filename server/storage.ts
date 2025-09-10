@@ -2090,7 +2090,7 @@ export class DatabaseStorage implements IStorage {
   async getUnifiedBillingPlans(organizationType?: string): Promise<UnifiedBillingPlan[]> {
     const conditions = [];
     if (organizationType) {
-      conditions.push(eq(unifiedBillingPlans.targetOrganizationType, organizationType));
+      conditions.push(eq(unifiedBillingPlans.organizationType, organizationType));
     }
     conditions.push(eq(unifiedBillingPlans.isActive, true));
     
@@ -2098,7 +2098,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(unifiedBillingPlans)
       .where(conditions.length ? and(...conditions) : undefined)
-      .orderBy(unifiedBillingPlans.sortOrder);
+      .orderBy(unifiedBillingPlans.displayOrder);
   }
 
   async getUnifiedBillingPlan(id: string): Promise<UnifiedBillingPlan | undefined> {

@@ -11,14 +11,18 @@ interface PermissionGuardProps {
 }
 
 // Map routes to required permissions
+// Default pages (voices, agents, playground, history, phone-numbers) don't require explicit permissions
 const routePermissions: Record<string, string> = {
-  // '/agents': 'manage_agents', // Remove restriction - users can see their assigned agents
-  '/voices': 'manage_voices',
-  '/phone-numbers': 'manage_phone_numbers',
+  // Default accessible pages - no permission required
+  // '/agents': 'manage_agents',
+  // '/voices': 'manage_voices', 
+  // '/phone-numbers': 'manage_phone_numbers',
+  // '/playground': 'access_playground',
+  // '/history': 'view_call_history',
+  
+  // Pages that still require permissions
   '/outbound-calling': 'make_outbound_calls',
   '/tools': 'configure_tools',
-  // '/playground': 'access_playground', // Remove restriction - users can test their assigned agents
-  '/history': 'view_call_history',
   '/integrations': 'manage_integrations',
   '/billing': 'view_billing',
 };
