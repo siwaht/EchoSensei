@@ -11,10 +11,20 @@ import {
 } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
-// Initialize Stripe with platform account
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2025-08-27.basil',
-});
+// Initialize Stripe with platform account (lazy initialization)
+let stripe: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (!stripe && process.env.STRIPE_SECRET_KEY) {
+    stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+      apiVersion: '2025-08-27.basil',
+    });
+  }
+  if (!stripe) {
+    throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
+  }
+  return stripe;
+}
 
 // Calculate payment splits based on plan configuration
 export function calculatePaymentSplits(
@@ -48,7 +58,7 @@ export async function createStripeConnectAccount(req: Request, res: Response) {
     }
     
     // Create Stripe Connect account
-    const account = await stripe.accounts.create({
+    const account = await getStripe().accounts.create({
       type: 'express',
       country: 'US',
       email: org.name.toLowerCase().replace(/\s/g, '') + '@agency.com',
@@ -69,7 +79,7 @@ export async function createStripeConnectAccount(req: Request, res: Response) {
       .where(eq(organizations.id, organizationId));
     
     // Create account link for onboarding
-    const accountLink = await stripe.accountLinks.create({
+    const accountLink = await getStripe().accountLinks.create({
       account: account.id,
       refresh_url: `${process.env.FRONTEND_URL}/agency/billing-settings`,
       return_url: `${process.env.FRONTEND_URL}/agency/billing-settings?connected=true`,
@@ -136,7 +146,7 @@ export async function createUnifiedPaymentIntent(req: Request, res: Response) {
     );
     
     // Create payment intent with platform account
-    const paymentIntent = await stripe.paymentIntents.create({
+    const paymentIntent = await getStripe().paymentIntents.create({
       amount: Math.round(amount * 100), // Convert to cents
       currency: 'usd',
       automatic_payment_methods: {
@@ -219,7 +229,7 @@ export async function confirmUnifiedPayment(req: Request, res: Response) {
     const { paymentIntentId } = req.body;
     
     // Retrieve the payment intent from Stripe
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
     
     if (paymentIntent.status === 'succeeded') {
       // Update payment status
@@ -314,7 +324,7 @@ export async function createUnifiedSubscription(req: Request, res: Response) {
     let customerId = org.stripeCustomerId;
     
     if (!customerId) {
-      const customer = await stripe.customers.create({
+      const customer = await getStripe().customers.create({
         metadata: {
           organizationId: organizationId
         }
@@ -328,19 +338,19 @@ export async function createUnifiedSubscription(req: Request, res: Response) {
     }
     
     // Attach payment method to customer
-    await stripe.paymentMethods.attach(paymentMethodId, {
+    await getStripe().paymentMethods.attach(paymentMethodId, {
       customer: customerId,
     });
     
     // Set as default payment method
-    await stripe.customers.update(customerId, {
+    await getStripe().customers.update(customerId, {
       invoice_settings: {
         default_payment_method: paymentMethodId,
       },
     });
     
     // Create subscription with Stripe
-    const subscription = await stripe.subscriptions.create({
+    const subscription = await getStripe().subscriptions.create({
       customer: customerId,
       items: [{
         price: plan.stripePriceId!,
@@ -389,7 +399,7 @@ export async function handleUnifiedWebhook(req: Request, res: Response) {
   let event: Stripe.Event;
   
   try {
-    event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    event = getStripe().webhooks.constructEvent(req.body, sig, webhookSecret);
   } catch (err: any) {
     console.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -509,7 +519,7 @@ async function executePaymentSplits(paymentIntentId: string) {
         if (agencyOrg?.stripeConnectAccountId) {
           try {
             // Create transfer to agency's Stripe Connect account
-            const transfer = await stripe.transfers.create({
+            const transfer = await getStripe().transfers.create({
               amount: Math.round(Number(split.amount) * 100),
               currency: 'usd',
               destination: agencyOrg.stripeConnectAccountId,
