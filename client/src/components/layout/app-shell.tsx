@@ -25,7 +25,8 @@ import {
   Brain,
   Users,
   Palette,
-  Volume2
+  Volume2,
+  Banknote
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { queryClient } from "@/lib/queryClient";
@@ -168,6 +169,8 @@ export default function AppShell({ children }: AppShellProps) {
     // Check for agency users route
     if (cleanLocation === "/agency-users") return "User Management";
     
+    // Check for agency payment settings route
+    if (cleanLocation === "/agency-payment-settings") return "Payment Settings";
     
     // Default to "Page Not Found" for unknown routes
     return "Page Not Found";
@@ -285,21 +288,21 @@ export default function AppShell({ children }: AppShellProps) {
                   <span>User Management</span>
                 </Link>
               )}
-              {/* Show billing settings to agency owners only */}
+              {/* Show payment settings to agency owners only */}
               {isAgency && !isAdmin && userRole === 'agency' && (
                 <Link
-                  href={buildPath("/agency-billing-settings")}
+                  href={buildPath("/agency-payment-settings")}
                   onClick={() => setSidebarOpen(false)}
                   className={cn(
                     "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
-                    location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/agency-billing-settings"
+                    location.replace(/^\/agency\/[a-z0-9-]+/, '') === "/agency-payment-settings"
                       ? "gradient-purple text-white shadow-lg"
                       : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:shadow-md"
                   )}
-                  data-testid="nav-agency-billing"
+                  data-testid="nav-agency-payment"
                 >
-                  <CreditCard className="w-5 h-5" />
-                  <span>Billing Settings</span>
+                  <Banknote className="w-5 h-5" />
+                  <span>Payment Settings</span>
                 </Link>
               )}
               {secondaryNavigation.map((item) => {

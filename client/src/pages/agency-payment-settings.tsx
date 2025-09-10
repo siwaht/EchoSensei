@@ -11,7 +11,10 @@ import { Badge } from "@/components/ui/badge";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Trash2, TestTube, Loader2 } from "lucide-react";
+import { 
+  CheckCircle, XCircle, AlertCircle, Eye, EyeOff, Trash2, TestTube, Loader2,
+  ExternalLink, TrendingUp, Calendar, Users, BarChart3, DollarSign
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,15 +25,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { SiStripe, SiPaypal } from "react-icons/si";
-
-const stripeConfigSchema = z.object({
-  publishableKey: z.string().min(1, "Publishable key is required").regex(/^pk_/, "Must be a valid Stripe publishable key"),
-  secretKey: z.string().min(1, "Secret key is required").regex(/^sk_/, "Must be a valid Stripe secret key"),
-});
+import { StatsCard } from "@/components/ui/stats-card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
 
 const paypalConfigSchema = z.object({
   clientId: z.string().min(1, "Client ID is required"),
@@ -38,7 +45,6 @@ const paypalConfigSchema = z.object({
   environment: z.enum(["sandbox", "production"]),
 });
 
-type StripeConfigForm = z.infer<typeof stripeConfigSchema>;
 type PaypalConfigForm = z.infer<typeof paypalConfigSchema>;
 
 interface PaymentProcessor {
@@ -49,24 +55,35 @@ interface PaymentProcessor {
   errorMessage?: string;
 }
 
+interface RevenueStats {
+  totalRevenue: number;
+  platformFees: number;
+  netRevenue: number;
+  pendingTransfers: number;
+  completedPayouts: number;
+  customersCount: number;
+  recentTransactions: Array<{
+    id: string;
+    date: string;
+    customer: string;
+    amount: number;
+    platformFee: number;
+    netAmount: number;
+    status: string;
+  }>;
+}
+
 export default function AgencyPaymentSettings() {
-  const [showStripeSecret, setShowStripeSecret] = useState(false);
   const [showPaypalSecret, setShowPaypalSecret] = useState(false);
-  const [testingStripe, setTestingStripe] = useState(false);
   const [testingPaypal, setTestingPaypal] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [processorToDelete, setProcessorToDelete] = useState<"stripe" | "paypal" | null>(null);
+  const [connectingStripe, setConnectingStripe] = useState(false);
+  const [activeTab, setActiveTab] = useState("revenue");
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const stripeForm = useForm<StripeConfigForm>({
-    resolver: zodResolver(stripeConfigSchema),
-    defaultValues: {
-      publishableKey: "",
-      secretKey: "",
-    },
-  });
+  const { user } = useAuth();
 
   const paypalForm = useForm<PaypalConfigForm>({
     resolver: zodResolver(paypalConfigSchema),
@@ -85,29 +102,18 @@ export default function AgencyPaymentSettings() {
   const stripeProcessor = processors?.find(p => p.provider === "stripe");
   const paypalProcessor = processors?.find(p => p.provider === "paypal");
 
-  // Configure Stripe mutation
-  const configureStripeMutation = useMutation({
-    mutationFn: async (data: StripeConfigForm) => {
-      await apiRequest("POST", "/api/agency/payment-processors", {
-        provider: "stripe",
-        ...data,
-      });
-    },
-    onSuccess: () => {
-      toast({
-        title: "Success",
-        description: "Stripe configuration saved successfully",
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/agency/payment-processors"] });
-      stripeForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save Stripe configuration",
-        variant: "destructive",
-      });
-    },
+  // Fetch organization details to check Stripe Connect status
+  const { data: organization } = useQuery<{ 
+    stripeConnectAccountId?: string;
+    stripeConnectStatus?: string;
+  }>({  
+    queryKey: ["/api/organization/current"],
+  });
+  
+  // Fetch revenue analytics
+  const { data: revenueStats } = useQuery<RevenueStats>({
+    queryKey: ["/api/unified-payments/analytics"],
+    enabled: !!organization?.stripeConnectAccountId,
   });
 
   // Configure PayPal mutation
@@ -179,20 +185,12 @@ export default function AgencyPaymentSettings() {
     },
   });
 
-  const onSubmitStripe = (data: StripeConfigForm) => {
-    configureStripeMutation.mutate(data);
-  };
-
   const onSubmitPaypal = (data: PaypalConfigForm) => {
     configurePaypalMutation.mutate(data);
   };
 
   const handleTestConnection = async (provider: "stripe" | "paypal") => {
-    if (provider === "stripe") {
-      setTestingStripe(true);
-      await testConnectionMutation.mutateAsync(provider);
-      setTestingStripe(false);
-    } else {
+    if (provider === "paypal") {
       setTestingPaypal(true);
       await testConnectionMutation.mutateAsync(provider);
       setTestingPaypal(false);
@@ -202,6 +200,27 @@ export default function AgencyPaymentSettings() {
   const handleDeleteProcessor = () => {
     if (processorToDelete) {
       deleteProcessorMutation.mutate(processorToDelete);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    setConnectingStripe(true);
+    try {
+      const result = await apiRequest("POST", "/api/unified-payments/create-connect-account", {
+        organizationId: (user as any)?.organizationId
+      });
+      const data = await result.json();
+      if (data.onboardingUrl) {
+        window.location.href = data.onboardingUrl;
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to start Stripe Connect onboarding",
+        variant: "destructive",
+      });
+    } finally {
+      setConnectingStripe(false);
     }
   };
 
@@ -242,7 +261,7 @@ export default function AgencyPaymentSettings() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6 px-4 sm:px-0">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-6 px-4 sm:px-0">
         <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto" />
         <div className="h-64 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse" />
       </div>
@@ -251,157 +270,231 @@ export default function AgencyPaymentSettings() {
 
   return (
     <TooltipProvider>
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-0">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 px-4 sm:px-0">
         <div className="text-center">
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2" data-testid="text-page-title">
-            Payment Settings
+            Payment Settings & Revenue
           </h2>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400" data-testid="text-page-description">
-            Configure payment processors to accept payments from your clients
+            Configure payment processors and view your revenue analytics
           </p>
         </div>
 
-        <Tabs defaultValue="stripe" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="stripe" className="flex items-center gap-2">
-              <SiStripe className="w-4 h-4" />
-              Stripe
-            </TabsTrigger>
-            <TabsTrigger value="paypal" className="flex items-center gap-2">
-              <SiPaypal className="w-4 h-4" />
-              PayPal
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="revenue">Revenue Dashboard</TabsTrigger>
+            <TabsTrigger value="stripe">Stripe Connect</TabsTrigger>
+            <TabsTrigger value="paypal">PayPal</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="stripe" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <SiStripe className="w-5 h-5" />
-                      Stripe Configuration
-                    </CardTitle>
-                    <CardDescription className="mt-2">
-                      Connect your Stripe account to accept credit card payments
-                    </CardDescription>
-                  </div>
-                  {getStatusBadge(stripeProcessor)}
+          {/* Revenue Dashboard Tab */}
+          <TabsContent value="revenue" className="space-y-6">
+            {organization?.stripeConnectAccountId ? (
+              <>
+                {/* Revenue Stats Cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <StatsCard
+                    title="Total Revenue"
+                    value={`$${(revenueStats?.totalRevenue || 0).toFixed(2)}`}
+                    change="All-time revenue"
+                    changeType="positive"
+                    icon={DollarSign}
+                  />
+                  <StatsCard
+                    title="Net Revenue"
+                    value={`$${(revenueStats?.netRevenue || 0).toFixed(2)}`}
+                    change="After platform fees"
+                    changeType="positive"
+                    icon={TrendingUp}
+                  />
+                  <StatsCard
+                    title="Pending Transfers"
+                    value={`$${(revenueStats?.pendingTransfers || 0).toFixed(2)}`}
+                    change="To be transferred"
+                    changeType="neutral"
+                    icon={Calendar}
+                  />
+                  <StatsCard
+                    title="Total Customers"
+                    value={revenueStats?.customersCount || 0}
+                    change="Active customers"
+                    changeType="positive"
+                    icon={Users}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {stripeProcessor?.errorMessage && (
-                  <Alert className="border-red-200 dark:border-red-800">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Configuration Error</AlertTitle>
-                    <AlertDescription>{stripeProcessor.errorMessage}</AlertDescription>
-                  </Alert>
-                )}
 
-                <Form {...stripeForm}>
-                  <form onSubmit={stripeForm.handleSubmit(onSubmitStripe)} className="space-y-4">
-                    <FormField
-                      control={stripeForm.control}
-                      name="publishableKey"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Publishable Key</FormLabel>
-                          <FormControl>
-                            <Input
-                              {...field}
-                              placeholder="pk_live_..."
-                              data-testid="input-stripe-publishable-key"
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Your Stripe publishable key (starts with pk_)
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={stripeForm.control}
-                      name="secretKey"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Secret Key</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                {...field}
-                                type={showStripeSecret ? "text" : "password"}
-                                placeholder="sk_live_..."
-                                data-testid="input-stripe-secret-key"
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowStripeSecret(!showStripeSecret)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                                data-testid="button-toggle-stripe-secret"
-                              >
-                                {showStripeSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormDescription>
-                            Your Stripe secret key (starts with sk_) - Keep this secure!
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex gap-2">
-                      <Button type="submit" disabled={configureStripeMutation.isPending} data-testid="button-save-stripe">
-                        {configureStripeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Configuration
-                      </Button>
-                      {stripeProcessor && (
-                        <>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => handleTestConnection("stripe")}
-                            disabled={testingStripe}
-                            data-testid="button-test-stripe"
-                          >
-                            {testingStripe ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <TestTube className="mr-2 h-4 w-4" />
-                            )}
-                            Test Connection
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setProcessorToDelete("stripe");
-                              setDeleteDialogOpen(true);
-                            }}
-                            className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-                            data-testid="button-delete-stripe"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Remove
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </form>
-                </Form>
-
-                {stripeProcessor?.lastTestedAt && (
-                  <div className="text-sm text-muted-foreground">
-                    Last tested: {new Date(stripeProcessor.lastTestedAt).toLocaleString()}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                {/* Recent Transactions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Transactions</CardTitle>
+                    <CardDescription>
+                      View your recent payment transactions and revenue splits
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {revenueStats?.recentTransactions && revenueStats.recentTransactions.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead className="text-right">Amount</TableHead>
+                            <TableHead className="text-right">Platform Fee</TableHead>
+                            <TableHead className="text-right">Net Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {revenueStats.recentTransactions.map((transaction) => (
+                            <TableRow key={transaction.id}>
+                              <TableCell>
+                                {new Date(transaction.date).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell>{transaction.customer}</TableCell>
+                              <TableCell className="text-right">
+                                ${transaction.amount.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right text-red-600 dark:text-red-400">
+                                -${transaction.platformFee.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                ${transaction.netAmount.toFixed(2)}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant={
+                                  transaction.status === "completed" ? "default" :
+                                  transaction.status === "pending" ? "secondary" :
+                                  "destructive"
+                                }>
+                                  {transaction.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8 text-muted-foreground">
+                        No transactions yet. Start processing payments to see your revenue here.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            ) : (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <BarChart3 className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mb-2">Connect Stripe to View Revenue</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Connect your Stripe account to start accepting payments and view revenue analytics.
+                  </p>
+                  <Button onClick={() => setActiveTab("stripe")}>
+                    Connect Stripe Account
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
+          {/* Stripe Connect Tab */}
+          <TabsContent value="stripe" className="space-y-6">
+            {!organization?.stripeConnectAccountId ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <SiStripe className="w-6 h-6" />
+                    Connect Your Stripe Account
+                  </CardTitle>
+                  <CardDescription>
+                    Use Stripe Connect to process payments and receive automatic payouts
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Why Stripe Connect?</AlertTitle>
+                    <AlertDescription>
+                      Stripe Connect allows you to:
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Accept payments on behalf of your customers</li>
+                        <li>Automatically receive your revenue share</li>
+                        <li>Handle compliance and reporting automatically</li>
+                        <li>Get paid directly to your bank account</li>
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+                  
+                  <div className="flex justify-center">
+                    <Button 
+                      size="lg"
+                      onClick={handleConnectStripe}
+                      disabled={connectingStripe}
+                      data-testid="button-connect-stripe"
+                    >
+                      {connectingStripe ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          Connect with Stripe
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <SiStripe className="w-6 h-6" />
+                    Stripe Connected
+                  </CardTitle>
+                  <CardDescription>
+                    Your Stripe account is connected and ready to process payments
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <div>
+                        <p className="font-medium">Stripe Account Connected</p>
+                        <p className="text-sm text-muted-foreground">
+                          Account ID: {organization.stripeConnectAccountId}
+                        </p>
+                      </div>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open('https://dashboard.stripe.com', '_blank')}
+                      data-testid="button-stripe-dashboard"
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </div>
+                  
+                  {organization.stripeConnectStatus === "pending" && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Complete Your Setup</AlertTitle>
+                      <AlertDescription>
+                        Your Stripe account connection is pending. Please complete the onboarding process to start accepting payments.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          {/* PayPal Tab */}
           <TabsContent value="paypal" className="space-y-4">
             <Card>
               <CardHeader>
@@ -583,27 +676,6 @@ export default function AgencyPaymentSettings() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Information Card */}
-        <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <div className="flex items-start gap-3">
-              <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-              <div className="space-y-2">
-                <h3 className="font-semibold text-blue-900 dark:text-blue-100">Security Notice</h3>
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  Your payment credentials are encrypted and stored securely. Never share your secret keys with anyone.
-                  Make sure to use production keys only when you're ready to accept real payments.
-                </p>
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  Need help getting your API keys? Check the documentation for
-                  {" "}<a href="https://stripe.com/docs/keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">Stripe</a> or
-                  {" "}<a href="https://developer.paypal.com/api/rest/" target="_blank" rel="noopener noreferrer" className="underline font-medium">PayPal</a>.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </TooltipProvider>
   );
