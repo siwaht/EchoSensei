@@ -29,7 +29,6 @@ interface OrganizationWithDetails extends Organization {
   children?: OrganizationWithDetails[];
   users?: User[];
   isActive?: boolean;
-  agencyPermissions?: string[];
 }
 
 export function AgencyManagement() {
