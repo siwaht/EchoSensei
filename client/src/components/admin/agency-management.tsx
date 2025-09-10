@@ -72,6 +72,10 @@ export function AgencyManagement() {
     DEFAULT_AGENCY_PERMISSIONS.starter
   );
 
+  // Track agent assignments
+  const [allAgents, setAllAgents] = useState<any[]>([]);
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+
   // Fetch organizations with hierarchy
   const { data: organizations = [], isLoading } = useQuery<Organization[]>({
     queryKey: ["/api/admin/organizations"],
@@ -1061,14 +1065,35 @@ export function AgencyManagement() {
       {/* Settings Dialog */}
       <Dialog 
         open={showSettingsDialog} 
-        onOpenChange={(open) => {
+        onOpenChange={async (open) => {
           setShowSettingsDialog(open);
           if (!open) {
             setAdminPassword("");
             setEditingPermissions([]);
-          } else if (open && selectedOrgForView?.organizationType === 'agency') {
+            setSelectedAgentIds([]);
+          } else if (open && selectedOrgForView) {
             // Load current permissions for the agency
-            setEditingPermissions(selectedOrgForView.agencyPermissions || []);
+            if (selectedOrgForView.organizationType === 'agency') {
+              setEditingPermissions(selectedOrgForView.agencyPermissions || []);
+            }
+            
+            // Fetch all agents and current assignments
+            try {
+              const [agentsResponse, assignedResponse] = await Promise.all([
+                apiRequest("GET", "/api/admin/agents"),
+                apiRequest("GET", `/api/admin/organizations/${selectedOrgForView.id}/agents`)
+              ]);
+              
+              const agentsData = await agentsResponse.json();
+              const assignedIds = await assignedResponse.json();
+              
+              setAllAgents(agentsData || []);
+              setSelectedAgentIds(assignedIds || []);
+            } catch (error) {
+              console.error("Error fetching agents:", error);
+              setAllAgents([]);
+              setSelectedAgentIds([]);
+            }
           }
         }}
       >
@@ -1230,6 +1255,78 @@ export function AgencyManagement() {
                   </div>
                 )}
                 
+                {/* Agent Assignment Section - Only for Agencies */}
+                {selectedOrgForView.organizationType === 'agency' && (
+                  <div className="col-span-full space-y-4 border-t pt-4">
+                    <div>
+                      <Label className="text-base font-semibold">Assigned Agents</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Select which AI agents belong to this agency
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                      {allAgents.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No agents available</p>
+                      ) : (
+                        allAgents.map((agent) => (
+                          <div key={agent.id} className="flex items-start space-x-2">
+                            <Checkbox
+                              id={`agent-${agent.id}`}
+                              checked={selectedAgentIds.includes(agent.id)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedAgentIds([...selectedAgentIds, agent.id]);
+                                } else {
+                                  setSelectedAgentIds(selectedAgentIds.filter(id => id !== agent.id));
+                                }
+                              }}
+                            />
+                            <div className="space-y-0.5 flex-1">
+                              <Label
+                                htmlFor={`agent-${agent.id}`}
+                                className="text-sm font-medium cursor-pointer"
+                              >
+                                {agent.name}
+                              </Label>
+                              <p className="text-xs text-muted-foreground">
+                                {agent.description || 'No description'}
+                              </p>
+                              {agent.organizationName && agent.organizationName !== selectedOrgForView.name && (
+                                <p className="text-xs text-orange-600 dark:text-orange-400">
+                                  Currently assigned to: {agent.organizationName}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Select all agents
+                          setSelectedAgentIds(allAgents.map(a => a.id));
+                        }}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedAgentIds([])}
+                      >
+                        Clear All
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="col-span-full space-y-2">
                   <Label htmlFor="admin-password">New Password (leave blank to keep current)</Label>
                   <Input 
@@ -1307,6 +1404,39 @@ export function AgencyManagement() {
                       variant: "destructive",
                     });
                     return;
+                  }
+                }
+                
+                // Handle agent reassignments if this is an agency
+                if (selectedOrgForView.organizationType === 'agency') {
+                  try {
+                    // Get current agent assignments for comparison
+                    const currentAssignmentsResponse = await apiRequest("GET", `/api/admin/organizations/${selectedOrgForView.id}/agents`);
+                    const currentAssignments = await currentAssignmentsResponse.json();
+                    
+                    // Find agents to reassign (newly selected)
+                    const agentsToAssign = selectedAgentIds.filter(id => !currentAssignments.includes(id));
+                    
+                    // Reassign each agent to this organization
+                    for (const agentId of agentsToAssign) {
+                      await apiRequest("POST", `/api/admin/agents/${agentId}/reassign`, {
+                        organizationId: selectedOrgForView.id
+                      });
+                    }
+                    
+                    if (agentsToAssign.length > 0) {
+                      toast({
+                        title: "Agents Reassigned",
+                        description: `${agentsToAssign.length} agent(s) have been assigned to ${selectedOrgForView.name}`,
+                      });
+                    }
+                  } catch (error) {
+                    console.error("Error reassigning agents:", error);
+                    toast({
+                      title: "Agent Assignment Failed",
+                      description: "Failed to reassign some agents",
+                      variant: "destructive",
+                    });
                   }
                 }
                 
