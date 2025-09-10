@@ -404,6 +404,42 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
+  // Admin routes - Agent Management
+  app.get('/api/admin/agents', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const agents = await storage.getAllAgents();
+      res.json(agents);
+    } catch (error) {
+      console.error("Error fetching all agents:", error);
+      res.status(500).json({ message: "Failed to fetch agents" });
+    }
+  });
+
+  app.get('/api/admin/organizations/:orgId/agents', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const agentIds = await storage.getAgentsByOrganization(req.params.orgId);
+      res.json(agentIds);
+    } catch (error) {
+      console.error("Error fetching organization agents:", error);
+      res.status(500).json({ message: "Failed to fetch organization agents" });
+    }
+  });
+
+  app.post('/api/admin/agents/:agentId/reassign', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { organizationId } = req.body;
+      if (!organizationId) {
+        return res.status(400).json({ message: "Organization ID is required" });
+      }
+      
+      const agent = await storage.reassignAgentToOrganization(req.params.agentId, organizationId);
+      res.json(agent);
+    } catch (error) {
+      console.error("Error reassigning agent:", error);
+      res.status(500).json({ message: "Failed to reassign agent" });
+    }
+  });
+
   // Admin routes - Organization Management
   app.get('/api/admin/organizations', isAuthenticated, isAdmin, async (req: any, res) => {
     try {

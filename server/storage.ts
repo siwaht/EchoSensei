@@ -669,6 +669,51 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(agents.id, id), eq(agents.organizationId, organizationId)));
   }
 
+  // Admin Agent operations
+  async getAllAgents(): Promise<Agent[]> {
+    // Get all agents with their organization details
+    const result = await db()
+      .select({
+        agent: agents,
+        organization: organizations,
+      })
+      .from(agents)
+      .leftJoin(organizations, eq(agents.organizationId, organizations.id));
+    
+    return result.map(r => ({
+      ...r.agent,
+      organizationName: r.organization?.name || 'Unknown',
+    }));
+  }
+
+  async reassignAgentToOrganization(agentId: string, newOrganizationId: string): Promise<Agent> {
+    // Update the agent's organization
+    const [agent] = await db()
+      .update(agents)
+      .set({ 
+        organizationId: newOrganizationId,
+        updatedAt: new Date() 
+      })
+      .where(eq(agents.id, agentId))
+      .returning();
+    
+    // Also clear any user assignments for this agent since it's moving to a new org
+    await db()
+      .delete(userAgents)
+      .where(eq(userAgents.agentId, agentId));
+    
+    return agent;
+  }
+
+  async getAgentsByOrganization(organizationId: string): Promise<string[]> {
+    const agentList = await db()
+      .select({ id: agents.id })
+      .from(agents)
+      .where(eq(agents.organizationId, organizationId));
+    
+    return agentList.map(a => a.id);
+  }
+
   // User-Agent assignment operations
   async getAgentsForUser(userId: string, organizationId: string): Promise<Agent[]> {
     const user = await this.getUser(userId);
