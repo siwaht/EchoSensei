@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import compression from "compression";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { rateLimiters } from "./middleware/rate-limiter";
 
 const app = express();
 
@@ -28,6 +29,21 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Apply rate limiting to API routes
+app.use('/api/auth/login', rateLimiters.auth);
+app.use('/api/auth/register', rateLimiters.auth);
+app.use('/api/auth/logout', rateLimiters.auth);
+
+// General API rate limiting
+app.use('/api/', rateLimiters.api);
+
+// Stricter limits for specific endpoints
+app.post('/api/agents', rateLimiters.write);
+app.patch('/api/agents/*', rateLimiters.write);
+app.delete('/api/agents/*', rateLimiters.write);
+app.post('/api/upload', rateLimiters.upload);
+app.post('/api/whitelabel/*', rateLimiters.upload);
 
 // Set longer timeout for upload endpoints
 app.use((req, res, next) => {
