@@ -128,7 +128,6 @@ export async function setupAuth(app: Express) {
     // Logout from passport
     req.logout((err) => {
       if (err) {
-        console.error("Error during logout:", err);
         // Send success anyway to allow client to redirect
         return res.status(200).send('Logged out');
       }
@@ -136,9 +135,6 @@ export async function setupAuth(app: Express) {
       // Destroy the session
       if (req.session) {
         req.session.destroy((destroyErr) => {
-          if (destroyErr) {
-            console.error("Error destroying session:", destroyErr);
-          }
           // Clear the session cookie
           res.clearCookie('connect.sid', { path: '/' });
           // Send success response
@@ -155,14 +151,7 @@ export async function setupAuth(app: Express) {
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
   const user = req.user as any;
 
-  console.log("Authentication check:", {
-    isAuthenticated: req.isAuthenticated(),
-    hasUser: !!user,
-    hasExpiresAt: !!user?.expires_at
-  });
-
   if (!req.isAuthenticated() || !user?.expires_at) {
-    console.log("Authentication failed: missing session or user data");
     return res.status(401).json({ message: "Unauthorized" });
   }
 

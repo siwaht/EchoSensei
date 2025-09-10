@@ -39,16 +39,12 @@ async function callElevenLabsAPI(apiKey: string, endpoint: string, method = "GET
   const responseText = await response.text();
   
   if (!response.ok) {
-    console.error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
-    console.error(`Response body: ${responseText}`);
-    
     // Check for authentication errors and mark integration as disconnected
     if ((response.status === 401 || response.status === 403) && integrationId) {
-      console.log(`Authentication failed for integration ${integrationId}, marking as disconnected`);
       try {
         await storage.updateIntegrationStatus(integrationId, "ERROR", new Date());
       } catch (updateError) {
-        console.error("Failed to update integration status:", updateError);
+        // Silent fail - integration status update
       }
     }
     
@@ -83,7 +79,6 @@ async function callElevenLabsAPI(apiKey: string, endpoint: string, method = "GET
     try {
       return JSON.parse(responseText);
     } catch (e) {
-      console.error("Failed to parse response as JSON:", responseText);
       return {};
     }
   }
@@ -154,7 +149,6 @@ async function manageElevenLabsTools(apiKey: string, tools: any[], integrationId
           toolId = existingTool.tool_id;
         } else {
           // Create new tool
-          console.log(`Creating new tool: ${tool.name}`);
           const createPayload = {
             type: tool.type === 'webhook' ? 'webhook' : 'client',
             name: tool.name,
@@ -341,9 +335,7 @@ export function registerRoutes(app: Express): Server {
   app.post('/api/admin/users/:userId/agents/:agentId', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { userId, agentId } = req.params;
-      console.log(`Assigning agent ${agentId} to user ${userId}`);
       await storage.assignAgentToUser(userId, agentId, req.user.id);
-      console.log(`Successfully assigned agent ${agentId} to user ${userId}`);
       res.json({ message: "Agent assigned successfully" });
     } catch (error) {
       console.error("Error assigning agent to user:", error);
@@ -354,9 +346,7 @@ export function registerRoutes(app: Express): Server {
   app.delete('/api/admin/users/:userId/agents/:agentId', isAuthenticated, isAdmin, async (req: any, res) => {
     try {
       const { userId, agentId } = req.params;
-      console.log(`Unassigning agent ${agentId} from user ${userId}`);
       await storage.unassignAgentFromUser(userId, agentId);
-      console.log(`Successfully unassigned agent ${agentId} from user ${userId}`);
       res.json({ message: "Agent unassigned successfully" });
     } catch (error) {
       console.error("Error unassigning agent from user:", error);
@@ -697,7 +687,6 @@ export function registerRoutes(app: Express): Server {
       }
 
       // Log the sync operation
-      console.log('API sync completed successfully using organization:', elevenLabsIntegration.organizationId);
 
       res.json({ 
         success: true, 
@@ -2716,9 +2705,7 @@ export function registerRoutes(app: Express): Server {
       const apiKey = decryptApiKey(integration.apiKey);
       
       try {
-        console.log("Validating agent with ID:", elevenLabsAgentId);
         const agentData = await callElevenLabsAPI(apiKey, `/v1/convai/agents/${elevenLabsAgentId}`, "GET", undefined, integration.id);
-        console.log("Agent validation successful:", agentData);
         res.json({ 
           message: "Agent validated successfully", 
           agentData: {
@@ -2829,7 +2816,6 @@ Generate the complete prompt now:`;
         return res.status(500).json({ message: "Failed to generate prompt" });
       }
 
-      console.log("Prompt generated successfully");
 
       res.json({ 
         systemPrompt: generatedPrompt,
@@ -3001,7 +2987,6 @@ Generate the complete prompt now:`;
         }
       };
 
-      console.log("Creating agent on ElevenLabs:", agentPayload);
       
       const elevenLabsResponse = await callElevenLabsAPI(
         apiKey,
@@ -3011,7 +2996,6 @@ Generate the complete prompt now:`;
         integration.id
       );
 
-      console.log("ElevenLabs agent created:", elevenLabsResponse);
 
       // Save agent to our database with default tools configuration
       const agentData = insertAgentSchema.parse({
@@ -3161,7 +3145,6 @@ Generate the complete prompt now:`;
         return res.status(404).json({ message: "User not found" });
       }
 
-      console.log(`Fetching agents for user ${user.email} (isAdmin: ${user.isAdmin}, role: ${user.role})`);
 
           // Get agents filtered by user permissions using the new access control
       const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
@@ -3278,20 +3261,17 @@ Generate the complete prompt now:`;
           
           // Return only agents the user has access to
           const allAgents = await storage.getAgentsForUser(userId, user.organizationId);
-          console.log(`Returning ${allAgents.length} agents for admin user ${user.email} after sync`);
           res.json(allAgents);
           
         } catch (syncError) {
           console.error("Error syncing with ElevenLabs:", syncError);
           // Fall back to local data if sync fails
           const agents = await storage.getAgentsForUser(userId, user.organizationId);
-          console.log(`Returning ${agents.length} agents for user ${user.email} (sync failed)`);
           res.json(agents);
         }
       } else {
         // No integration, just return local agents
         const agents = await storage.getAgentsForUser(userId, user.organizationId);
-        console.log(`Returning ${agents.length} agents for user ${user.email} (no sync)`);
         res.json(agents);
       }
     } catch (error) {
@@ -3821,7 +3801,6 @@ Generate the complete prompt now:`;
           try {
             const decryptedKey = decryptApiKey(integration.apiKey);
             
-            console.log(`Deleting agent from ElevenLabs: ${agent.elevenLabsAgentId}`);
             
             // Call ElevenLabs API to delete the agent
             const response = await fetch(`https://api.elevenlabs.io/v1/convai/agents/${agent.elevenLabsAgentId}`, {
@@ -3837,7 +3816,6 @@ Generate the complete prompt now:`;
               // Don't fail the entire operation if ElevenLabs deletion fails
               // The user may want to remove it from their dashboard anyway
             } else {
-              console.log(`Successfully deleted agent ${agent.elevenLabsAgentId} from ElevenLabs`);
             }
           } catch (elevenLabsError) {
             console.error("Error deleting agent from ElevenLabs:", elevenLabsError);
@@ -4155,7 +4133,6 @@ Generate the complete prompt now:`;
           return res.status(400).json({ message: "Agent not synced with ElevenLabs" });
         }
         
-        console.log("Updating ElevenLabs agent:", elevenLabsAgentId, elevenLabsPayload);
         
         const response = await callElevenLabsAPI(
           decryptedKey,
@@ -4768,14 +4745,6 @@ Generate the complete prompt now:`;
         elevenLabsAgentId: elevenLabsAgentId
       });
 
-      console.log("Phone number details for agent assignment:", {
-        phoneNumberId: phoneNumber.id,
-        elevenLabsPhoneId: phoneNumber.elevenLabsPhoneId,
-        status: phoneNumber.status,
-        agentId: agentId,
-        elevenLabsAgentId: elevenLabsAgentId
-      });
-
       // If phone number is synced with ElevenLabs (has elevenLabsPhoneId), update the assignment there
       // We check for elevenLabsPhoneId regardless of status to ensure sync happens
       if (phoneNumber.elevenLabsPhoneId) {
@@ -4792,8 +4761,6 @@ Generate the complete prompt now:`;
             if (elevenLabsAgentId) {
               payload.agent_id = elevenLabsAgentId;
             }
-            
-            console.log("Updating ElevenLabs phone number with payload:", payload);
             
             // Try PATCH first, then fall back to PUT if it fails
             let response;
@@ -4975,7 +4942,6 @@ Generate the complete prompt now:`;
       const updates = req.body;
       
       console.log("\n=== AGENT UPDATE REQUEST ===");
-      console.log("Agent ID:", agentId);
       console.log("Updates received:", JSON.stringify(updates, null, 2));
       console.log("================================\n");
 
@@ -5015,7 +4981,6 @@ Generate the complete prompt now:`;
             let currentAgentConfig: any = {};
             if (currentAgentResponse.ok) {
               currentAgentConfig = await currentAgentResponse.json();
-              console.log("Current agent config fetched successfully");
             } else {
               console.error("Failed to fetch current agent config, using defaults");
             }
@@ -5251,7 +5216,6 @@ Generate the complete prompt now:`;
             };
             
             console.log("\n=== UPDATING ELEVENLABS AGENT ===");
-            console.log("Agent ID:", agent.elevenLabsAgentId);
             console.log("Payload:", JSON.stringify(elevenLabsPayload, null, 2));
 
             // Try updating with PUT instead of PATCH if PATCH fails
@@ -6563,8 +6527,6 @@ Generate the complete prompt now:`;
       const userId = req.user.id;
       
       console.log("Starting playground session:");
-      console.log("  User:", req.user.email);
-      console.log("  Agent ID:", agentId);
       console.log("  Connection Type:", connectionType);
 
       if (!agentId) {
@@ -6593,7 +6555,6 @@ Generate the complete prompt now:`;
       // First, verify the agent exists in our database and user has access
       const agent = await storage.getAgent(agentId, user.organizationId);
       if (!agent) {
-        console.log("Agent not found in database:", agentId);
         return res.status(404).json({ message: "Agent not found in database" });
       }
 
@@ -6602,17 +6563,13 @@ Generate the complete prompt now:`;
         // Get agents assigned to this user
         const userAgents = await storage.getAgentsForUser(userId, user.organizationId);
         const assignedAgentIds = userAgents.map(a => a.id);
-        console.log("User's assigned agent IDs:", assignedAgentIds);
-        console.log("Checking access for agent ID:", agentId);
         if (!assignedAgentIds.includes(agentId)) {
-          console.log("User does not have access to agent:", agentId);
           return res.status(403).json({ message: "You don't have access to this agent" });
         }
       }
 
       // Use the ElevenLabs agent ID from the database
       const elevenLabsAgentId = agent.elevenLabsAgentId;
-      console.log("Using ElevenLabs agent ID:", elevenLabsAgentId);
 
       let url, expectedField;
       if (connectionType === 'webrtc') {
