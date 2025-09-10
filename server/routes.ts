@@ -6043,6 +6043,8 @@ Generate the complete prompt now:`;
           appName: org.name,
           companyName: org.name,
           primaryColor: "#7C3AED",
+          secondaryColor: "#A855F7",
+          accentColor: "#EC4899",
           removePlatformBranding: false
         });
       }
@@ -6054,6 +6056,8 @@ Generate the complete prompt now:`;
         logoUrl: config.logoUrl,
         faviconUrl: config.faviconUrl,
         primaryColor: config.primaryColor,
+        secondaryColor: config.secondaryColor,
+        accentColor: config.accentColor,
         colorPalette: config.colorPalette,
         removePlatformBranding: config.removePlatformBranding,
         supportUrl: config.supportUrl,
@@ -6099,6 +6103,8 @@ Generate the complete prompt now:`;
               logoUrl: config.logoUrl,
               faviconUrl: config.faviconUrl,
               primaryColor: config.primaryColor,
+              secondaryColor: config.secondaryColor,
+              accentColor: config.accentColor,
               removePlatformBranding: config.removePlatformBranding,
             });
           }
@@ -6110,6 +6116,8 @@ Generate the complete prompt now:`;
           appName: "VoiceAI Dashboard",
           companyName: "",
           primaryColor: "#7C3AED",
+          secondaryColor: "#A855F7",
+          accentColor: "#EC4899",
           removePlatformBranding: false,
         });
       }
@@ -6126,6 +6134,8 @@ Generate the complete prompt now:`;
           logoUrl: config.logoUrl,
           faviconUrl: config.faviconUrl,
           primaryColor: config.primaryColor,
+          secondaryColor: config.secondaryColor,
+          accentColor: config.accentColor,
           removePlatformBranding: config.removePlatformBranding,
         });
       } else {
@@ -6133,6 +6143,9 @@ Generate the complete prompt now:`;
         res.json({
           appName: "VoiceAI Dashboard",
           companyName: "",
+          primaryColor: "#7C3AED",
+          secondaryColor: "#A855F7",
+          accentColor: "#EC4899",
           primaryColor: "#7C3AED",
           removePlatformBranding: false,
         });
@@ -6267,7 +6280,7 @@ Generate the complete prompt now:`;
       // Allow any user in an agency organization to modify whitelabel
       // (agencies should be able to customize their whitelabel regardless of role)
 
-      const { appName, companyName, primaryColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl, subdomain } = req.body;
+      const { appName, companyName, primaryColor, secondaryColor, accentColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl, subdomain } = req.body;
 
       // If subdomain is provided, update the organization
       if (subdomain !== undefined) {
@@ -6294,6 +6307,8 @@ Generate the complete prompt now:`;
         appName,
         companyName,
         primaryColor,
+        secondaryColor,
+        accentColor,
         removePlatformBranding,
         supportUrl,
         documentationUrl,

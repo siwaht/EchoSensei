@@ -8,6 +8,8 @@ interface WhitelabelConfig {
   appName: string;
   companyName: string;
   primaryColor: string;
+  secondaryColor?: string;
+  accentColor?: string;
   removePlatformBranding: boolean;
   supportUrl?: string;
   documentationUrl?: string;
@@ -91,14 +93,36 @@ export function WhitelabelProvider({ children }: { children: ReactNode }) {
   // Apply whitelabel styles
   useEffect(() => {
     if (config && isAgencyView) {
-      // Apply primary color to CSS variables
+      // Apply all three colors to CSS variables
       const root = document.documentElement;
+      
+      // Apply primary color
       if (config.primaryColor) {
         try {
           const hslColor = hexToHSL(config.primaryColor);
           root.style.setProperty("--primary", hslColor);
         } catch (error) {
           console.error("Failed to apply primary color:", error);
+        }
+      }
+      
+      // Apply secondary color
+      if (config.secondaryColor) {
+        try {
+          const hslColor = hexToHSL(config.secondaryColor);
+          root.style.setProperty("--secondary", hslColor);
+        } catch (error) {
+          console.error("Failed to apply secondary color:", error);
+        }
+      }
+      
+      // Apply accent color
+      if (config.accentColor) {
+        try {
+          const hslColor = hexToHSL(config.accentColor);
+          root.style.setProperty("--accent", hslColor);
+        } catch (error) {
+          console.error("Failed to apply accent color:", error);
         }
       }
 
@@ -121,6 +145,8 @@ export function WhitelabelProvider({ children }: { children: ReactNode }) {
     return () => {
       if (!isAgencyView) {
         document.documentElement.style.removeProperty("--primary");
+        document.documentElement.style.removeProperty("--secondary");
+        document.documentElement.style.removeProperty("--accent");
         document.title = "VoiceAI Dashboard";
       }
     };

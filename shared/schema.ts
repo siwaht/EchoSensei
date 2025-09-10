@@ -1563,6 +1563,8 @@ export const whitelabelConfigs = pgTable("whitelabel_configs", {
   
   // Colors (stored as hex values)
   primaryColor: varchar("primary_color").default("#7C3AED"), // Purple
+  secondaryColor: varchar("secondary_color").default("#A855F7"), // Light Purple
+  accentColor: varchar("accent_color").default("#EC4899"), // Pink
   
   // Auto-generated colors (calculated from primary)
   colorPalette: json("color_palette").$type<{
