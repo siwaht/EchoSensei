@@ -1741,7 +1741,7 @@ export function registerRoutes(app: Express): Server {
       // Agency owners and admins have implicit permission to manage users within their organization
       const isAgencyOwner = org.organizationType === 'agency' && 
         (user.role === 'admin' || user.role === 'agency' || user.role === 'owner' || 
-         user.permissions?.includes('manage_users'));
+         user.permissions?.includes('manage_agency_users'));
       
       if (!isAgencyOwner && !user.isAdmin) {
         return res.status(403).json({ message: "You don't have permission to manage users" });
@@ -8592,7 +8592,7 @@ Generate the complete prompt now:`;
         res.json({ 
           valid: true, 
           message: "Payment processor credentials are valid",
-          accountInfo: validationResult.accountInfo,
+          ...(validationResult.accountInfo && { accountInfo: validationResult.accountInfo }),
         });
       } else {
         // Update status to invalid

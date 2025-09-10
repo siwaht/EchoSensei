@@ -16,6 +16,10 @@ const routePermissions: Record<string, string> = {
   '/api/billing': 'view_billing',
   '/api/users': 'manage_users',
   '/api/settings': 'manage_settings',
+  // Agency-specific routes
+  '/api/agency/users': 'manage_agency_users',
+  '/api/agency/billing': 'view_agency_billing',
+  '/api/agency/payment-processors': 'manage_payment_methods',
 };
 
 // Check if user has required permission for the route
