@@ -642,6 +642,164 @@ export const agencyTransactions = pgTable("agency_transactions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Payment processor status enum
+export const paymentProcessorStatusEnum = pgEnum("payment_processor_status", ["pending_validation", "active", "invalid", "disabled"]);
+
+// Agency Payment Processors table - stores encrypted payment gateway settings for agencies
+export const agencyPaymentProcessors = pgTable("agency_payment_processors", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(), // Agency organization ID
+  provider: varchar("provider").notNull(), // 'stripe' or 'paypal'
+  
+  // Encrypted credentials (AES-256-GCM)
+  encryptedCredentials: text("encrypted_credentials").notNull(), // JSON with encrypted keys
+  
+  // Validation status
+  status: paymentProcessorStatusEnum("status").notNull().default("pending_validation"),
+  lastValidatedAt: timestamp("last_validated_at"),
+  validationError: text("validation_error"),
+  
+  // Configuration
+  isDefault: boolean("is_default").default(false),
+  webhookEndpoint: varchar("webhook_endpoint"), // Agency-specific webhook URL
+  
+  // Metadata
+  metadata: jsonb("metadata").$type<{
+    publicKey?: string; // Stripe publishable key (safe to expose)
+    webhookId?: string; // PayPal webhook ID
+    mode?: "sandbox" | "production";
+  }>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  // Unique constraint on organizationId and provider for upsert operations
+  uniqueOrgProvider: unique("unique_org_processor").on(table.organizationId, table.provider),
+}));
+
+// Agency Billing Plans table - comprehensive billing plans created by agencies
+export const agencyBillingPlans = pgTable("agency_billing_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  organizationId: varchar("organization_id").notNull(), // Agency organization ID
+  
+  // Plan details
+  name: varchar("name").notNull(),
+  description: text("description"),
+  billingCycle: billingCycleEnum("billing_cycle").notNull(), // monthly, quarterly, annual, one_time
+  
+  // Pricing
+  price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  setupFee: decimal("setup_fee", { precision: 10, scale: 2 }).default('0'),
+  currency: varchar("currency").default('usd'),
+  
+  // Trial settings
+  trialPeriodDays: integer("trial_period_days").default(0),
+  
+  // Features and limits
+  features: jsonb("features").$type<{
+    highlights: string[]; // Marketing bullet points
+    callsLimit?: number;
+    minutesLimit?: number;
+    storageLimit?: number; // In GB
+    agentsLimit?: number;
+    customLimits?: Record<string, any>;
+  }>().notNull(),
+  
+  // Payment processor product IDs
+  stripeProductId: varchar("stripe_product_id"),
+  stripePriceId: varchar("stripe_price_id"),
+  paypalPlanId: varchar("paypal_plan_id"),
+  
+  // Display settings
+  displayOrder: integer("display_order").default(0),
+  isActive: boolean("is_active").default(true),
+  isPublic: boolean("is_public").default(true), // Whether plan is visible to customers
+  isPopular: boolean("is_popular").default(false),
+  
+  // Metadata
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Customer subscription status enum
+export const customerSubscriptionStatusEnum = pgEnum("customer_subscription_status", ["active", "past_due", "canceled", "trialing", "paused", "expired"]);
+
+// Customer Subscriptions table - tracks customer subscriptions to agency plans
+export const customerSubscriptions = pgTable("customer_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // References
+  agencyOrganizationId: varchar("agency_organization_id").notNull(), // Agency organization ID
+  customerOrganizationId: varchar("customer_organization_id").notNull(), // Customer organization ID
+  userId: varchar("user_id").notNull(), // User who subscribed
+  planId: varchar("plan_id").notNull(), // Agency billing plan ID
+  
+  // Subscription details
+  status: customerSubscriptionStatusEnum("status").notNull().default("active"),
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false),
+  
+  // Payment processor subscription IDs
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  paypalSubscriptionId: varchar("paypal_subscription_id"),
+  paymentProcessor: varchar("payment_processor"), // 'stripe' or 'paypal'
+  
+  // Trial information
+  trialStart: timestamp("trial_start"),
+  trialEnd: timestamp("trial_end"),
+  
+  // Usage tracking
+  usageData: jsonb("usage_data").$type<{
+    callsUsed: number;
+    minutesUsed: number;
+    storageUsed?: number;
+    customUsage?: Record<string, any>;
+  }>().default({ callsUsed: 0, minutesUsed: 0 }),
+  
+  // Metadata
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  canceledAt: timestamp("canceled_at"),
+});
+
+// Customer Payment Methods table - stores customer payment methods linked to agency processors
+export const customerPaymentMethods = pgTable("customer_payment_methods", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // References
+  agencyOrganizationId: varchar("agency_organization_id").notNull(), // Agency organization ID
+  customerOrganizationId: varchar("customer_organization_id").notNull(), // Customer organization ID
+  userId: varchar("user_id").notNull(), // User who added the payment method
+  
+  // Payment method details
+  type: varchar("type").notNull(), // 'card', 'bank_account', 'paypal'
+  provider: varchar("provider").notNull(), // 'stripe' or 'paypal'
+  
+  // Provider-specific IDs (encrypted)
+  stripePaymentMethodId: varchar("stripe_payment_method_id"),
+  stripeCustomerId: varchar("stripe_customer_id"),
+  paypalBillingAgreementId: varchar("paypal_billing_agreement_id"),
+  
+  // Display information (safe to expose)
+  displayName: varchar("display_name"), // e.g., "Visa ending in 4242"
+  last4: varchar("last4"), // Last 4 digits of card
+  brand: varchar("brand"), // Card brand (visa, mastercard, etc.)
+  expiryMonth: integer("expiry_month"),
+  expiryYear: integer("expiry_year"),
+  
+  // Status
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  
+  // Metadata
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 
 
 // Relations
@@ -1565,6 +1723,30 @@ export const insertAgencyTransactionSchema = createInsertSchema(agencyTransactio
   createdAt: true,
 });
 
+export const insertAgencyPaymentProcessorSchema = createInsertSchema(agencyPaymentProcessors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAgencyBillingPlanSchema = createInsertSchema(agencyBillingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCustomerSubscriptionSchema = createInsertSchema(customerSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertCustomerPaymentMethodSchema = createInsertSchema(customerPaymentMethods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 export const insertUnifiedBillingPlanSchema = createInsertSchema(unifiedBillingPlans).omit({
   id: true,
   createdAt: true,
@@ -1706,3 +1888,11 @@ export type PaymentSplit = typeof paymentSplits.$inferSelect;
 export type InsertPaymentSplit = z.infer<typeof insertPaymentSplitSchema>;
 export type UnifiedSubscription = typeof unifiedSubscriptions.$inferSelect;
 export type InsertUnifiedSubscription = z.infer<typeof insertUnifiedSubscriptionSchema>;
+export type AgencyPaymentProcessor = typeof agencyPaymentProcessors.$inferSelect;
+export type InsertAgencyPaymentProcessor = z.infer<typeof insertAgencyPaymentProcessorSchema>;
+export type AgencyBillingPlan = typeof agencyBillingPlans.$inferSelect;
+export type InsertAgencyBillingPlan = z.infer<typeof insertAgencyBillingPlanSchema>;
+export type CustomerSubscription = typeof customerSubscriptions.$inferSelect;
+export type InsertCustomerSubscription = z.infer<typeof insertCustomerSubscriptionSchema>;
+export type CustomerPaymentMethod = typeof customerPaymentMethods.$inferSelect;
+export type InsertCustomerPaymentMethod = z.infer<typeof insertCustomerPaymentMethodSchema>;

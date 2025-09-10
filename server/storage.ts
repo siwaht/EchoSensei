@@ -25,6 +25,10 @@ import {
   agencyPricingPlans,
   agencySubscriptions,
   agencyTransactions,
+  agencyPaymentProcessors,
+  agencyBillingPlans,
+  customerSubscriptions,
+  customerPaymentMethods,
   type User,
   type UpsertUser,
   type Organization,
@@ -74,6 +78,14 @@ import {
   type InsertAgencySubscription,
   type AgencyTransaction,
   type InsertAgencyTransaction,
+  type AgencyPaymentProcessor,
+  type InsertAgencyPaymentProcessor,
+  type AgencyBillingPlan,
+  type InsertAgencyBillingPlan,
+  type CustomerSubscription,
+  type InsertCustomerSubscription,
+  type CustomerPaymentMethod,
+  type InsertCustomerPaymentMethod,
   unifiedBillingPlans,
   paymentSplits,
   unifiedSubscriptions,
@@ -235,6 +247,36 @@ export interface IStorage {
   getAgencyTransaction(id: string): Promise<AgencyTransaction | undefined>;
   createAgencyTransaction(transaction: InsertAgencyTransaction): Promise<AgencyTransaction>;
   updateAgencyTransaction(id: string, updates: Partial<InsertAgencyTransaction>): Promise<AgencyTransaction>;
+
+  // Agency Payment Processor operations
+  getAgencyPaymentProcessors(organizationId: string): Promise<AgencyPaymentProcessor[]>;
+  getAgencyPaymentProcessor(organizationId: string, provider: string): Promise<AgencyPaymentProcessor | undefined>;
+  createAgencyPaymentProcessor(processor: InsertAgencyPaymentProcessor): Promise<AgencyPaymentProcessor>;
+  updateAgencyPaymentProcessor(id: string, updates: Partial<InsertAgencyPaymentProcessor>): Promise<AgencyPaymentProcessor>;
+  deleteAgencyPaymentProcessor(organizationId: string, provider: string): Promise<void>;
+
+  // Agency Billing Plan operations (new schema)
+  getAgencyBillingPlans(organizationId: string, includeInactive?: boolean): Promise<AgencyBillingPlan[]>;
+  getAgencyBillingPlan(id: string): Promise<AgencyBillingPlan | undefined>;
+  createAgencyBillingPlan(plan: InsertAgencyBillingPlan): Promise<AgencyBillingPlan>;
+  updateAgencyBillingPlan(id: string, updates: Partial<InsertAgencyBillingPlan>): Promise<AgencyBillingPlan>;
+  deleteAgencyBillingPlan(id: string): Promise<void>;
+
+  // Customer Subscription operations
+  getCustomerSubscriptions(agencyOrganizationId: string): Promise<CustomerSubscription[]>;
+  getCustomerSubscription(id: string): Promise<CustomerSubscription | undefined>;
+  getCustomerSubscriptionByCustomer(customerOrganizationId: string): Promise<CustomerSubscription | undefined>;
+  createCustomerSubscription(subscription: InsertCustomerSubscription): Promise<CustomerSubscription>;
+  updateCustomerSubscription(id: string, updates: Partial<InsertCustomerSubscription>): Promise<CustomerSubscription>;
+  cancelCustomerSubscription(id: string): Promise<void>;
+
+  // Customer Payment Method operations
+  getCustomerPaymentMethods(customerOrganizationId: string): Promise<CustomerPaymentMethod[]>;
+  getCustomerPaymentMethod(id: string): Promise<CustomerPaymentMethod | undefined>;
+  createCustomerPaymentMethod(method: InsertCustomerPaymentMethod): Promise<CustomerPaymentMethod>;
+  updateCustomerPaymentMethod(id: string, updates: Partial<InsertCustomerPaymentMethod>): Promise<CustomerPaymentMethod>;
+  deleteCustomerPaymentMethod(id: string): Promise<void>;
+  setDefaultPaymentMethod(customerOrganizationId: string, methodId: string): Promise<void>;
 
   // Batch call operations
   getBatchCalls(organizationId: string): Promise<BatchCall[]>;
@@ -1279,6 +1321,216 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Agency transaction not found");
     }
     return updated;
+  }
+
+  // Agency Payment Processor implementations
+  async getAgencyPaymentProcessors(organizationId: string): Promise<AgencyPaymentProcessor[]> {
+    const processors = await db()
+      .select()
+      .from(agencyPaymentProcessors)
+      .where(eq(agencyPaymentProcessors.organizationId, organizationId));
+    return processors;
+  }
+  
+  async getAgencyPaymentProcessor(organizationId: string, provider: string): Promise<AgencyPaymentProcessor | undefined> {
+    const [processor] = await db()
+      .select()
+      .from(agencyPaymentProcessors)
+      .where(
+        and(
+          eq(agencyPaymentProcessors.organizationId, organizationId),
+          eq(agencyPaymentProcessors.provider, provider)
+        )
+      );
+    return processor;
+  }
+  
+  async createAgencyPaymentProcessor(processor: InsertAgencyPaymentProcessor): Promise<AgencyPaymentProcessor> {
+    const [newProcessor] = await db()
+      .insert(agencyPaymentProcessors)
+      .values(processor)
+      .returning();
+    return newProcessor;
+  }
+  
+  async updateAgencyPaymentProcessor(id: string, updates: Partial<InsertAgencyPaymentProcessor>): Promise<AgencyPaymentProcessor> {
+    const [updated] = await db()
+      .update(agencyPaymentProcessors)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agencyPaymentProcessors.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteAgencyPaymentProcessor(organizationId: string, provider: string): Promise<void> {
+    await db()
+      .delete(agencyPaymentProcessors)
+      .where(
+        and(
+          eq(agencyPaymentProcessors.organizationId, organizationId),
+          eq(agencyPaymentProcessors.provider, provider)
+        )
+      );
+  }
+  
+  // Agency Billing Plan implementations (new schema)
+  async getAgencyBillingPlans(organizationId: string, includeInactive: boolean = false): Promise<AgencyBillingPlan[]> {
+    let query = db()
+      .select()
+      .from(agencyBillingPlans)
+      .where(eq(agencyBillingPlans.organizationId, organizationId));
+    
+    if (!includeInactive) {
+      query = query.where(eq(agencyBillingPlans.isActive, true));
+    }
+    
+    const plans = await query.orderBy(agencyBillingPlans.displayOrder);
+    return plans;
+  }
+  
+  async getAgencyBillingPlan(id: string): Promise<AgencyBillingPlan | undefined> {
+    const [plan] = await db()
+      .select()
+      .from(agencyBillingPlans)
+      .where(eq(agencyBillingPlans.id, id));
+    return plan;
+  }
+  
+  async createAgencyBillingPlan(plan: InsertAgencyBillingPlan): Promise<AgencyBillingPlan> {
+    const [newPlan] = await db()
+      .insert(agencyBillingPlans)
+      .values(plan)
+      .returning();
+    return newPlan;
+  }
+  
+  async updateAgencyBillingPlan(id: string, updates: Partial<InsertAgencyBillingPlan>): Promise<AgencyBillingPlan> {
+    const [updated] = await db()
+      .update(agencyBillingPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(agencyBillingPlans.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteAgencyBillingPlan(id: string): Promise<void> {
+    await db()
+      .delete(agencyBillingPlans)
+      .where(eq(agencyBillingPlans.id, id));
+  }
+  
+  // Customer Subscription implementations
+  async getCustomerSubscriptions(agencyOrganizationId: string): Promise<CustomerSubscription[]> {
+    const subscriptions = await db()
+      .select()
+      .from(customerSubscriptions)
+      .where(eq(customerSubscriptions.agencyOrganizationId, agencyOrganizationId))
+      .orderBy(desc(customerSubscriptions.createdAt));
+    return subscriptions;
+  }
+  
+  async getCustomerSubscription(id: string): Promise<CustomerSubscription | undefined> {
+    const [subscription] = await db()
+      .select()
+      .from(customerSubscriptions)
+      .where(eq(customerSubscriptions.id, id));
+    return subscription;
+  }
+  
+  async getCustomerSubscriptionByCustomer(customerOrganizationId: string): Promise<CustomerSubscription | undefined> {
+    const [subscription] = await db()
+      .select()
+      .from(customerSubscriptions)
+      .where(
+        and(
+          eq(customerSubscriptions.customerOrganizationId, customerOrganizationId),
+          eq(customerSubscriptions.status, 'active')
+        )
+      );
+    return subscription;
+  }
+  
+  async createCustomerSubscription(subscription: InsertCustomerSubscription): Promise<CustomerSubscription> {
+    const [newSubscription] = await db()
+      .insert(customerSubscriptions)
+      .values(subscription)
+      .returning();
+    return newSubscription;
+  }
+  
+  async updateCustomerSubscription(id: string, updates: Partial<InsertCustomerSubscription>): Promise<CustomerSubscription> {
+    const [updated] = await db()
+      .update(customerSubscriptions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customerSubscriptions.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async cancelCustomerSubscription(id: string): Promise<void> {
+    await db()
+      .update(customerSubscriptions)
+      .set({
+        status: 'canceled',
+        canceledAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(customerSubscriptions.id, id));
+  }
+  
+  // Customer Payment Method implementations
+  async getCustomerPaymentMethods(customerOrganizationId: string): Promise<CustomerPaymentMethod[]> {
+    const methods = await db()
+      .select()
+      .from(customerPaymentMethods)
+      .where(eq(customerPaymentMethods.customerOrganizationId, customerOrganizationId))
+      .orderBy(desc(customerPaymentMethods.isDefault), desc(customerPaymentMethods.createdAt));
+    return methods;
+  }
+  
+  async getCustomerPaymentMethod(id: string): Promise<CustomerPaymentMethod | undefined> {
+    const [method] = await db()
+      .select()
+      .from(customerPaymentMethods)
+      .where(eq(customerPaymentMethods.id, id));
+    return method;
+  }
+  
+  async createCustomerPaymentMethod(method: InsertCustomerPaymentMethod): Promise<CustomerPaymentMethod> {
+    const [newMethod] = await db()
+      .insert(customerPaymentMethods)
+      .values(method)
+      .returning();
+    return newMethod;
+  }
+  
+  async updateCustomerPaymentMethod(id: string, updates: Partial<InsertCustomerPaymentMethod>): Promise<CustomerPaymentMethod> {
+    const [updated] = await db()
+      .update(customerPaymentMethods)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(customerPaymentMethods.id, id))
+      .returning();
+    return updated;
+  }
+  
+  async deleteCustomerPaymentMethod(id: string): Promise<void> {
+    await db()
+      .delete(customerPaymentMethods)
+      .where(eq(customerPaymentMethods.id, id));
+  }
+  
+  async setDefaultPaymentMethod(customerOrganizationId: string, methodId: string): Promise<void> {
+    // First, unset all defaults for this customer
+    await db()
+      .update(customerPaymentMethods)
+      .set({ isDefault: false })
+      .where(eq(customerPaymentMethods.customerOrganizationId, customerOrganizationId));
+    
+    // Then set the new default
+    await db()
+      .update(customerPaymentMethods)
+      .set({ isDefault: true })
+      .where(eq(customerPaymentMethods.id, methodId));
   }
 
   // Phone number operations

@@ -12,6 +12,12 @@ import ElevenLabsService from "./services/elevenlabs";
 import Stripe from "stripe";
 import * as unifiedPayment from "./unified-payment";
 import { cacheMiddleware } from "./middleware/cache-middleware";
+import { 
+  AgencyPaymentService, 
+  encryptCredentials, 
+  decryptCredentials, 
+  createAgencyPaymentService 
+} from './services/agency-payment';
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -8439,6 +8445,327 @@ Generate the complete prompt now:`;
     } catch (error) {
       console.error("Error accepting invitation:", error);
       res.status(500).json({ error: "Failed to accept invitation" });
+    }
+  });
+
+  // ========================================
+  // Agency Payment Processor Management Routes
+  // ========================================
+  
+  // Configure payment processor (Stripe or PayPal)
+  app.post("/api/agency/payment-processors", isAuthenticated, async (req: any, res) => {
+    try {
+      const { provider, credentials, metadata } = req.body;
+      const organizationId = req.user.organizationId;
+      
+      // Validate input
+      if (!provider || !credentials) {
+        return res.status(400).json({ error: "Provider and credentials are required" });
+      }
+      
+      if (!['stripe', 'paypal'].includes(provider)) {
+        return res.status(400).json({ error: "Invalid provider. Must be 'stripe' or 'paypal'" });
+      }
+      
+      // Validate credentials based on provider
+      const service = new AgencyPaymentService(organizationId);
+      let validationResult;
+      
+      if (provider === 'stripe') {
+        if (!credentials.secretKey || !credentials.publishableKey) {
+          return res.status(400).json({ error: "Stripe requires secretKey and publishableKey" });
+        }
+        validationResult = await service.validateStripeCredentials(
+          credentials.secretKey,
+          credentials.publishableKey
+        );
+      } else if (provider === 'paypal') {
+        if (!credentials.clientId || !credentials.clientSecret) {
+          return res.status(400).json({ error: "PayPal requires clientId and clientSecret" });
+        }
+        validationResult = await service.validatePayPalCredentials(
+          credentials.clientId,
+          credentials.clientSecret,
+          credentials.mode || 'sandbox'
+        );
+      }
+      
+      if (!validationResult?.valid) {
+        return res.status(400).json({ 
+          error: "Invalid credentials", 
+          details: validationResult?.error 
+        });
+      }
+      
+      // Encrypt credentials
+      const encryptedCredentials = encryptCredentials(credentials);
+      
+      // Save to database
+      const processor = await storage.createAgencyPaymentProcessor({
+        organizationId,
+        provider,
+        encryptedCredentials,
+        status: 'active',
+        metadata: {
+          ...metadata,
+          publicKey: provider === 'stripe' ? credentials.publishableKey : undefined,
+          mode: provider === 'paypal' ? (credentials.mode || 'sandbox') : undefined,
+        },
+      });
+      
+      res.json({
+        id: processor.id,
+        provider: processor.provider,
+        status: processor.status,
+        metadata: processor.metadata,
+        createdAt: processor.createdAt,
+      });
+    } catch (error) {
+      console.error("Error configuring payment processor:", error);
+      res.status(500).json({ error: "Failed to configure payment processor" });
+    }
+  });
+  
+  // Get configured payment processors (without exposing keys)
+  app.get("/api/agency/payment-processors", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const processors = await storage.getAgencyPaymentProcessors(organizationId);
+      
+      // Remove encrypted credentials from response
+      const safeProcessors = processors.map(p => ({
+        id: p.id,
+        provider: p.provider,
+        status: p.status,
+        lastValidatedAt: p.lastValidatedAt,
+        metadata: p.metadata,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      }));
+      
+      res.json(safeProcessors);
+    } catch (error) {
+      console.error("Error fetching payment processors:", error);
+      res.status(500).json({ error: "Failed to fetch payment processors" });
+    }
+  });
+  
+  // Test payment processor credentials
+  app.post("/api/agency/test-payment-processor", isAuthenticated, async (req: any, res) => {
+    try {
+      const { provider } = req.body;
+      const organizationId = req.user.organizationId;
+      
+      if (!provider) {
+        return res.status(400).json({ error: "Provider is required" });
+      }
+      
+      const processor = await storage.getAgencyPaymentProcessor(organizationId, provider);
+      if (!processor) {
+        return res.status(404).json({ error: "Payment processor not configured" });
+      }
+      
+      const service = new AgencyPaymentService(organizationId);
+      const credentials = decryptCredentials(processor.encryptedCredentials);
+      
+      let validationResult;
+      if (provider === 'stripe') {
+        validationResult = await service.validateStripeCredentials(
+          credentials.secretKey,
+          credentials.publishableKey
+        );
+      } else if (provider === 'paypal') {
+        validationResult = await service.validatePayPalCredentials(
+          credentials.clientId,
+          credentials.clientSecret,
+          processor.metadata?.mode || 'sandbox'
+        );
+      }
+      
+      if (validationResult?.valid) {
+        // Update last validated timestamp
+        await storage.updateAgencyPaymentProcessor(processor.id, {
+          lastValidatedAt: new Date(),
+          status: 'active',
+        });
+        
+        res.json({ 
+          valid: true, 
+          message: "Payment processor credentials are valid",
+          accountInfo: validationResult.accountInfo,
+        });
+      } else {
+        // Update status to invalid
+        await storage.updateAgencyPaymentProcessor(processor.id, {
+          status: 'invalid',
+          validationError: validationResult?.error,
+        });
+        
+        res.status(400).json({ 
+          valid: false, 
+          error: validationResult?.error || "Invalid credentials" 
+        });
+      }
+    } catch (error) {
+      console.error("Error testing payment processor:", error);
+      res.status(500).json({ error: "Failed to test payment processor" });
+    }
+  });
+  
+  // Delete payment processor
+  app.delete("/api/agency/payment-processors/:provider", isAuthenticated, async (req: any, res) => {
+    try {
+      const { provider } = req.params;
+      const organizationId = req.user.organizationId;
+      
+      await storage.deleteAgencyPaymentProcessor(organizationId, provider);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting payment processor:", error);
+      res.status(500).json({ error: "Failed to delete payment processor" });
+    }
+  });
+  
+  // ========================================
+  // Agency Billing Plans Management Routes
+  // ========================================
+  
+  // Get agency billing plans
+  app.get("/api/agency/billing-plans", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const includeInactive = req.query.includeInactive === 'true';
+      
+      const plans = await storage.getAgencyBillingPlans(organizationId, includeInactive);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching billing plans:", error);
+      res.status(500).json({ error: "Failed to fetch billing plans" });
+    }
+  });
+  
+  // Create billing plan
+  app.post("/api/agency/billing-plans", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const planData = req.body;
+      
+      // Validate required fields
+      if (!planData.name || !planData.price || !planData.billingCycle) {
+        return res.status(400).json({ 
+          error: "Name, price, and billing cycle are required" 
+        });
+      }
+      
+      // Create plan in database
+      const plan = await storage.createAgencyBillingPlan({
+        ...planData,
+        organizationId,
+      });
+      
+      // Create products in payment processors if configured
+      const service = await createAgencyPaymentService(organizationId);
+      
+      // Try to create Stripe product if configured
+      const stripeProcessor = await storage.getAgencyPaymentProcessor(organizationId, 'stripe');
+      if (stripeProcessor && stripeProcessor.status === 'active') {
+        const stripeResult = await service.createStripeProduct(plan);
+        if (stripeResult.success) {
+          await storage.updateAgencyBillingPlan(plan.id, {
+            stripeProductId: stripeResult.productId,
+            stripePriceId: stripeResult.priceId,
+          });
+        }
+      }
+      
+      // TODO: Create PayPal plan if configured
+      
+      res.json(plan);
+    } catch (error) {
+      console.error("Error creating billing plan:", error);
+      res.status(500).json({ error: "Failed to create billing plan" });
+    }
+  });
+  
+  // Update billing plan
+  app.patch("/api/agency/billing-plans/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      const organizationId = req.user.organizationId;
+      
+      // Get existing plan to verify ownership
+      const existingPlan = await storage.getAgencyBillingPlan(id);
+      if (!existingPlan || existingPlan.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Billing plan not found" });
+      }
+      
+      // Update plan
+      const updatedPlan = await storage.updateAgencyBillingPlan(id, updates);
+      
+      // Update Stripe product if needed
+      if (existingPlan.stripeProductId && (updates.name || updates.description)) {
+        const service = await createAgencyPaymentService(organizationId);
+        await service.updateStripeProduct(existingPlan.stripeProductId, updates);
+      }
+      
+      res.json(updatedPlan);
+    } catch (error) {
+      console.error("Error updating billing plan:", error);
+      res.status(500).json({ error: "Failed to update billing plan" });
+    }
+  });
+  
+  // Delete billing plan
+  app.delete("/api/agency/billing-plans/:id", isAuthenticated, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const organizationId = req.user.organizationId;
+      
+      // Get existing plan to verify ownership
+      const existingPlan = await storage.getAgencyBillingPlan(id);
+      if (!existingPlan || existingPlan.organizationId !== organizationId) {
+        return res.status(404).json({ error: "Billing plan not found" });
+      }
+      
+      // Check if plan has active subscriptions
+      const subscriptions = await storage.getCustomerSubscriptions(organizationId);
+      const hasActiveSubscriptions = subscriptions.some(s => 
+        s.planId === id && s.status === 'active'
+      );
+      
+      if (hasActiveSubscriptions) {
+        return res.status(400).json({ 
+          error: "Cannot delete plan with active subscriptions" 
+        });
+      }
+      
+      // Archive Stripe product if exists
+      if (existingPlan.stripeProductId) {
+        const service = await createAgencyPaymentService(organizationId);
+        await service.archiveStripeProduct(existingPlan.stripeProductId);
+      }
+      
+      // Soft delete by marking as inactive
+      await storage.updateAgencyBillingPlan(id, { isActive: false });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting billing plan:", error);
+      res.status(500).json({ error: "Failed to delete billing plan" });
+    }
+  });
+  
+  // Get agency subscriptions
+  app.get("/api/agency/subscriptions", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const subscriptions = await storage.getCustomerSubscriptions(organizationId);
+      
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      res.status(500).json({ error: "Failed to fetch subscriptions" });
     }
   });
 
