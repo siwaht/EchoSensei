@@ -25,7 +25,7 @@ const Integrations = lazy(() => import("@/pages/integrations"));
 const Billing = lazy(() => import("@/pages/billing"));
 const Settings = lazy(() => import("@/pages/settings"));
 const Admin = lazy(() => import("@/pages/admin-new"));
-const Checkout = lazy(() => import("@/pages/checkout"));
+// Removed Checkout - using unified-checkout component instead
 const Playground = lazy(() => import("@/pages/playground"));
 const PhoneNumbers = lazy(() => import("@/pages/phone-numbers"));
 const OutboundCalling = lazy(() => import("@/pages/outbound-calling"));
@@ -35,7 +35,7 @@ const AgentTesting = lazy(() => import("@/pages/agent-testing"));
 const WhitelabelSettings = lazy(() => import("@/pages/whitelabel-settings"));
 const AgencyUsers = lazy(() => import("@/pages/agency-users"));
 const AgencyBillingSettings = lazy(() => import("@/pages/agency-billing-settings"));
-const AgencyCheckout = lazy(() => import("@/pages/agency-checkout"));
+// Removed AgencyCheckout - using unified-checkout component instead
 const VoiceConfiguration = lazy(() => import("@/pages/voice-configuration"));
 
 // Loading fallback component
@@ -105,7 +105,6 @@ function AgencyRouter() {
           <Route path="/agency/:subdomain/billing">
             <PermissionGuard><Billing /></PermissionGuard>
           </Route>
-          <Route path="/agency/:subdomain/checkout" component={Checkout} />
           <Route path="/agency/:subdomain/settings" component={Settings} />
           <Route path="/agency/:subdomain/admin">
             <PermissionGuard permission="manage_users"><Admin /></PermissionGuard>
@@ -119,7 +118,6 @@ function AgencyRouter() {
           <Route path="/agency/:subdomain/agency-billing-settings">
             <PermissionGuard><AgencyBillingSettings /></PermissionGuard>
           </Route>
-          <Route path="/agency/:subdomain/agency-checkout" component={AgencyCheckout} />
         </Switch>
       </Suspense>
     </AppShell>
@@ -191,7 +189,6 @@ function Router() {
           <Route path="/billing">
             <PermissionGuard><Billing /></PermissionGuard>
           </Route>
-          <Route path="/checkout" component={Checkout} />
           <Route path="/settings" component={Settings} />
           <Route path="/admin">
             <PermissionGuard permission="manage_users"><Admin /></PermissionGuard>
@@ -205,7 +202,6 @@ function Router() {
           <Route path="/agency-billing-settings">
             <PermissionGuard><AgencyBillingSettings /></PermissionGuard>
           </Route>
-          <Route path="/agency-checkout" component={AgencyCheckout} />
           <Route component={NotFound} />
         </Switch>
       </Suspense>

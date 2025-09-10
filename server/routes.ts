@@ -9,15 +9,9 @@ import type { RequestHandler } from "express";
 import { seedAdminUser } from "./seedAdmin";
 import { checkPermission, checkRoutePermission } from "./middleware/permissions";
 import ElevenLabsService from "./services/elevenlabs";
-import Stripe from "stripe";
 import * as unifiedPayment from "./unified-payment";
 import { cacheMiddleware } from "./middleware/cache-middleware";
-import { 
-  AgencyPaymentService, 
-  encryptCredentials, 
-  decryptCredentials, 
-  createAgencyPaymentService 
-} from './services/agency-payment';
+import Stripe from "stripe";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -197,6 +191,58 @@ async function manageElevenLabsTools(apiKey: string, tools: any[], integrationId
 }
 
 // Encryption helpers
+// Generic encryption function for credentials
+function encryptCredentials(data: any): string {
+  const dataStr = typeof data === 'string' ? data : JSON.stringify(data);
+  const algorithm = "aes-256-cbc";
+  const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || "default-key", "salt", 32);
+  const iv = crypto.randomBytes(16);
+  
+  const cipher = crypto.createCipheriv(algorithm, key, iv);
+  let encrypted = cipher.update(dataStr, "utf8", "hex");
+  encrypted += cipher.final("hex");
+  
+  return `${iv.toString("hex")}:${encrypted}`;
+}
+
+// Generic decryption function for credentials
+function decryptCredentials(encryptedData: string): any {
+  try {
+    const algorithm = "aes-256-cbc";
+    const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || "default-key", "salt", 32);
+    
+    // Handle both old and new encryption formats
+    if (!encryptedData.includes(":")) {
+      // Old format - try legacy decryption
+      const decipher = crypto.createDecipher("aes-256-cbc", process.env.ENCRYPTION_KEY || "default-key");
+      let decrypted = decipher.update(encryptedData, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+      try {
+        return JSON.parse(decrypted);
+      } catch {
+        return decrypted;
+      }
+    }
+    
+    // New format
+    const [ivHex, encrypted] = encryptedData.split(":");
+    const iv = Buffer.from(ivHex, "hex");
+    
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    let decrypted = decipher.update(encrypted, "hex", "utf8");
+    decrypted += decipher.final("utf8");
+    
+    try {
+      return JSON.parse(decrypted);
+    } catch {
+      return decrypted;
+    }
+  } catch (error) {
+    console.error("Decryption failed:", error);
+    throw new Error("Failed to decrypt credentials. Please re-enter your credentials.");
+  }
+}
+
 function encryptApiKey(apiKey: string): string {
   const algorithm = "aes-256-cbc";
   const key = crypto.scryptSync(process.env.ENCRYPTION_KEY || "default-key", "salt", 32);
@@ -2330,7 +2376,7 @@ export function registerRoutes(app: Express): Server {
       
       // Initialize Stripe with agency's secret key
       const stripe = new Stripe(paymentConfig.stripeSecretKey, {
-        apiVersion: "2025-08-27.basil",
+        apiVersion: "2025-08-27.basil" as Stripe.LatestApiVersion,
       });
       
       // Create payment intent
@@ -6364,16 +6410,10 @@ Generate the complete prompt now:`;
       const organizationId = req.user.organizationId;
       
       // Check if Stripe is configured
-      const stripe = await import('./stripe');
-      if (!stripe.isStripeConfigured()) {
-        return res.status(400).json({ 
-          error: 'Payment gateway is not configured. Please contact support.' 
-        });
-      }
-      
-      await stripe.createPaymentIntent({ 
-        body: { organizationId, packageId, amount } 
-      } as any, res);
+      // Since we removed the stripe module, we'll use unified payment instead
+      return res.status(400).json({ 
+        error: 'This endpoint has been deprecated. Please use /api/unified-payments/create-payment-intent instead.' 
+      });
     } catch (error) {
       console.error("Error creating payment intent:", error);
       res.status(500).json({ error: "Failed to create payment" });
@@ -6382,8 +6422,10 @@ Generate the complete prompt now:`;
 
   app.post("/api/payments/confirm", isAuthenticated, async (req: any, res) => {
     try {
-      const stripe = await import('./stripe');
-      await stripe.confirmPayment(req, res);
+      // This endpoint has been deprecated in favor of unified payments
+      return res.status(400).json({ 
+        error: 'This endpoint has been deprecated. Please use unified payment endpoints instead.' 
+      });
     } catch (error) {
       console.error("Error confirming payment:", error);
       res.status(500).json({ error: "Failed to confirm payment" });
@@ -6396,10 +6438,10 @@ Generate the complete prompt now:`;
       const organizationId = req.user.organizationId;
       const email = req.user.email;
       
-      const stripe = await import('./stripe');
-      await stripe.createSubscription({ 
-        body: { organizationId, priceId, email } 
-      } as any, res);
+      // This endpoint has been deprecated in favor of unified payments
+      return res.status(400).json({ 
+        error: 'This endpoint has been deprecated. Please use unified payment endpoints instead.' 
+      });
     } catch (error) {
       console.error("Error creating subscription:", error);
       res.status(500).json({ error: "Failed to create subscription" });
@@ -6409,8 +6451,8 @@ Generate the complete prompt now:`;
   // Stripe webhook endpoint (no auth required)
   app.post("/api/webhooks/stripe", async (req, res) => {
     try {
-      const stripe = await import('./stripe');
-      await stripe.handleWebhook(req, res);
+      // This endpoint has been deprecated in favor of unified payments
+      await unifiedPayment.handleStripeWebhook(req, res);
     } catch (error) {
       console.error("Webhook error:", error);
       res.status(400).json({ error: "Webhook processing failed" });
@@ -8468,26 +8510,69 @@ Generate the complete prompt now:`;
       }
       
       // Validate credentials based on provider
-      const service = new AgencyPaymentService(organizationId);
-      let validationResult;
+      let validationResult = { valid: false, error: "" };
       
       if (provider === 'stripe') {
         if (!credentials.secretKey || !credentials.publishableKey) {
           return res.status(400).json({ error: "Stripe requires secretKey and publishableKey" });
         }
-        validationResult = await service.validateStripeCredentials(
-          credentials.secretKey,
-          credentials.publishableKey
-        );
+        // Basic validation - try to initialize Stripe
+        try {
+          // Stripe is already imported at the top
+          const stripe = new Stripe(credentials.secretKey, {
+            apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
+          });
+          // Test the credentials by fetching account info
+          const account = await stripe.accounts.retrieve();
+          validationResult = {
+            valid: true,
+            error: '',
+            accountInfo: {
+              id: account.id,
+              email: account.email || '',
+              charges_enabled: account.charges_enabled || false,
+            } as any
+          } as any;
+        } catch (error: any) {
+          validationResult = {
+            valid: false,
+            error: error.message || 'Invalid Stripe credentials'
+          };
+        }
       } else if (provider === 'paypal') {
         if (!credentials.clientId || !credentials.clientSecret) {
           return res.status(400).json({ error: "PayPal requires clientId and clientSecret" });
         }
-        validationResult = await service.validatePayPalCredentials(
-          credentials.clientId,
-          credentials.clientSecret,
-          credentials.mode || 'sandbox'
-        );
+        // Basic PayPal validation
+        try {
+          const baseUrl = (credentials.mode || 'sandbox') === 'sandbox' 
+            ? 'https://api-m.sandbox.paypal.com'
+            : 'https://api-m.paypal.com';
+          
+          const auth = Buffer.from(`${credentials.clientId}:${credentials.clientSecret}`).toString('base64');
+          const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'grant_type=client_credentials',
+          });
+          
+          if (response.ok) {
+            validationResult = { valid: true, error: '' };
+          } else {
+            validationResult = { 
+              valid: false, 
+              error: 'Invalid PayPal credentials' 
+            };
+          }
+        } catch (error: any) {
+          validationResult = {
+            valid: false,
+            error: error.message || 'Failed to validate PayPal credentials'
+          };
+        }
       }
       
       if (!validationResult?.valid) {
@@ -8565,21 +8650,61 @@ Generate the complete prompt now:`;
         return res.status(404).json({ error: "Payment processor not configured" });
       }
       
-      const service = new AgencyPaymentService(organizationId);
       const credentials = decryptCredentials(processor.encryptedCredentials);
       
-      let validationResult;
+      let validationResult = { valid: false, error: "" };
       if (provider === 'stripe') {
-        validationResult = await service.validateStripeCredentials(
-          credentials.secretKey,
-          credentials.publishableKey
-        );
+        try {
+          // Stripe is already imported at the top
+          const stripe = new Stripe(credentials.secretKey, {
+            apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
+          });
+          const account = await stripe.accounts.retrieve();
+          validationResult = {
+            valid: true,
+            error: '',
+            accountInfo: {
+              id: account.id,
+              email: account.email || '',
+              charges_enabled: account.charges_enabled || false,
+            } as any
+          } as any;
+        } catch (error: any) {
+          validationResult = {
+            valid: false,
+            error: error.message || 'Invalid Stripe credentials'
+          };
+        }
       } else if (provider === 'paypal') {
-        validationResult = await service.validatePayPalCredentials(
-          credentials.clientId,
-          credentials.clientSecret,
-          processor.metadata?.mode || 'sandbox'
-        );
+        try {
+          const baseUrl = (processor.metadata?.mode || 'sandbox') === 'sandbox' 
+            ? 'https://api-m.sandbox.paypal.com'
+            : 'https://api-m.paypal.com';
+          
+          const auth = Buffer.from(`${credentials.clientId}:${credentials.clientSecret}`).toString('base64');
+          const response = await fetch(`${baseUrl}/v1/oauth2/token`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Basic ${auth}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: 'grant_type=client_credentials',
+          });
+          
+          if (response.ok) {
+            validationResult = { valid: true, error: '' };
+          } else {
+            validationResult = { 
+              valid: false, 
+              error: 'Invalid PayPal credentials' 
+            };
+          }
+        } catch (error: any) {
+          validationResult = {
+            valid: false,
+            error: error.message || 'Failed to validate PayPal credentials'
+          };
+        }
       }
       
       if (validationResult?.valid) {
@@ -8663,18 +8788,39 @@ Generate the complete prompt now:`;
         organizationId,
       });
       
-      // Create products in payment processors if configured
-      const service = await createAgencyPaymentService(organizationId);
-      
       // Try to create Stripe product if configured
       const stripeProcessor = await storage.getAgencyPaymentProcessor(organizationId, 'stripe');
       if (stripeProcessor && stripeProcessor.status === 'active') {
-        const stripeResult = await service.createStripeProduct(plan);
-        if (stripeResult.success) {
-          await storage.updateAgencyBillingPlan(plan.id, {
-            stripeProductId: stripeResult.productId,
-            stripePriceId: stripeResult.priceId,
+        try {
+          const credentials = decryptCredentials(stripeProcessor.encryptedCredentials);
+          // Stripe is already imported at the top
+          const stripe = new Stripe(credentials.secretKey, {
+            apiVersion: '2025-08-27.basil' as Stripe.LatestApiVersion,
           });
+          
+          // Create product
+          const product = await stripe.products.create({
+            name: plan.name,
+            description: plan.description,
+          });
+          
+          // Create price
+          const price = await stripe.prices.create({
+            product: product.id,
+            unit_amount: Math.round(Number(plan.price) * 100), // Convert to cents
+            currency: 'usd',
+            recurring: (plan.billingCycle === 'monthly' || plan.billingCycle === 'yearly') ? {
+              interval: plan.billingCycle === 'yearly' ? 'year' : 'month',
+            } : undefined,
+          });
+          
+          await storage.updateAgencyBillingPlan(plan.id, {
+            stripeProductId: product.id,
+            stripePriceId: price.id,
+          });
+        } catch (error) {
+          console.error('Failed to create Stripe product:', error);
+          // Continue without Stripe product - not a critical failure
         }
       }
       
@@ -8705,8 +8851,23 @@ Generate the complete prompt now:`;
       
       // Update Stripe product if needed
       if (existingPlan.stripeProductId && (updates.name || updates.description)) {
-        const service = await createAgencyPaymentService(organizationId);
-        await service.updateStripeProduct(existingPlan.stripeProductId, updates);
+        const stripeProcessor = await storage.getAgencyPaymentProcessor(organizationId, 'stripe');
+        if (stripeProcessor && stripeProcessor.status === 'active') {
+          try {
+            const credentials = decryptCredentials(stripeProcessor.encryptedCredentials);
+            const { Stripe } = await import('stripe');
+            const stripe = new Stripe(credentials.secretKey, {
+              apiVersion: '2025-08-27.basil',
+            });
+            
+            await stripe.products.update(existingPlan.stripeProductId, {
+              ...(updates.name ? { name: updates.name } : {}),
+              ...(updates.description ? { description: updates.description } : {}),
+            });
+          } catch (error) {
+            console.error('Failed to update Stripe product:', error);
+          }
+        }
       }
       
       res.json(updatedPlan);
@@ -8742,8 +8903,22 @@ Generate the complete prompt now:`;
       
       // Archive Stripe product if exists
       if (existingPlan.stripeProductId) {
-        const service = await createAgencyPaymentService(organizationId);
-        await service.archiveStripeProduct(existingPlan.stripeProductId);
+        const stripeProcessor = await storage.getAgencyPaymentProcessor(organizationId, 'stripe');
+        if (stripeProcessor && stripeProcessor.status === 'active') {
+          try {
+            const credentials = decryptCredentials(stripeProcessor.encryptedCredentials);
+            const { Stripe } = await import('stripe');
+            const stripe = new Stripe(credentials.secretKey, {
+              apiVersion: '2025-08-27.basil',
+            });
+            
+            await stripe.products.update(existingPlan.stripeProductId, {
+              active: false,
+            });
+          } catch (error) {
+            console.error('Failed to archive Stripe product:', error);
+          }
+        }
       }
       
       // Soft delete by marking as inactive

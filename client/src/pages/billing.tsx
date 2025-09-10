@@ -3,10 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Calendar, DollarSign, Crown, TrendingUp } from "lucide-react";
-import { useLocation } from "wouter";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { UnifiedCheckout } from "@/components/unified-checkout";
 
 export default function Billing() {
-  const [, setLocation] = useLocation();
+  const [showCheckout, setShowCheckout] = useState(false);
   const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/analytics/organization"],
   });
@@ -132,7 +134,7 @@ export default function Billing() {
             <Button 
               className="w-full" 
               data-testid="button-manage-plan"
-              onClick={() => setLocation("/agency-checkout")}
+              onClick={() => setShowCheckout(true)}
             >
               View Plans
             </Button>
@@ -141,7 +143,7 @@ export default function Billing() {
             <Button 
               className="w-full" 
               data-testid="button-manage-plan"
-              onClick={() => setLocation("/checkout")}
+              onClick={() => setShowCheckout(true)}
             >
               Manage Plan
             </Button>
@@ -176,6 +178,16 @@ export default function Billing() {
           </p>
         </div>
       </Card>
+      
+      {/* Unified Checkout Dialog */}
+      <Dialog open={showCheckout} onOpenChange={setShowCheckout}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Choose Your Plan</DialogTitle>
+          </DialogHeader>
+          <UnifiedCheckout />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
