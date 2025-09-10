@@ -16,12 +16,12 @@ function getDatabaseConnection() {
       );
     }
 
-    // Configure the connection pool with proper settings for serverless
+    // Configure the connection pool optimized for high concurrency
     pool = new Pool({ 
       connectionString: process.env.DATABASE_URL,
-      max: 10, // Maximum number of connections in pool
-      connectionTimeoutMillis: 10000, // 10 seconds connection timeout
-      idleTimeoutMillis: 30000, // 30 seconds idle timeout
+      max: 20, // Increased for handling 100s of concurrent users
+      connectionTimeoutMillis: 5000, // 5 seconds connection timeout (faster fail)
+      idleTimeoutMillis: 10000, // 10 seconds idle timeout (more aggressive cleanup)
       allowExitOnIdle: true
     });
 

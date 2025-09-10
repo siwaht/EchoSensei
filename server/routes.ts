@@ -11,6 +11,7 @@ import { checkPermission, checkRoutePermission } from "./middleware/permissions"
 import ElevenLabsService from "./services/elevenlabs";
 import Stripe from "stripe";
 import * as unifiedPayment from "./unified-payment";
+import { cacheMiddleware } from "./middleware/cache-middleware";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
