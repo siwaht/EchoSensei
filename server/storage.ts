@@ -74,6 +74,15 @@ import {
   type InsertAgencySubscription,
   type AgencyTransaction,
   type InsertAgencyTransaction,
+  unifiedBillingPlans,
+  paymentSplits,
+  unifiedSubscriptions,
+  type UnifiedBillingPlan,
+  type InsertUnifiedBillingPlan,
+  type PaymentSplit,
+  type InsertPaymentSplit,
+  type UnifiedSubscription,
+  type InsertUnifiedSubscription,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, count, sum, avg, max, or, inArray, isNull } from "drizzle-orm";
@@ -252,6 +261,25 @@ export interface IStorage {
   getBatchCallRecipients(batchCallId: string): Promise<BatchCallRecipient[]>;
   createBatchCallRecipients(recipients: InsertBatchCallRecipient[]): Promise<BatchCallRecipient[]>;
   updateBatchCallRecipient(id: string, data: Partial<BatchCallRecipient>): Promise<BatchCallRecipient>;
+  
+  // Unified Billing Plan operations
+  getUnifiedBillingPlans(organizationType?: string): Promise<UnifiedBillingPlan[]>;
+  getUnifiedBillingPlan(id: string): Promise<UnifiedBillingPlan | undefined>;
+  createUnifiedBillingPlan(plan: InsertUnifiedBillingPlan): Promise<UnifiedBillingPlan>;
+  updateUnifiedBillingPlan(id: string, updates: Partial<InsertUnifiedBillingPlan>): Promise<UnifiedBillingPlan>;
+  deleteUnifiedBillingPlan(id: string): Promise<void>;
+  
+  // Payment Split operations
+  getPaymentSplits(paymentId: string): Promise<PaymentSplit[]>;
+  createPaymentSplit(split: InsertPaymentSplit): Promise<PaymentSplit>;
+  updatePaymentSplit(id: string, updates: Partial<InsertPaymentSplit>): Promise<PaymentSplit>;
+  
+  // Unified Subscription operations
+  getUnifiedSubscriptions(organizationId: string): Promise<UnifiedSubscription[]>;
+  getUnifiedSubscription(id: string): Promise<UnifiedSubscription | undefined>;
+  createUnifiedSubscription(subscription: InsertUnifiedSubscription): Promise<UnifiedSubscription>;
+  updateUnifiedSubscription(id: string, updates: Partial<InsertUnifiedSubscription>): Promise<UnifiedSubscription>;
+  cancelUnifiedSubscription(id: string): Promise<void>;
   
   // Approval webhook operations
   getApprovalWebhooks(): Promise<ApprovalWebhook[]>;
