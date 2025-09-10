@@ -8,83 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Eye, Save, Check, Users, Palette, Copy, ExternalLink, ChevronDown, Info, Globe } from "lucide-react";
+import { ArrowLeft, Upload, Eye, Save, Check, Users, Copy, ExternalLink, ChevronDown, Info, Globe } from "lucide-react";
 import { useLocation } from "wouter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-// Preset themes with predefined color combinations
-const PRESET_THEMES = [
-  {
-    id: "professional",
-    name: "Professional Blue",
-    primary: "#2563eb", // Blue
-    secondary: "#3b82f6",
-    accent: "#10b981"
-  },
-  {
-    id: "modern",
-    name: "Modern Purple",
-    primary: "#7c3aed", // Purple
-    secondary: "#a855f7",
-    accent: "#ec4899"
-  },
-  {
-    id: "corporate",
-    name: "Corporate Gray",
-    primary: "#475569", // Gray
-    secondary: "#64748b",
-    accent: "#0ea5e9"
-  },
-  {
-    id: "fresh",
-    name: "Fresh Green",
-    primary: "#16a34a", // Green
-    secondary: "#22c55e",
-    accent: "#f59e0b"
-  },
-  {
-    id: "bold",
-    name: "Bold Orange",
-    primary: "#ea580c", // Orange
-    secondary: "#f97316",
-    accent: "#7c3aed"
-  },
-  {
-    id: "minimal",
-    name: "Minimal Black",
-    primary: "#18181b", // Black
-    secondary: "#27272a",
-    accent: "#3b82f6"
-  }
-];
-
-// Color palette for quick selection
-const COLOR_PALETTE = [
-  "#000000", // Black
-  "#18181b", // Zinc 900
-  "#475569", // Slate 600
-  "#6b7280", // Gray 500
-  "#2563eb", // Blue 600
-  "#3b82f6", // Blue 500
-  "#0ea5e9", // Cyan 500
-  "#06b6d4", // Cyan 500
-  "#14b8a6", // Teal 500
-  "#10b981", // Emerald 500
-  "#16a34a", // Green 600
-  "#22c55e", // Green 500
-  "#84cc16", // Lime 500
-  "#eab308", // Yellow 500
-  "#f59e0b", // Amber 500
-  "#f97316", // Orange 500
-  "#ea580c", // Orange 600
-  "#dc2626", // Red 600
-  "#ef4444", // Red 500
-  "#ec4899", // Pink 500
-  "#d946ef", // Fuchsia 500
-  "#a855f7", // Purple 500
-  "#9333ea", // Purple 600
-  "#7c3aed", // Violet 600
-];
 
 // Get base domain from environment or use default
 const getBaseDomain = () => {
@@ -109,8 +36,6 @@ export default function WhitelabelSettings() {
   const [appName, setAppName] = useState("VoiceAI Dashboard");
   const [companyName, setCompanyName] = useState("");
   const [removeBranding, setRemoveBranding] = useState(false);
-  const [selectedTheme, setSelectedTheme] = useState(PRESET_THEMES[0]);
-  const [customPrimaryColor, setCustomPrimaryColor] = useState("#7c3aed");
   const [subdomain, setSubdomain] = useState("");
   const [customDomain, setCustomDomain] = useState("");
   const [supportUrl, setSupportUrl] = useState("");
@@ -118,7 +43,6 @@ export default function WhitelabelSettings() {
   const [hasChanges, setHasChanges] = useState(false);
   const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
   const [checkingSubdomain, setCheckingSubdomain] = useState(false);
-  const [useCustomColor, setUseCustomColor] = useState(false);
 
   // Load existing whitelabel settings
   const { data: whitelabelData, isLoading } = useQuery<any>({
@@ -141,18 +65,6 @@ export default function WhitelabelSettings() {
       setRemoveBranding(whitelabelData.removeBranding || false);
       setSupportUrl(whitelabelData.supportUrl || "");
       setDocumentationUrl(whitelabelData.documentationUrl || "");
-      
-      // Set theme based on saved primary color
-      if (whitelabelData.primaryColor) {
-        const matchingTheme = PRESET_THEMES.find(t => t.primary === whitelabelData.primaryColor);
-        if (matchingTheme) {
-          setSelectedTheme(matchingTheme);
-          setUseCustomColor(false);
-        } else {
-          setCustomPrimaryColor(whitelabelData.primaryColor);
-          setUseCustomColor(true);
-        }
-      }
     }
   }, [whitelabelData]);
 
@@ -217,9 +129,6 @@ export default function WhitelabelSettings() {
       const data = {
         appName,
         companyName,
-        primaryColor: useCustomColor ? customPrimaryColor : selectedTheme.primary,
-        secondaryColor: useCustomColor ? customPrimaryColor : selectedTheme.secondary,
-        accentColor: useCustomColor ? customPrimaryColor : selectedTheme.accent,
         removePlatformBranding: removeBranding,
         subdomain,
         customDomain,
@@ -294,7 +203,6 @@ export default function WhitelabelSettings() {
     );
   }
 
-  const currentPrimaryColor = useCustomColor ? customPrimaryColor : selectedTheme.primary;
 
   return (
     <div className="p-6">
@@ -414,113 +322,6 @@ export default function WhitelabelSettings() {
               </CardContent>
             </Card>
 
-            {/* Color Theme */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Color Theme</CardTitle>
-                <CardDescription>
-                  Choose a preset theme or pick a custom color
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Preset Themes */}
-                <div>
-                  <Label>Preset Themes</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
-                    {PRESET_THEMES.map((theme) => (
-                      <button
-                        key={theme.id}
-                        className={`relative p-3 rounded-lg border-2 transition-all ${
-                          !useCustomColor && selectedTheme.id === theme.id
-                            ? 'border-primary bg-primary/5' 
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        onClick={() => {
-                          setSelectedTheme(theme);
-                          setUseCustomColor(false);
-                          setHasChanges(true);
-                        }}
-                      >
-                        {!useCustomColor && selectedTheme.id === theme.id && (
-                          <Check className="absolute top-2 right-2 h-4 w-4 text-primary" />
-                        )}
-                        
-                        <div className="space-y-2">
-                          <div className="text-sm font-medium text-left">{theme.name}</div>
-                          
-                          {/* Color preview */}
-                          <div className="flex gap-1">
-                            <div 
-                              className="w-8 h-8 rounded"
-                              style={{ backgroundColor: theme.primary }}
-                              title="Primary"
-                            />
-                            <div 
-                              className="w-8 h-8 rounded"
-                              style={{ backgroundColor: theme.secondary }}
-                              title="Secondary"
-                            />
-                            <div 
-                              className="w-8 h-8 rounded"
-                              style={{ backgroundColor: theme.accent }}
-                              title="Accent"
-                            />
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Choose Own Color */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Label>Choose Your Own Color</Label>
-                    {useCustomColor && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </div>
-                  <div className="grid grid-cols-8 sm:grid-cols-12 gap-2">
-                    {COLOR_PALETTE.map((color) => (
-                      <button
-                        key={color}
-                        className={`w-full aspect-square rounded-lg border-2 transition-all ${
-                          useCustomColor && customPrimaryColor === color
-                            ? 'border-primary ring-2 ring-primary ring-offset-2' 
-                            : 'border-border hover:border-primary/50'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() => {
-                          setCustomPrimaryColor(color);
-                          setUseCustomColor(true);
-                          setHasChanges(true);
-                        }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
-                  
-                  {/* Custom hex input */}
-                  <div className="flex items-center gap-2 mt-3">
-                    <Input
-                      type="text"
-                      value={customPrimaryColor}
-                      onChange={(e) => {
-                        setCustomPrimaryColor(e.target.value);
-                        setUseCustomColor(true);
-                        setHasChanges(true);
-                      }}
-                      placeholder="#7c3aed"
-                      className="w-32"
-                    />
-                    <div 
-                      className="w-10 h-10 rounded border"
-                      style={{ backgroundColor: customPrimaryColor }}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Custom Domain Settings */}
             <Card>
@@ -818,9 +619,6 @@ export default function WhitelabelSettings() {
               onClick={handleSave}
               disabled={!hasChanges || saveMutation.isPending}
               className="w-full"
-              style={{ 
-                backgroundColor: hasChanges ? currentPrimaryColor : undefined 
-              }}
             >
               <Save className="h-4 w-4 mr-2" />
               {saveMutation.isPending ? "Saving..." : "Save Changes"}
@@ -853,11 +651,8 @@ export default function WhitelabelSettings() {
                         {logoPreview ? (
                           <img src={logoPreview} alt="Logo" className="h-12 mx-auto mb-4" />
                         ) : (
-                          <div 
-                            className="h-12 w-12 rounded mx-auto mb-4"
-                            style={{ backgroundColor: currentPrimaryColor }}
-                          >
-                            <Palette className="h-full w-full p-2 text-white" />
+                          <div className="h-12 w-12 rounded mx-auto mb-4 bg-primary flex items-center justify-center">
+                            <Upload className="h-6 w-6 text-white" />
                           </div>
                         )}
                         <h2 className="text-2xl font-bold">{appName || "VoiceAI Dashboard"}</h2>
@@ -869,8 +664,7 @@ export default function WhitelabelSettings() {
                         <div className="h-10 rounded bg-gray-100" />
                         <div className="h-10 rounded bg-gray-100" />
                         <button 
-                          className="w-full h-10 rounded text-white font-medium"
-                          style={{ backgroundColor: currentPrimaryColor }}
+                          className="w-full h-10 rounded text-white font-medium bg-primary"
                         >
                           Sign In
                         </button>
@@ -887,8 +681,7 @@ export default function WhitelabelSettings() {
                     <div className="border rounded-lg overflow-hidden">
                       {/* Dashboard Header Preview */}
                       <div 
-                        className="h-14 flex items-center px-4 text-white"
-                        style={{ backgroundColor: currentPrimaryColor }}
+                        className="h-14 flex items-center px-4 text-white bg-primary"
                       >
                         {logoPreview ? (
                           <img src={logoPreview} alt="Logo" className="h-8 mr-3 brightness-0 invert" />
@@ -900,18 +693,9 @@ export default function WhitelabelSettings() {
                       {/* Dashboard Content Preview */}
                       <div className="p-4 bg-white">
                         <div className="grid grid-cols-3 gap-3 mb-4">
-                          <div 
-                            className="h-20 rounded opacity-10"
-                            style={{ backgroundColor: currentPrimaryColor }}
-                          />
-                          <div 
-                            className="h-20 rounded opacity-10"
-                            style={{ backgroundColor: currentPrimaryColor }}
-                          />
-                          <div 
-                            className="h-20 rounded opacity-10"
-                            style={{ backgroundColor: currentPrimaryColor }}
-                          />
+                          <div className="h-20 rounded bg-primary/10" />
+                          <div className="h-20 rounded bg-primary/10" />
+                          <div className="h-20 rounded bg-primary/10" />
                         </div>
                         <div className="h-32 rounded bg-gray-100" />
                       </div>

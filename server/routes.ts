@@ -6042,9 +6042,6 @@ Generate the complete prompt now:`;
         return res.json({
           appName: org.name,
           companyName: org.name,
-          primaryColor: "#7C3AED",
-          secondaryColor: "#A855F7",
-          accentColor: "#EC4899",
           removePlatformBranding: false
         });
       }
@@ -6055,10 +6052,6 @@ Generate the complete prompt now:`;
         companyName: config.companyName || org.name,
         logoUrl: config.logoUrl,
         faviconUrl: config.faviconUrl,
-        primaryColor: config.primaryColor,
-        secondaryColor: config.secondaryColor,
-        accentColor: config.accentColor,
-        colorPalette: config.colorPalette,
         removePlatformBranding: config.removePlatformBranding,
         supportUrl: config.supportUrl,
         documentationUrl: config.documentationUrl
@@ -6102,9 +6095,6 @@ Generate the complete prompt now:`;
               companyName: config.companyName,
               logoUrl: config.logoUrl,
               faviconUrl: config.faviconUrl,
-              primaryColor: config.primaryColor,
-              secondaryColor: config.secondaryColor,
-              accentColor: config.accentColor,
               removePlatformBranding: config.removePlatformBranding,
             });
           }
@@ -6115,9 +6105,6 @@ Generate the complete prompt now:`;
           error: "Agency not found",
           appName: "VoiceAI Dashboard",
           companyName: "",
-          primaryColor: "#7C3AED",
-          secondaryColor: "#A855F7",
-          accentColor: "#EC4899",
           removePlatformBranding: false,
         });
       }
@@ -6133,9 +6120,6 @@ Generate the complete prompt now:`;
           companyName: config.companyName,
           logoUrl: config.logoUrl,
           faviconUrl: config.faviconUrl,
-          primaryColor: config.primaryColor,
-          secondaryColor: config.secondaryColor,
-          accentColor: config.accentColor,
           removePlatformBranding: config.removePlatformBranding,
         });
       } else {
@@ -6143,10 +6127,6 @@ Generate the complete prompt now:`;
         res.json({
           appName: "VoiceAI Dashboard",
           companyName: "",
-          primaryColor: "#7C3AED",
-          secondaryColor: "#A855F7",
-          accentColor: "#EC4899",
-          primaryColor: "#7C3AED",
           removePlatformBranding: false,
         });
       }
@@ -6156,7 +6136,6 @@ Generate the complete prompt now:`;
       res.json({
         appName: "VoiceAI Dashboard",
         companyName: "",
-        primaryColor: "#7C3AED",
         removePlatformBranding: false,
       });
     }
@@ -6184,7 +6163,6 @@ Generate the complete prompt now:`;
           organizationId: user.organizationId,
           appName: "VoiceAI Dashboard",
           companyName: organization.name,
-          primaryColor: "#7C3AED",
           removePlatformBranding: false,
         });
       }
@@ -6280,7 +6258,7 @@ Generate the complete prompt now:`;
       // Allow any user in an agency organization to modify whitelabel
       // (agencies should be able to customize their whitelabel regardless of role)
 
-      const { appName, companyName, primaryColor, secondaryColor, accentColor, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl, subdomain } = req.body;
+      const { appName, companyName, removePlatformBranding, supportUrl, documentationUrl, logoUrl, faviconUrl, subdomain } = req.body;
 
       // If subdomain is provided, update the organization
       if (subdomain !== undefined) {
@@ -6306,9 +6284,6 @@ Generate the complete prompt now:`;
         organizationId: user.organizationId,
         appName,
         companyName,
-        primaryColor,
-        secondaryColor,
-        accentColor,
         removePlatformBranding,
         supportUrl,
         documentationUrl,

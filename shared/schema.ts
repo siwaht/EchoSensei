@@ -102,7 +102,6 @@ export const organizations = pgTable("organizations", {
     maxApiCallsPerDay?: number;
     customBranding?: {
       logo?: string;
-      primaryColor?: string;
       companyUrl?: string;
     };
   }>(),
@@ -1101,8 +1100,6 @@ export const workspaceSettings = pgTable("workspace_settings", {
   organizationId: varchar("organization_id").notNull().unique(),
   name: varchar("name").notNull(),
   logo: varchar("logo"),
-  primaryColor: varchar("primary_color").default("#000000"),
-  accentColor: varchar("accent_color").default("#0066ff"),
   timezone: varchar("timezone").default("UTC"),
   dateFormat: varchar("date_format").default("MM/DD/YYYY"),
   timeFormat: varchar("time_format").default("12h"), // 12h, 24h
@@ -1560,28 +1557,6 @@ export const whitelabelConfigs = pgTable("whitelabel_configs", {
   // Logo URLs (stored in cloud storage)
   logoUrl: text("logo_url"),
   faviconUrl: text("favicon_url"),
-  
-  // Colors (stored as hex values)
-  primaryColor: varchar("primary_color").default("#7C3AED"), // Purple
-  secondaryColor: varchar("secondary_color").default("#A855F7"), // Light Purple
-  accentColor: varchar("accent_color").default("#EC4899"), // Pink
-  
-  // Auto-generated colors (calculated from primary)
-  colorPalette: json("color_palette").$type<{
-    primary: string;
-    primaryDark: string;
-    primaryLight: string;
-    secondary: string;
-    accent: string;
-    background: string;
-    backgroundDark: string;
-    text: string;
-    textMuted: string;
-    border: string;
-    success: string;
-    warning: string;
-    error: string;
-  }>(),
   
   // Simple toggles
   removePlatformBranding: boolean("remove_platform_branding").default(false),
