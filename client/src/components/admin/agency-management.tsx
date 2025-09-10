@@ -29,6 +29,7 @@ interface OrganizationWithDetails extends Organization {
   children?: OrganizationWithDetails[];
   users?: User[];
   isActive?: boolean;
+  permissions?: string[];
 }
 
 export function AgencyManagement() {
@@ -44,6 +45,7 @@ export function AgencyManagement() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [orgToDelete, setOrgToDelete] = useState<OrganizationWithDetails | null>(null);
   const [adminPassword, setAdminPassword] = useState<string>("");
+  const [editingPermissions, setEditingPermissions] = useState<string[]>([]);
   
   // New agency form state
   const [newAgency, setNewAgency] = useState({
@@ -1064,6 +1066,10 @@ export function AgencyManagement() {
           setShowSettingsDialog(open);
           if (!open) {
             setAdminPassword("");
+            setEditingPermissions([]);
+          } else if (open && selectedOrgForView?.organizationType === 'agency') {
+            // Load current permissions for the agency
+            setEditingPermissions(selectedOrgForView.permissions || []);
           }
         }}
       >
@@ -1144,6 +1150,87 @@ export function AgencyManagement() {
                   </Select>
                 </div>
                 
+                {/* Permissions Section - Only for Agencies */}
+                {selectedOrgForView.organizationType === 'agency' && (
+                  <div className="col-span-full space-y-4 border-t pt-4">
+                    <div>
+                      <Label className="text-base font-semibold">Agency Permissions</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Configure what features and capabilities this agency has access to
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                      {Object.entries(AGENCY_PERMISSIONS_BY_CATEGORY).map(([category, permissions]) => (
+                        <div key={category} className="space-y-2">
+                          <h4 className="font-medium text-sm text-muted-foreground">{category}</h4>
+                          <div className="space-y-2">
+                            {permissions.map((permission) => (
+                              <div key={permission.id} className="flex items-start space-x-2">
+                                <Checkbox
+                                  id={`edit-perm-${permission.id}`}
+                                  checked={editingPermissions.includes(permission.id)}
+                                  onCheckedChange={(checked) => {
+                                    if (checked) {
+                                      setEditingPermissions([...editingPermissions, permission.id]);
+                                    } else {
+                                      setEditingPermissions(editingPermissions.filter(p => p !== permission.id));
+                                    }
+                                  }}
+                                />
+                                <div className="space-y-0.5">
+                                  <Label
+                                    htmlFor={`edit-perm-${permission.id}`}
+                                    className="text-sm font-medium cursor-pointer"
+                                  >
+                                    {permission.name}
+                                  </Label>
+                                  <p className="text-xs text-muted-foreground">
+                                    {permission.description}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Select all permissions
+                          const allPermissions = Object.values(AGENCY_PERMISSIONS_BY_CATEGORY)
+                            .flat()
+                            .map(p => p.id);
+                          setEditingPermissions(allPermissions);
+                        }}
+                      >
+                        Select All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingPermissions([])}
+                      >
+                        Clear All
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingPermissions(DEFAULT_AGENCY_PERMISSIONS.professional)}
+                      >
+                        Use Professional Defaults
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="col-span-full space-y-2">
                   <Label htmlFor="admin-password">New Password (leave blank to keep current)</Label>
                   <Input 
@@ -1187,6 +1274,7 @@ export function AgencyManagement() {
                 if (selectedOrgForView.organizationType === 'agency') {
                   updates.commissionRate = parseFloat(commissionInput?.value || '30');
                   updates.creditBalance = parseFloat(creditInput?.value || '0');
+                  updates.permissions = editingPermissions;
                 }
                 
                 // If password is provided, update it for the first user in the organization
