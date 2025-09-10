@@ -29,7 +29,7 @@ interface OrganizationWithDetails extends Organization {
   children?: OrganizationWithDetails[];
   users?: User[];
   isActive?: boolean;
-  permissions?: string[];
+  agencyPermissions?: string[];
 }
 
 export function AgencyManagement() {
@@ -1069,7 +1069,7 @@ export function AgencyManagement() {
             setEditingPermissions([]);
           } else if (open && selectedOrgForView?.organizationType === 'agency') {
             // Load current permissions for the agency
-            setEditingPermissions(selectedOrgForView.permissions || []);
+            setEditingPermissions(selectedOrgForView.agencyPermissions || []);
           }
         }}
       >
@@ -1274,7 +1274,7 @@ export function AgencyManagement() {
                 if (selectedOrgForView.organizationType === 'agency') {
                   updates.commissionRate = parseFloat(commissionInput?.value || '30');
                   updates.creditBalance = parseFloat(creditInput?.value || '0');
-                  updates.permissions = editingPermissions;
+                  updates.agencyPermissions = editingPermissions;
                 }
                 
                 // If password is provided, update it for the first user in the organization
