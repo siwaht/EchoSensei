@@ -374,14 +374,12 @@ export default function Integrations() {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    <div className="space-y-2">
-                      <p>Your API key is encrypted with AES-256 and stored securely. We never share or expose your credentials.</p>
-                      <p className="text-amber-600 dark:text-amber-400 text-xs font-medium flex items-start gap-2">
-                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                        <span>Important: Copy your API key from a plain text source. Avoid copying from PDFs or formatted documents as they may contain invisible characters that cause connection errors.</span>
-                      </p>
-                    </div>
+                    Your API key is encrypted with AES-256 and stored securely. We never share or expose your credentials.
                   </FormDescription>
+                  <div className="text-amber-600 dark:text-amber-400 text-xs font-medium flex items-start gap-2 mt-2">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                    <span>Important: Copy your API key from a plain text source. Avoid copying from PDFs or formatted documents as they may contain invisible characters that cause connection errors.</span>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

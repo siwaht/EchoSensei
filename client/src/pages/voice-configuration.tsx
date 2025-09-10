@@ -243,7 +243,7 @@ export default function VoiceConfiguration() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {agents && Array.isArray(agents) && (agents as any[]).map((agent: any) => (
+                            {agents && Array.isArray(agents) && agents.map((agent) => (
                               <SelectItem key={agent.id} value={agent.id}>
                                 {agent.name || "Unnamed Agent"}
                               </SelectItem>
@@ -561,7 +561,7 @@ export default function VoiceConfiguration() {
                                     <SelectValue placeholder="Choose a voice" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {voices && Array.isArray(voices) && (voices as any[]).map((v: any) => (
+                                    {voices && Array.isArray(voices) && voices.map((v) => (
                                       <SelectItem key={v.voice_id} value={v.voice_id}>
                                         {v.name || "Unnamed Voice"}
                                       </SelectItem>
