@@ -86,6 +86,7 @@ export const organizations = pgTable("organizations", {
   maxAgents: integer("max_agents").default(5),
   maxUsers: integer("max_users").default(10),
   stripeCustomerId: varchar("stripe_customer_id"),
+  stripeConnectAccountId: varchar("stripe_connect_account_id"), // For agencies to receive payouts
   subscriptionId: varchar("subscription_id"),
   billingStatus: varchar("billing_status").default('inactive'), // active, inactive, past_due, warning, paused
   creditAlertStatus: creditAlertStatusEnum("credit_alert_status").default("normal"),
@@ -477,11 +478,15 @@ export const payments = pgTable("payments", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   organizationId: varchar("organization_id").notNull(),
   packageId: varchar("package_id"),
+  planId: varchar("plan_id"), // Unified billing plan ID
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  platformAmount: decimal("platform_amount", { precision: 10, scale: 2 }), // Amount platform keeps
+  agencyAmount: decimal("agency_amount", { precision: 10, scale: 2 }), // Amount agency receives
   currency: varchar("currency").default('usd'),
   status: paymentStatusEnum("status").notNull().default("pending"),
   paymentMethod: varchar("payment_method"), // stripe, paypal
   transactionId: varchar("transaction_id"), // External payment provider transaction ID
+  stripeTransferId: varchar("stripe_transfer_id"), // Stripe Connect transfer ID
   description: text("description"),
   completedAt: timestamp("completed_at"),
   failedAt: timestamp("failed_at"),
@@ -1249,6 +1254,142 @@ export const auditLogs = pgTable("audit_logs", {
   index("audit_logs_created_idx").on(table.createdAt),
 ]);
 
+// Unified Billing Plans - Hierarchical billing structure for platform, agencies, and customers
+export const unifiedBillingPlans = pgTable("unified_billing_plans", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // Hierarchy
+  parentPlanId: varchar("parent_plan_id"), // Reference to parent plan for inheritance
+  createdByOrganizationId: varchar("created_by_organization_id").notNull(), // Platform or agency that created this
+  organizationType: organizationTypeEnum("organization_type").notNull(), // Who can purchase this plan
+  
+  // Plan details
+  name: varchar("name").notNull(),
+  description: text("description"),
+  planType: varchar("plan_type").notNull(), // 'subscription', 'one_time', 'usage_based', 'credit_pack'
+  billingCycle: varchar("billing_cycle"), // 'monthly', 'quarterly', 'annual', null for one-time
+  
+  // Pricing
+  basePrice: decimal("base_price", { precision: 10, scale: 2 }).notNull(),
+  setupFee: decimal("setup_fee", { precision: 10, scale: 2 }).default('0'),
+  
+  // Revenue sharing
+  platformFeePercentage: decimal("platform_fee_percentage", { precision: 5, scale: 2 }).default('30'), // Platform takes this %
+  agencyMarginPercentage: decimal("agency_margin_percentage", { precision: 5, scale: 2 }).default('0'), // Agency adds this margin
+  
+  // Features and limits
+  features: jsonb("features").$type<{
+    maxAgents?: number;
+    maxUsers?: number;
+    maxMinutesPerMonth?: number;
+    maxCallsPerMonth?: number;
+    includedCredits?: number;
+    perMinuteRate?: number;
+    perCallRate?: number;
+    customBranding?: boolean;
+    whitelabel?: boolean;
+    apiAccess?: boolean;
+    supportLevel?: string;
+  }>().notNull(),
+  
+  // Stripe/PayPal integration
+  stripeProductId: varchar("stripe_product_id"),
+  stripePriceId: varchar("stripe_price_id"),
+  paypalPlanId: varchar("paypal_plan_id"),
+  
+  // Display settings
+  isActive: boolean("is_active").default(true),
+  isPopular: boolean("is_popular").default(false),
+  displayOrder: integer("display_order").default(0),
+  
+  // Metadata
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("unified_plans_parent_idx").on(table.parentPlanId),
+  index("unified_plans_org_idx").on(table.createdByOrganizationId),
+  index("unified_plans_type_idx").on(table.organizationType),
+]);
+
+// Payment Splits - Track how payments are distributed between platform and agencies
+export const paymentSplits = pgTable("payment_splits", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // References
+  paymentId: varchar("payment_id").notNull(),
+  fromOrganizationId: varchar("from_organization_id").notNull(), // Customer who paid
+  toOrganizationId: varchar("to_organization_id").notNull(), // Platform or agency receiving
+  
+  // Split details
+  splitType: varchar("split_type").notNull(), // 'platform_fee', 'agency_revenue', 'commission'
+  amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
+  percentage: decimal("percentage", { precision: 5, scale: 2 }),
+  
+  // Transfer details
+  transferStatus: varchar("transfer_status").default('pending'), // 'pending', 'processing', 'completed', 'failed'
+  stripeTransferId: varchar("stripe_transfer_id"),
+  transferredAt: timestamp("transferred_at"),
+  
+  // Error handling
+  failureReason: text("failure_reason"),
+  retryCount: integer("retry_count").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("payment_splits_payment_idx").on(table.paymentId),
+  index("payment_splits_from_idx").on(table.fromOrganizationId),
+  index("payment_splits_to_idx").on(table.toOrganizationId),
+]);
+
+// Unified Subscriptions - Single table for all subscription types
+export const unifiedSubscriptions = pgTable("unified_subscriptions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  
+  // References
+  organizationId: varchar("organization_id").notNull(), // Subscriber organization
+  planId: varchar("plan_id").notNull(), // Unified billing plan
+  parentSubscriptionId: varchar("parent_subscription_id"), // For nested subscriptions
+  
+  // Subscription details
+  status: varchar("status").notNull().default("active"), // 'active', 'trialing', 'past_due', 'canceled', 'paused'
+  
+  // Billing periods
+  currentPeriodStart: timestamp("current_period_start").notNull(),
+  currentPeriodEnd: timestamp("current_period_end").notNull(),
+  trialEnd: timestamp("trial_end"),
+  cancelAt: timestamp("cancel_at"),
+  canceledAt: timestamp("canceled_at"),
+  pausedAt: timestamp("paused_at"),
+  
+  // Payment method
+  stripeSubscriptionId: varchar("stripe_subscription_id"),
+  paypalSubscriptionId: varchar("paypal_subscription_id"),
+  
+  // Usage tracking
+  currentUsage: jsonb("current_usage").$type<{
+    minutes?: number;
+    calls?: number;
+    agents?: number;
+    users?: number;
+    credits?: number;
+  }>(),
+  
+  // Custom pricing overrides
+  customPrice: decimal("custom_price", { precision: 10, scale: 2 }),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }),
+  
+  metadata: jsonb("metadata").$type<Record<string, any>>(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => [
+  index("unified_subs_org_idx").on(table.organizationId),
+  index("unified_subs_plan_idx").on(table.planId),
+  index("unified_subs_status_idx").on(table.status),
+]);
+
 // Whitelabel configurations for agencies
 export const whitelabelConfigs = pgTable("whitelabel_configs", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -1424,6 +1565,23 @@ export const insertAgencyTransactionSchema = createInsertSchema(agencyTransactio
   createdAt: true,
 });
 
+export const insertUnifiedBillingPlanSchema = createInsertSchema(unifiedBillingPlans).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPaymentSplitSchema = createInsertSchema(paymentSplits).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertUnifiedSubscriptionSchema = createInsertSchema(unifiedSubscriptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Payment relations (defined after billingPackages table)
 export const paymentsRelations = relations(payments, ({ one }) => ({
   organization: one(organizations, {
@@ -1542,3 +1700,9 @@ export type AgencySubscription = typeof agencySubscriptions.$inferSelect;
 export type InsertAgencySubscription = z.infer<typeof insertAgencySubscriptionSchema>;
 export type AgencyTransaction = typeof agencyTransactions.$inferSelect;
 export type InsertAgencyTransaction = z.infer<typeof insertAgencyTransactionSchema>;
+export type UnifiedBillingPlan = typeof unifiedBillingPlans.$inferSelect;
+export type InsertUnifiedBillingPlan = z.infer<typeof insertUnifiedBillingPlanSchema>;
+export type PaymentSplit = typeof paymentSplits.$inferSelect;
+export type InsertPaymentSplit = z.infer<typeof insertPaymentSplitSchema>;
+export type UnifiedSubscription = typeof unifiedSubscriptions.$inferSelect;
+export type InsertUnifiedSubscription = z.infer<typeof insertUnifiedSubscriptionSchema>;
