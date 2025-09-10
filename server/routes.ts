@@ -2297,7 +2297,7 @@ export function registerRoutes(app: Express): Server {
       
       // Initialize Stripe with agency's secret key
       const stripe = new Stripe(paymentConfig.stripeSecretKey, {
-        apiVersion: "2023-10-16",
+        apiVersion: "2025-08-27.basil",
       });
       
       // Create payment intent
