@@ -113,6 +113,7 @@ export interface IStorage {
   removeUserFromOrganization(userId: string, organizationId: string): Promise<void>;
   assignAgentsToUser(userId: string, organizationId: string, agentIds: string[]): Promise<void>;
   getUserAssignedAgents(userId: string, organizationId: string): Promise<Agent[]>;
+  getUsersWithAssignedAgents(userIds: string[], organizationId: string): Promise<Map<string, Agent[]>>;
   
   // User invitation operations
   createInvitation(invitation: InsertUserInvitation): Promise<UserInvitation>;
@@ -505,6 +506,43 @@ export class DatabaseStorage implements IStorage {
       ));
     
     return result.map(r => r.agent);
+  }
+  
+  // Batch method to fetch assigned agents for multiple users at once (prevents N+1 queries)
+  async getUsersWithAssignedAgents(userIds: string[], organizationId: string): Promise<Map<string, Agent[]>> {
+    if (userIds.length === 0) {
+      return new Map();
+    }
+    
+    const result = await db()
+      .select({ 
+        userId: userAgents.userId,
+        agent: agents 
+      })
+      .from(userAgents)
+      .innerJoin(agents, eq(userAgents.agentId, agents.id))
+      .where(and(
+        inArray(userAgents.userId, userIds),
+        eq(agents.organizationId, organizationId)
+      ));
+    
+    // Group agents by userId
+    const userAgentsMap = new Map<string, Agent[]>();
+    for (const row of result) {
+      if (!userAgentsMap.has(row.userId)) {
+        userAgentsMap.set(row.userId, []);
+      }
+      userAgentsMap.get(row.userId)!.push(row.agent);
+    }
+    
+    // Ensure all userIds have an entry (even if empty)
+    for (const userId of userIds) {
+      if (!userAgentsMap.has(userId)) {
+        userAgentsMap.set(userId, []);
+      }
+    }
+    
+    return userAgentsMap;
   }
 
   // User invitation operations

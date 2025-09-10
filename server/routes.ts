@@ -8242,9 +8242,13 @@ Generate the complete prompt now:`;
         assignedAgentIds: [] as string[]  // Will be populated later
       }));
       
-      // Get assigned agents for each user
+      // Get assigned agents for all users in a single query (prevents N+1)
+      const userIds = formattedUsers.map(u => u.id);
+      const userAgentsMap = await storage.getUsersWithAssignedAgents(userIds, organizationId);
+      
+      // Assign agents to each user
       for (const user of formattedUsers) {
-        const assignedAgents = await storage.getUserAssignedAgents(user.id, organizationId);
+        const assignedAgents = userAgentsMap.get(user.id) || [];
         user.assignedAgentIds = assignedAgents.map(a => a.id);
       }
       

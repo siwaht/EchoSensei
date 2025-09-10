@@ -226,6 +226,9 @@ export default function AdminDashboard() {
         maxUsers: "10",
         monthlyPrice: "0",
         features: [],
+        availableToType: "end_customer" as "agency" | "end_customer",
+        baseCost: "0",
+        marginPercentage: "30",
       });
     },
     onError: (error: any) => {
@@ -517,10 +520,10 @@ export default function AdminDashboard() {
                         <li className="truncate">• ${pkg.perMinuteRate} per minute</li>
                         <li className="truncate">• {pkg.maxAgents} agents max</li>
                         <li className="truncate">• {pkg.maxUsers} users max</li>
-                        {pkg.monthlyCredits > 0 && (
+                        {Number(pkg.monthlyCredits) > 0 && (
                           <li className="truncate">• {pkg.monthlyCredits} monthly credits</li>
                         )}
-                        {pkg.marginPercentage && pkg.marginPercentage > 0 && (
+                        {pkg.marginPercentage && Number(pkg.marginPercentage) > 0 && (
                           <li className="truncate text-muted-foreground">• {pkg.marginPercentage}% agency margin</li>
                         )}
                       </ul>

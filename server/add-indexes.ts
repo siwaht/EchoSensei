@@ -12,6 +12,12 @@ async function addPerformanceIndexes() {
     await db().execute(sql`
       CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_organization_id ON users(organization_id);
     `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_user_type ON users(user_type);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_users_is_admin ON users(is_admin);
+    `);
 
     // Agent indexes
     await db().execute(sql`
@@ -19,6 +25,12 @@ async function addPerformanceIndexes() {
     `);
     await db().execute(sql`
       CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_agents_eleven_labs_id ON agents(eleven_labs_agent_id);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_agents_user_id ON agents(user_id);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_agents_org_user ON agents(organization_id, user_id);
     `);
 
     // Call logs indexes
@@ -34,6 +46,12 @@ async function addPerformanceIndexes() {
     await db().execute(sql`
       CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_call_logs_org_created ON call_logs(organization_id, created_at DESC);
     `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_call_logs_status ON call_logs(status);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_call_logs_org_agent ON call_logs(organization_id, agent_id);
+    `);
 
     // Integration indexes
     await db().execute(sql`
@@ -41,6 +59,12 @@ async function addPerformanceIndexes() {
     `);
     await db().execute(sql`
       CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_integrations_provider ON integrations(provider);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_integrations_status ON integrations(status);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_integrations_org_provider ON integrations(organization_id, provider);
     `);
 
     // User agents indexes (for role-based access)
@@ -57,6 +81,12 @@ async function addPerformanceIndexes() {
     `);
     await db().execute(sql`
       CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_organizations_custom_domain ON organizations(custom_domain);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_organizations_parent_id ON organizations(parent_organization_id);
+    `);
+    await db().execute(sql`
+      CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_organizations_type ON organizations(organization_type);
     `);
 
     // Payment and billing indexes
@@ -77,12 +107,12 @@ async function addPerformanceIndexes() {
 
     console.log('✅ Successfully added all performance indexes');
     console.log('\n📊 Indexes added for:');
-    console.log('   - Users: email, organization_id');
-    console.log('   - Agents: organization_id, eleven_labs_agent_id');
-    console.log('   - Call Logs: organization_id, agent_id, created_at, composite');
-    console.log('   - Integrations: organization_id, type');
+    console.log('   - Users: email, organization_id, user_type, is_admin');
+    console.log('   - Agents: organization_id, eleven_labs_agent_id, user_id, composite');
+    console.log('   - Call Logs: organization_id, agent_id, created_at, status, composites');
+    console.log('   - Integrations: organization_id, provider, status, composite');
     console.log('   - User Agents: user_id, agent_id');
-    console.log('   - Organizations: subdomain, custom_domain');
+    console.log('   - Organizations: subdomain, custom_domain, parent_organization_id, type');
     console.log('   - Payments: from_organization_id, created_at');
     console.log('   - Credit Transactions: organization_id, created_at');
 
