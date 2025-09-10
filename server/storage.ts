@@ -331,6 +331,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: Partial<User>): Promise<User> {
+    // Default permissions for all users
+    const defaultPermissions = [
+      'manage_users',
+      'manage_branding',
+      'manage_voices',
+      'manage_agents',
+      'access_playground',
+      'view_call_history',
+      'manage_phone_numbers'
+    ];
+
     // If no organization exists for this user, create one
     let organizationId = userData.organizationId;
     
@@ -349,12 +360,23 @@ export class DatabaseStorage implements IStorage {
       profileImageUrl: userData.profileImageUrl,
       organizationId,
       isAdmin: userData.email === "cc@siwaht.com",
-      permissions: userData.permissions || [],
+      permissions: userData.permissions || defaultPermissions,
     }).returning();
     return user;
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
+    // Default permissions for all users
+    const defaultPermissions = [
+      'manage_users',
+      'manage_branding',
+      'manage_voices',
+      'manage_agents',
+      'access_playground',
+      'view_call_history',
+      'manage_phone_numbers'
+    ];
+
     // If no organizationId provided, create a new organization for the user
     let organizationId = userData.organizationId;
     if (!organizationId) {
@@ -368,7 +390,7 @@ export class DatabaseStorage implements IStorage {
 
     const [user] = await db()
       .insert(users)
-      .values({ ...userData, organizationId, isAdmin, permissions: userData.permissions || [] })
+      .values({ ...userData, organizationId, isAdmin, permissions: userData.permissions || defaultPermissions })
       .onConflictDoUpdate({
         target: users.id,
         set: {
