@@ -6452,7 +6452,7 @@ Generate the complete prompt now:`;
   app.post("/api/webhooks/stripe", async (req, res) => {
     try {
       // This endpoint has been deprecated in favor of unified payments
-      await unifiedPayment.handleStripeWebhook(req, res);
+      await unifiedPayment.handleUnifiedWebhook(req, res);
     } catch (error) {
       console.error("Webhook error:", error);
       res.status(400).json({ error: "Webhook processing failed" });
@@ -8801,7 +8801,7 @@ Generate the complete prompt now:`;
           // Create product
           const product = await stripe.products.create({
             name: plan.name,
-            description: plan.description,
+            description: plan.description || undefined,
           });
           
           // Create price
@@ -8809,8 +8809,8 @@ Generate the complete prompt now:`;
             product: product.id,
             unit_amount: Math.round(Number(plan.price) * 100), // Convert to cents
             currency: 'usd',
-            recurring: (plan.billingCycle === 'monthly' || plan.billingCycle === 'yearly') ? {
-              interval: plan.billingCycle === 'yearly' ? 'year' : 'month',
+            recurring: (plan.billingCycle === 'monthly' || plan.billingCycle === 'annual') ? {
+              interval: plan.billingCycle === 'annual' ? 'year' : 'month',
             } : undefined,
           });
           
