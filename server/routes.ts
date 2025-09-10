@@ -10,6 +10,7 @@ import { seedAdminUser } from "./seedAdmin";
 import { checkPermission, checkRoutePermission } from "./middleware/permissions";
 import ElevenLabsService from "./services/elevenlabs";
 import Stripe from "stripe";
+import * as unifiedPayment from "./unified-payment";
 
 // Authentication middleware
 const isAuthenticated: RequestHandler = (req, res, next) => {
@@ -6409,6 +6410,99 @@ Generate the complete prompt now:`;
       res.status(500).json({ error: "Failed to fetch payment history" });
     }
   });
+
+  // ============== UNIFIED PAYMENT ROUTES ==============
+  // Create Stripe Connect account for agency
+  app.post("/api/unified-payments/create-connect-account", isAuthenticated, async (req: any, res) => {
+    try {
+      // Check if user is agency admin
+      const user = await storage.getUser(req.user.id);
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: "Only agency admins can create Connect accounts" });
+      }
+      
+      req.body.organizationId = user.organizationId;
+      await unifiedPayment.createStripeConnectAccount(req, res);
+    } catch (error) {
+      console.error("Error creating Connect account:", error);
+      res.status(500).json({ error: "Failed to create Connect account" });
+    }
+  });
+
+  // Create unified payment intent with automatic revenue splitting
+  app.post("/api/unified-payments/create-payment-intent", isAuthenticated, async (req: any, res) => {
+    try {
+      await unifiedPayment.createUnifiedPaymentIntent(req, res);
+    } catch (error) {
+      console.error("Error creating unified payment intent:", error);
+      res.status(500).json({ error: "Failed to create payment intent" });
+    }
+  });
+
+  // Confirm unified payment and execute splits
+  app.post("/api/unified-payments/confirm-payment", isAuthenticated, async (req: any, res) => {
+    try {
+      await unifiedPayment.confirmUnifiedPayment(req, res);
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      res.status(500).json({ error: "Failed to confirm payment" });
+    }
+  });
+
+  // Create unified subscription
+  app.post("/api/unified-payments/create-subscription", isAuthenticated, async (req: any, res) => {
+    try {
+      await unifiedPayment.createUnifiedSubscription(req, res);
+    } catch (error) {
+      console.error("Error creating subscription:", error);
+      res.status(500).json({ error: "Failed to create subscription" });
+    }
+  });
+
+  // Get unified payment analytics
+  app.get("/api/unified-payments/analytics", isAuthenticated, async (req: any, res) => {
+    try {
+      await unifiedPayment.getUnifiedPaymentAnalytics(req, res);
+    } catch (error) {
+      console.error("Error fetching payment analytics:", error);
+      res.status(500).json({ error: "Failed to fetch payment analytics" });
+    }
+  });
+
+  // Unified Stripe webhook endpoint (no auth required)
+  app.post("/api/webhooks/unified-stripe", async (req, res) => {
+    try {
+      await unifiedPayment.handleUnifiedWebhook(req, res);
+    } catch (error) {
+      console.error("Unified webhook error:", error);
+      res.status(400).json({ error: "Webhook processing failed" });
+    }
+  });
+
+  // Get unified billing plans
+  app.get("/api/unified-billing/plans", async (req: any, res) => {
+    try {
+      const { organizationType } = req.query;
+      const plans = await storage.getUnifiedBillingPlans(organizationType);
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching unified billing plans:", error);
+      res.status(500).json({ error: "Failed to fetch billing plans" });
+    }
+  });
+
+  // Get unified subscriptions for an organization
+  app.get("/api/unified-billing/subscriptions", isAuthenticated, async (req: any, res) => {
+    try {
+      const organizationId = req.user.organizationId;
+      const subscriptions = await storage.getUnifiedSubscriptions(organizationId);
+      res.json(subscriptions);
+    } catch (error) {
+      console.error("Error fetching subscriptions:", error);
+      res.status(500).json({ error: "Failed to fetch subscriptions" });
+    }
+  });
+  // ============== END UNIFIED PAYMENT ROUTES ==============
 
   // Generate WebRTC conversation token (new ElevenLabs 2025 feature)
   app.post("/api/playground/webrtc-token", isAuthenticated, checkPermission('access_playground'), async (req: any, res) => {

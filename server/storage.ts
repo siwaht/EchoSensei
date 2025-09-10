@@ -2063,6 +2063,123 @@ export class DatabaseStorage implements IStorage {
 
     return agencyOrg;
   }
+
+  // Unified Billing Plan operations
+  async getUnifiedBillingPlans(organizationType?: string): Promise<UnifiedBillingPlan[]> {
+    const conditions = [];
+    if (organizationType) {
+      conditions.push(eq(unifiedBillingPlans.targetOrganizationType, organizationType));
+    }
+    conditions.push(eq(unifiedBillingPlans.isActive, true));
+    
+    return await db()
+      .select()
+      .from(unifiedBillingPlans)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .orderBy(unifiedBillingPlans.sortOrder);
+  }
+
+  async getUnifiedBillingPlan(id: string): Promise<UnifiedBillingPlan | undefined> {
+    const [plan] = await db()
+      .select()
+      .from(unifiedBillingPlans)
+      .where(eq(unifiedBillingPlans.id, id));
+    return plan;
+  }
+
+  async createUnifiedBillingPlan(plan: InsertUnifiedBillingPlan): Promise<UnifiedBillingPlan> {
+    const [created] = await db()
+      .insert(unifiedBillingPlans)
+      .values(plan)
+      .returning();
+    return created;
+  }
+
+  async updateUnifiedBillingPlan(id: string, updates: Partial<InsertUnifiedBillingPlan>): Promise<UnifiedBillingPlan> {
+    const [updated] = await db()
+      .update(unifiedBillingPlans)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(unifiedBillingPlans.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUnifiedBillingPlan(id: string): Promise<void> {
+    await db()
+      .update(unifiedBillingPlans)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(unifiedBillingPlans.id, id));
+  }
+
+  // Payment Split operations
+  async getPaymentSplits(paymentId: string): Promise<PaymentSplit[]> {
+    return await db()
+      .select()
+      .from(paymentSplits)
+      .where(eq(paymentSplits.paymentId, paymentId));
+  }
+
+  async createPaymentSplit(split: InsertPaymentSplit): Promise<PaymentSplit> {
+    const [created] = await db()
+      .insert(paymentSplits)
+      .values(split)
+      .returning();
+    return created;
+  }
+
+  async updatePaymentSplit(id: string, updates: Partial<InsertPaymentSplit>): Promise<PaymentSplit> {
+    const [updated] = await db()
+      .update(paymentSplits)
+      .set(updates)
+      .where(eq(paymentSplits.id, id))
+      .returning();
+    return updated;
+  }
+
+  // Unified Subscription operations
+  async getUnifiedSubscriptions(organizationId: string): Promise<UnifiedSubscription[]> {
+    return await db()
+      .select()
+      .from(unifiedSubscriptions)
+      .where(eq(unifiedSubscriptions.organizationId, organizationId))
+      .orderBy(desc(unifiedSubscriptions.createdAt));
+  }
+
+  async getUnifiedSubscription(id: string): Promise<UnifiedSubscription | undefined> {
+    const [subscription] = await db()
+      .select()
+      .from(unifiedSubscriptions)
+      .where(eq(unifiedSubscriptions.id, id));
+    return subscription;
+  }
+
+  async createUnifiedSubscription(subscription: InsertUnifiedSubscription): Promise<UnifiedSubscription> {
+    const [created] = await db()
+      .insert(unifiedSubscriptions)
+      .values(subscription)
+      .returning();
+    return created;
+  }
+
+  async updateUnifiedSubscription(id: string, updates: Partial<InsertUnifiedSubscription>): Promise<UnifiedSubscription> {
+    const [updated] = await db()
+      .update(unifiedSubscriptions)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(unifiedSubscriptions.id, id))
+      .returning();
+    return updated;
+  }
+
+  async cancelUnifiedSubscription(id: string): Promise<void> {
+    await db()
+      .update(unifiedSubscriptions)
+      .set({ 
+        status: 'canceled', 
+        canceledAt: new Date(),
+        updatedAt: new Date() 
+      })
+      .where(eq(unifiedSubscriptions.id, id));
+  }
 }
 
 export const storage = new DatabaseStorage();
