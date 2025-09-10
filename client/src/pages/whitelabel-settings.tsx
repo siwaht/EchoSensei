@@ -8,8 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { ArrowLeft, Upload, Eye, Save, Check, Users, Palette, Copy, ExternalLink } from "lucide-react";
+import { ArrowLeft, Upload, Eye, Save, Check, Users, Palette, Copy, ExternalLink, ChevronDown, Info, Globe } from "lucide-react";
 import { useLocation } from "wouter";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 // Preset themes with predefined color combinations
 const PRESET_THEMES = [
@@ -595,7 +596,10 @@ export default function WhitelabelSettings() {
                 </div>
                 
                 <div>
-                  <Label htmlFor="customDomain">Custom Domain (Optional)</Label>
+                  <Label htmlFor="customDomain" className="flex items-center gap-2">
+                    <Globe className="h-4 w-4" />
+                    Custom Domain (Optional)
+                  </Label>
                   <Input
                     id="customDomain"
                     type="url"
@@ -607,9 +611,139 @@ export default function WhitelabelSettings() {
                     placeholder="dashboard.youragency.com"
                     className="mt-2"
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Point your domain's CNAME record to {subdomain || 'your-subdomain'}.{baseDomain}
-                  </p>
+                  
+                  {/* Expandable Setup Instructions */}
+                  <Collapsible className="mt-3">
+                    <CollapsibleTrigger asChild>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full justify-between text-sm font-normal px-3 py-2 h-auto hover:bg-muted"
+                        type="button"
+                      >
+                        <span className="flex items-center gap-2">
+                          <Info className="h-4 w-4" />
+                          How to connect your domain
+                        </span>
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 data-[state=open]:rotate-180" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    
+                    <CollapsibleContent className="mt-2">
+                      <div className="rounded-lg border bg-muted/50 p-4 space-y-4">
+                        {/* Quick Overview */}
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium">Connect your domain in 3 simple steps:</p>
+                          <div className="pl-4 space-y-3 text-sm">
+                            <div className="flex gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">1</span>
+                              <div>
+                                <p className="font-medium">Go to your domain provider</p>
+                                <p className="text-xs text-muted-foreground">Access your DNS settings at GoDaddy, Namecheap, Cloudflare, etc.</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">2</span>
+                              <div>
+                                <p className="font-medium">Add a CNAME record</p>
+                                <div className="mt-2 p-2 bg-background rounded border">
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <span className="text-muted-foreground">Type:</span>
+                                      <p className="font-mono font-medium">CNAME</p>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">Name/Host:</span>
+                                      <p className="font-mono font-medium">@ or www</p>
+                                    </div>
+                                    <div className="col-span-2">
+                                      <span className="text-muted-foreground">Points to/Value:</span>
+                                      <div className="flex items-center gap-2 mt-1">
+                                        <code className="font-mono text-xs bg-muted px-2 py-1 rounded flex-1 break-all">
+                                          {subdomain || 'your-subdomain'}.{baseDomain}
+                                        </code>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0"
+                                          type="button"
+                                          onClick={() => {
+                                            const target = `${subdomain || 'your-subdomain'}.${baseDomain}`;
+                                            navigator.clipboard.writeText(target);
+                                            toast({
+                                              title: "Copied!",
+                                              description: "CNAME target copied to clipboard",
+                                            });
+                                          }}
+                                        >
+                                          <Copy className="h-3 w-3" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <span className="text-muted-foreground">TTL:</span>
+                                      <p className="font-mono font-medium">3600 or Auto</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex gap-3">
+                              <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">3</span>
+                              <div>
+                                <p className="font-medium">Save and wait</p>
+                                <p className="text-xs text-muted-foreground">Changes typically take 5-30 minutes to propagate</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Provider-specific help */}
+                        <div className="border-t pt-3">
+                          <p className="text-xs font-medium mb-2">Need help? Quick links to popular providers:</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7"
+                              type="button"
+                              onClick={() => window.open('https://www.godaddy.com/help/add-a-cname-record-19236', '_blank')}
+                            >
+                              GoDaddy Guide →
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7"
+                              type="button"
+                              onClick={() => window.open('https://www.namecheap.com/support/knowledgebase/article.aspx/9646', '_blank')}
+                            >
+                              Namecheap Guide →
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs h-7"
+                              type="button"
+                              onClick={() => window.open('https://developers.cloudflare.com/dns/manage-dns-records/how-to/create-dns-records/', '_blank')}
+                            >
+                              Cloudflare Guide →
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Additional info */}
+                        <div className="bg-blue-50 dark:bg-blue-950/20 rounded p-3 text-xs">
+                          <p className="font-medium mb-1">💡 Pro tip:</p>
+                          <p className="text-muted-foreground">
+                            If you're using Cloudflare, make sure the proxy (orange cloud) is turned OFF for this record to work properly.
+                          </p>
+                        </div>
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
               </CardContent>
             </Card>
