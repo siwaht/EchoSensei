@@ -19,15 +19,26 @@ class ElevenLabsService {
   private defaultHeaders: HeadersInit;
 
   constructor(config: ElevenLabsConfig) {
+    // Sanitize the API key to ensure no non-ASCII characters
+    const sanitizedApiKey = config.apiKey
+      .replace(/[\u2010-\u2015]/g, '-')  // Replace Unicode dashes
+      .replace(/[\u2018-\u201B]/g, "'")  // Replace smart quotes
+      .replace(/[\u201C-\u201F]/g, '"')  // Replace smart double quotes
+      .replace(/\u2026/g, '...')         // Replace ellipsis
+      .replace(/\s+/g, '')               // Remove whitespace
+      .replace(/[^\x20-\x7E]/g, '')      // Remove non-ASCII
+      .trim();
+
     this.config = {
       baseUrl: "https://api.elevenlabs.io",
       maxRetries: 3,
       retryDelay: 1000,
       ...config,
+      apiKey: sanitizedApiKey,
     };
 
     this.defaultHeaders = {
-      "xi-api-key": this.config.apiKey,
+      "xi-api-key": sanitizedApiKey,
       "Content-Type": "application/json",
     };
   }

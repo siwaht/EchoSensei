@@ -2539,10 +2539,21 @@ export function registerRoutes(app: Express): Server {
         return res.status(404).json({ message: "User not found" });
       }
 
-      const { apiKey } = req.body;
+      let { apiKey } = req.body;
       if (!apiKey) {
         return res.status(400).json({ message: "API key is required" });
       }
+
+      // Sanitize the API key to remove non-ASCII characters
+      // This handles cases where the frontend sanitization might be bypassed
+      apiKey = apiKey
+        .replace(/[\u2010-\u2015]/g, '-')  // Replace various Unicode dashes with ASCII hyphen
+        .replace(/[\u2018-\u201B]/g, "'")  // Replace smart quotes with ASCII apostrophe
+        .replace(/[\u201C-\u201F]/g, '"')  // Replace smart double quotes with ASCII quote
+        .replace(/\u2026/g, '...')         // Replace ellipsis with three dots
+        .replace(/\s+/g, '')               // Remove all whitespace
+        .replace(/[^\x20-\x7E]/g, '')      // Remove any remaining non-ASCII characters
+        .trim();
 
       const encryptedKey = encryptApiKey(apiKey);
       

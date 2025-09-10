@@ -14,8 +14,27 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// Helper function to sanitize API key by removing non-ASCII characters
+const sanitizeApiKey = (apiKey: string): string => {
+  // Replace common Unicode characters with ASCII equivalents
+  let sanitized = apiKey
+    .replace(/[\u2010-\u2015]/g, '-')  // Replace various dashes with ASCII hyphen
+    .replace(/[\u2018-\u201B]/g, "'")  // Replace smart quotes with ASCII apostrophe
+    .replace(/[\u201C-\u201F]/g, '"')  // Replace smart double quotes with ASCII quote
+    .replace(/\u2026/g, '...')         // Replace ellipsis with three dots
+    .replace(/\s+/g, '')               // Remove all whitespace
+    .replace(/[^\x20-\x7E]/g, '');     // Remove any remaining non-ASCII characters
+  
+  return sanitized.trim();
+};
+
 const apiKeySchema = z.object({
-  apiKey: z.string().min(1, "API key is required"),
+  apiKey: z.string()
+    .min(1, "API key is required")
+    .transform((val) => sanitizeApiKey(val))
+    .refine((val) => val === sanitizeApiKey(val), {
+      message: "API key contains invalid characters. Please copy it again from a plain text source."
+    }),
 });
 
 type ApiKeyForm = z.infer<typeof apiKeySchema>;
@@ -355,7 +374,13 @@ export default function Integrations() {
                     </div>
                   </FormControl>
                   <FormDescription>
-                    Your API key is encrypted with AES-256 and stored securely. We never share or expose your credentials.
+                    <div className="space-y-2">
+                      <p>Your API key is encrypted with AES-256 and stored securely. We never share or expose your credentials.</p>
+                      <p className="text-amber-600 dark:text-amber-400 text-xs font-medium flex items-start gap-2">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <span>Important: Copy your API key from a plain text source. Avoid copying from PDFs or formatted documents as they may contain invisible characters that cause connection errors.</span>
+                      </p>
+                    </div>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
