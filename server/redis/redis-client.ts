@@ -132,7 +132,11 @@ class RedisClient {
   async del(key: string | string[]): Promise<number> {
     if (!this.isAvailable()) return 0;
     try {
-      return await this.client!.del(key);
+      if (Array.isArray(key)) {
+        return await this.client!.del(...key);
+      } else {
+        return await this.client!.del(key);
+      }
     } catch (error) {
       console.error('Redis del error:', error);
       return 0;
