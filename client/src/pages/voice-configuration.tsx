@@ -243,7 +243,7 @@ export default function VoiceConfiguration() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {agents && Array.isArray(agents) && agents.map((agent: any) => (
+                            {agents && Array.isArray(agents) && (agents as any[]).map((agent: any) => (
                               <SelectItem key={agent.id} value={agent.id}>
                                 {agent.name || "Unnamed Agent"}
                               </SelectItem>
@@ -471,28 +471,29 @@ export default function VoiceConfiguration() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="multiVoiceEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel className="text-base">Enable Multi-Voice</FormLabel>
-                        <FormDescription>
-                          Allow your agent to switch between multiple voices
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          data-testid="switch-multi-voice"
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+              <Form {...form}>
+                <div className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="multiVoiceEnabled"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Enable Multi-Voice</FormLabel>
+                          <FormDescription>
+                            Allow your agent to switch between multiple voices
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            data-testid="switch-multi-voice"
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
                 {form.watch("multiVoiceEnabled") && (
                   <>
@@ -560,7 +561,7 @@ export default function VoiceConfiguration() {
                                     <SelectValue placeholder="Choose a voice" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {voices && Array.isArray(voices) && voices.map((v: any) => (
+                                    {voices && Array.isArray(voices) && (voices as any[]).map((v: any) => (
                                       <SelectItem key={v.voice_id} value={v.voice_id}>
                                         {v.name || "Unnamed Voice"}
                                       </SelectItem>
@@ -612,7 +613,8 @@ export default function VoiceConfiguration() {
                     )}
                   </>
                 )}
-              </div>
+                </div>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
