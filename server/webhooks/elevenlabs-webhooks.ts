@@ -188,6 +188,23 @@ export async function handlePostCallWebhook(req: Request, res: Response) {
     // Calculate cost (ElevenLabs may provide this, or calculate based on duration)
     const calculatedCost = cost || (credits_used ? credits_used * 0.001 : 0);
 
+    // Extract and sanitize summary from ElevenLabs analysis
+    const rawSummary = analysis?.transcript_summary;
+    const sanitizedSummary = typeof rawSummary === 'string' ? rawSummary.trim() : null;
+    const summaryFromAnalysis = sanitizedSummary && sanitizedSummary.length > 0 ? sanitizedSummary : null;
+    const summaryStatus = summaryFromAnalysis ? 'success' : null;
+    const summaryMetadata = summaryFromAnalysis ? {
+      provider: 'elevenlabs',
+      source: 'analysis',
+      generatedAt: new Date().toISOString()
+    } : null;
+
+    if (summaryFromAnalysis) {
+      console.log(`✅ Summary extracted from ElevenLabs analysis for conversation: ${conversation_id}`);
+    } else {
+      console.log(`ℹ️ No summary provided by ElevenLabs for conversation: ${conversation_id}`);
+    }
+
     // Check for existing call log to prevent duplicates
     const existingCallLog = await storage.getCallLogByConversationId(
       agent.organizationId,
@@ -198,20 +215,17 @@ export async function handlePostCallWebhook(req: Request, res: Response) {
       console.log("📝 Updating existing call log:", conversation_id);
       
       // Update existing call log with new data
-      await storage.updateCallLog(existingCallLog.id, {
+      await storage.updateCallLog(existingCallLog.id, agent.organizationId, {
         status: call_status || existingCallLog.status,
         duration: call_duration_seconds || existingCallLog.duration,
         cost: String(calculatedCost),
         transcript: transcript || existingCallLog.transcript,
         audioUrl: recording_url || audio_url || existingCallLog.audioUrl,
         phoneNumber: phone_number || existingCallLog.phoneNumber,
-        metadata: {
-          ...existingCallLog.metadata,
-          end_reason,
-          analysis,
-          last_updated: new Date().toISOString(),
-          ...metadata
-        }
+        summary: summaryFromAnalysis || existingCallLog.summary,
+        summaryStatus: summaryStatus || existingCallLog.summaryStatus,
+        summaryGeneratedAt: summaryFromAnalysis ? new Date() : existingCallLog.summaryGeneratedAt,
+        summaryMetadata: summaryMetadata || existingCallLog.summaryMetadata
       });
     } else {
       console.log("📝 Creating new call log:", conversation_id);
@@ -228,12 +242,10 @@ export async function handlePostCallWebhook(req: Request, res: Response) {
         audioUrl: recording_url || audio_url || null,
         phoneNumber: phone_number || null,
         elevenLabsCallId: conversation_id,
-        metadata: {
-          end_reason,
-          analysis,
-          webhook_received_at: new Date().toISOString(),
-          ...metadata
-        },
+        summary: summaryFromAnalysis,
+        summaryStatus: summaryStatus,
+        summaryGeneratedAt: summaryFromAnalysis ? new Date() : null,
+        summaryMetadata: summaryMetadata,
         createdAt: timestamp ? new Date(timestamp) : new Date()
       });
     }

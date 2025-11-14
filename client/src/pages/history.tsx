@@ -89,25 +89,6 @@ export default function History() {
     },
   });
 
-  const generateSummariesMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/jobs/generate-all-summaries"),
-    onSuccess: (data: any) => {
-      const message = `Generated ${data.successful || 0} summaries (${data.failed || 0} failed)`;
-      toast({
-        title: "Summaries Generated",
-        description: message,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/call-logs"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Summary Generation Failed",
-        description: error.message || "Failed to generate summaries",
-        variant: "destructive",
-      });
-    },
-  });
-
   const fetchAudioMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/jobs/fetch-missing-audio"),
     onSuccess: (data: any) => {
@@ -258,16 +239,6 @@ export default function History() {
             >
               <RefreshCw className={`w-4 h-4 ${syncCallsMutation.isPending ? 'animate-spin' : ''}`} />
               {syncCallsMutation.isPending ? 'Syncing...' : 'Sync Calls'}
-            </Button>
-            <Button
-              onClick={() => generateSummariesMutation.mutate()}
-              disabled={generateSummariesMutation.isPending}
-              variant="outline"
-              className="flex items-center justify-center gap-2 w-full sm:w-auto"
-              data-testid="button-generate-summaries"
-            >
-              <Bot className={`w-4 h-4 ${generateSummariesMutation.isPending ? 'animate-spin' : ''}`} />
-              {generateSummariesMutation.isPending ? 'Generating...' : 'Generate Summaries'}
             </Button>
             <Button
               onClick={() => fetchAudioMutation.mutate()}
