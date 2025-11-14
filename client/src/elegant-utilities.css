@@ -1,0 +1,301 @@
+/* Additional elegant utility classes for common patterns */
+
+/* Smooth transitions */
+.transition-elegant {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-smooth {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Elegant borders */
+.border-elegant {
+  border: 1px solid var(--border);
+  transition: border-color 0.3s ease;
+}
+
+.border-elegant:hover {
+  border-color: hsl(var(--primary) / 0.4);
+}
+
+.border-gradient {
+  position: relative;
+  background: var(--card);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.border-gradient::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  margin: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    hsl(162, 72%, 45%),
+    hsl(199, 89%, 48%),
+    hsl(263, 90%, 61%)
+  );
+}
+
+/* Text utilities */
+.text-elegant {
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Surface elevation */
+.surface-raised {
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.surface-raised:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-1px);
+}
+
+.surface-flat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: none;
+}
+
+/* Badge styles */
+.badge-elegant {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.025em;
+  background: var(--accent);
+  color: var(--accent-foreground);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s ease;
+}
+
+.badge-elegant:hover {
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.badge-primary {
+  background: linear-gradient(135deg,
+    hsl(162, 72%, 45%),
+    hsl(162, 75%, 38%)
+  );
+  color: white;
+  border-color: hsl(162, 75%, 35%);
+}
+
+/* Input focus styles */
+.input-elegant {
+  background: var(--input);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.input-elegant:focus {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow:
+    0 0 0 3px hsl(var(--primary) / 0.1),
+    var(--shadow-sm);
+}
+
+.input-elegant:focus-visible {
+  outline: none;
+  border-color: var(--ring);
+  box-shadow:
+    0 0 0 3px hsl(var(--primary) / 0.1),
+    var(--shadow-sm);
+}
+
+/* Link styles */
+.link-elegant {
+  position: relative;
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.link-elegant::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  transition: width 0.3s ease;
+}
+
+.link-elegant:hover {
+  color: var(--primary-dark);
+}
+
+.link-elegant:hover::after {
+  width: 100%;
+}
+
+/* Divider styles */
+.divider-elegant {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--border),
+    transparent
+  );
+  margin: 2rem 0;
+}
+
+.divider-gradient {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    hsl(162, 72%, 45%),
+    hsl(199, 89%, 48%),
+    hsl(263, 90%, 61%),
+    transparent
+  );
+  margin: 2rem 0;
+}
+
+/* Status indicators */
+.status-dot {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.status-dot-success {
+  background: var(--success);
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.status-dot-warning {
+  background: var(--warning);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.status-dot-error {
+  background: var(--destructive);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.status-dot-info {
+  background: var(--info);
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.5);
+}
+
+/* Scrollbar styling */
+.scrollbar-elegant::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-track {
+  background: var(--muted);
+  border-radius: 4px;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.scrollbar-elegant::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}
+
+/* Loading skeleton */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--muted);
+  border-radius: var(--radius);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: skeleton-shimmer 2s infinite;
+}
+
+.dark .skeleton::after {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Tooltip elegant */
+.tooltip-elegant {
+  position: relative;
+}
+
+.tooltip-elegant::before,
+.tooltip-elegant::after {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tooltip-elegant::before {
+  content: attr(data-tooltip);
+  margin-bottom: 5px;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  font-size: 0.875rem;
+  white-space: nowrap;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border);
+}
+
+.tooltip-elegant:hover::before,
+.tooltip-elegant:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
