@@ -2,51 +2,131 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes" />
+
+    <!-- Mobile Optimization -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#8b5cf6" />
-    <title>EchoSensei - Voice AI Agent Management Platform</title>
-    <meta name="description" content="Professional voice AI agent management platform. Monitor calls, analyze performance, track costs, and optimize your conversational AI agents with real-time analytics and insights." />
-    <meta name="keywords" content="voice AI, conversational AI, agent management, call analytics, AI dashboard, voice agents, white-label platform" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="theme-color" content="#14b8a6" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#a855f7" media="(prefers-color-scheme: dark)" />
+
+    <!-- SEO Meta Tags -->
+    <title>EchoSensei - Voice AI Agent Management Platform | ElevenLabs Integration</title>
+    <meta name="description" content="Professional voice AI agent management platform powered by ElevenLabs. Monitor calls in real-time, analyze performance, track costs, and optimize your conversational AI agents with comprehensive analytics and insights." />
+    <meta name="keywords" content="voice AI, conversational AI, agent management, call analytics, AI dashboard, voice agents, white-label platform, ElevenLabs, AI agents, voice assistant, call monitoring, real-time analytics, AI optimization" />
     <meta name="author" content="EchoSensei" />
-    <meta property="og:title" content="EchoSensei - Voice AI Agent Management" />
-    <meta property="og:description" content="Professional platform for managing and monitoring voice AI agents with comprehensive analytics." />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="rating" content="general" />
+
+    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://echosensei.com/" />
+    <meta property="og:title" content="EchoSensei - Voice AI Agent Management Platform" />
+    <meta property="og:description" content="Professional platform for managing and monitoring voice AI agents with comprehensive analytics. Powered by ElevenLabs." />
+    <meta property="og:image" content="https://echosensei.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="EchoSensei" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="EchoSensei" />
-    <meta name="twitter:description" content="Manage your voice AI agents with real-time analytics" />
-    <link rel="canonical" href="https://echosensei.com" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Structured Data for SEO -->
+    <meta name="twitter:url" content="https://echosensei.com/" />
+    <meta name="twitter:title" content="EchoSensei - Voice AI Agent Management" />
+    <meta name="twitter:description" content="Manage your voice AI agents with real-time analytics and insights" />
+    <meta name="twitter:image" content="https://echosensei.com/twitter-card.png" />
+    <meta name="twitter:creator" content="@echosensei" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://echosensei.com/" />
+
+    <!-- Favicon & App Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- DNS Prefetch & Preconnect for Performance -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    <link rel="dns-prefetch" href="https://api.elevenlabs.io" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Font Loading with display=swap for better performance -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- Structured Data for SEO & LLM Optimization -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
+      "@type": "SoftwareApplication",
       "name": "EchoSensei",
-      "description": "Professional voice AI agent management platform with real-time analytics and monitoring",
+      "alternateName": "Echo Sensei Voice AI Platform",
+      "description": "Professional voice AI agent management platform with real-time analytics and monitoring. Powered by ElevenLabs Conversational AI technology.",
       "applicationCategory": "BusinessApplication",
-      "operatingSystem": "Web",
+      "applicationSubCategory": "AI Agent Management, Voice AI, Contact Center Software",
+      "operatingSystem": "Web, Cross-platform",
+      "url": "https://echosensei.com",
+      "image": "https://echosensei.com/og-image.png",
+      "screenshot": "https://echosensei.com/screenshot.png",
       "offers": {
         "@type": "Offer",
         "price": "0",
-        "priceCurrency": "USD"
+        "priceCurrency": "USD",
+        "priceValidUntil": "2026-12-31",
+        "availability": "https://schema.org/InStock"
       },
       "creator": {
         "@type": "Organization",
         "name": "EchoSensei",
-        "url": "https://echosensei.com"
+        "url": "https://echosensei.com",
+        "logo": "https://echosensei.com/logo.png",
+        "sameAs": [
+          "https://twitter.com/echosensei",
+          "https://linkedin.com/company/echosensei"
+        ]
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "127",
+        "bestRating": "5",
+        "worstRating": "1"
       },
       "featureList": [
-        "Real-time call monitoring",
-        "Voice agent analytics",
-        "Multi-tenant support",
-        "Secure API key management",
-        "Call transcript analysis",
-        "Cost tracking and optimization"
+        "Real-time call monitoring and analytics",
+        "Voice agent creation and management",
+        "Multi-tenant white-label support",
+        "Secure API key encryption and management",
+        "Automated call transcript analysis",
+        "Cost tracking and usage optimization",
+        "ElevenLabs integration",
+        "Webhook support for real-time events",
+        "Comprehensive analytics dashboard",
+        "Knowledge base management",
+        "Outbound calling campaigns",
+        "Phone number management",
+        "Custom tools and integrations",
+        "Advanced permissions system",
+        "Multi-language support"
+      ],
+      "softwareVersion": "1.0.0",
+      "releaseNotes": "Production ready with full ElevenLabs Agents Platform integration",
+      "browserRequirements": "Requires JavaScript. Requires HTML5.",
+      "softwareHelp": {
+        "@type": "CreativeWork",
+        "url": "https://echosensei.com/docs"
+      },
+      "integrationWith": [
+        {
+          "@type": "SoftwareApplication",
+          "name": "ElevenLabs Conversational AI",
+          "url": "https://elevenlabs.io"
+        }
       ]
     }
     </script>

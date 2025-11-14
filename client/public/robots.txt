@@ -1,0 +1,36 @@
+# robots.txt for EchoSensei Voice AI Platform
+# https://www.robotstxt.org/
+
+User-agent: *
+
+# Allow crawling of public pages
+Allow: /
+
+# Disallow private/authenticated areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /settings/
+Disallow: /billing/
+Disallow: /agency/
+Disallow: /checkout/
+
+# Disallow sensitive data endpoints
+Disallow: /webhooks/
+Disallow: /auth/
+
+# Allow specific public resources
+Allow: /assets/
+Allow: /*.css
+Allow: /*.js
+Allow: /*.png
+Allow: /*.jpg
+Allow: /*.jpeg
+Allow: /*.gif
+Allow: /*.svg
+Allow: /*.webp
+
+# Crawl delay (be nice to servers)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://echosensei.com/sitemap.xml

@@ -5,6 +5,12 @@ import { setupWebSocketRoutes, setupWebSocketEndpoints } from "./routes-websocke
 import { setupVite, serveStatic, log } from "./vite";
 import { rateLimiters } from "./middleware/rate-limiter";
 import { config } from "./config";
+import {
+  staticAssetCache,
+  apiCache,
+  securityHeaders,
+  enableETags
+} from "./middleware/cache-headers";
 
 const app = express();
 
@@ -13,6 +19,12 @@ if (config.security.trustProxy) {
   app.set('trust proxy', 1);
   console.log('[SERVER] Trust proxy enabled');
 }
+
+// Apply security headers to all responses
+app.use(securityHeaders);
+
+// Enable ETags for conditional requests
+app.use(enableETags);
 
 // Enable gzip compression for all responses
 app.use(compression({
@@ -26,6 +38,9 @@ app.use(compression({
   level: 6, // Balanced compression level
   threshold: 1024 // Only compress responses larger than 1KB
 }));
+
+// Apply cache headers for static assets
+app.use(staticAssetCache);
 
 // Increase body size limit to 10MB for image uploads
 // Also increase timeout for large uploads
@@ -45,6 +60,9 @@ app.use('/api/auth/logout', rateLimiters.auth);
 
 // General API rate limiting
 app.use('/api/', rateLimiters.api);
+
+// Apply cache headers for API responses
+app.use('/api/', apiCache);
 
 // Stricter limits for specific endpoints
 app.post('/api/agents', rateLimiters.write);

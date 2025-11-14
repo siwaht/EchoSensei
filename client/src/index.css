@@ -135,6 +135,38 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Safe area inset support for notched devices (iPhone X+, etc.) */
+:root {
+  --safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --safe-area-inset-right: env(safe-area-inset-right, 0px);
+  --safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-inset-left: env(safe-area-inset-left, 0px);
+}
+
+/* Apply safe area padding to main layout elements */
+.safe-top {
+  padding-top: var(--safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: var(--safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: var(--safe-area-inset-right);
+}
+
+.safe-area-padding {
+  padding-top: var(--safe-area-inset-top);
+  padding-right: var(--safe-area-inset-right);
+  padding-bottom: var(--safe-area-inset-bottom);
+  padding-left: var(--safe-area-inset-left);
+}
+
 /* Mobile-first responsive utilities */
 @media (max-width: 640px) {
   .hide-mobile { display: none !important; }
@@ -145,6 +177,70 @@
   .mobile-p-3 { padding: 0.75rem !important; }
   .mobile-gap-2 { gap: 0.5rem !important; }
   .mobile-gap-3 { gap: 0.75rem !important; }
+
+  /* Mobile table optimization - switch to card view */
+  .mobile-table-card tbody {
+    display: block;
+  }
+
+  .mobile-table-card tr {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-table-card td {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-table-card td:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-table-card td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    margin-right: 1rem;
+  }
+
+  /* Mobile navigation spacing with safe areas */
+  .mobile-nav {
+    padding-bottom: calc(1rem + var(--safe-area-inset-bottom));
+  }
+
+  /* Mobile header with safe area */
+  .mobile-header {
+    padding-top: calc(1rem + var(--safe-area-inset-top));
+  }
+
+  /* Reduce font sizes for mobile */
+  h1 { font-size: 1.875rem !important; }
+  h2 { font-size: 1.5rem !important; }
+  h3 { font-size: 1.25rem !important; }
+  h4 { font-size: 1.125rem !important; }
+
+  /* Mobile-optimized cards */
+  .card {
+    padding: 1rem;
+  }
+
+  /* Mobile button sizing */
+  button, .btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Mobile form inputs */
+  input, textarea, select {
+    font-size: 16px !important; /* Prevents zoom on iOS */
+  }
 }
 
 @media (min-width: 641px) {
@@ -162,6 +258,24 @@
 @viewport {
   width: device-width;
   initial-scale: 1.0;
+  viewport-fit: cover;
+}
+
+/* Full-height mobile views accounting for safe areas */
+.min-h-screen-safe {
+  min-height: 100vh;
+  min-height: calc(100vh - var(--safe-area-inset-top) - var(--safe-area-inset-bottom));
+}
+
+/* Mobile-optimized vh units (accounts for address bar) */
+@supports (height: 100dvh) {
+  .mobile-vh-100 {
+    height: 100dvh;
+  }
+
+  .mobile-min-h-screen {
+    min-height: 100dvh;
+  }
 }
 
 /* Container and spacing utilities */
