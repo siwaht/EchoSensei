@@ -11,11 +11,16 @@
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(222 47% 11%);
 
-  /* Sophisticated primary colors with gradient support */
-  --primary: hsl(162 72% 45%);
-  --primary-light: hsl(162 70% 55%);
-  --primary-dark: hsl(162 75% 35%);
+  /* ElevenLabs-inspired purple primary colors */
+  --primary: hsl(262 83% 58%);
+  --primary-light: hsl(262 80% 68%);
+  --primary-dark: hsl(262 90% 48%);
   --primary-foreground: hsl(0 0% 100%);
+
+  /* Complementary teal accent (original) for variety */
+  --accent-teal: hsl(162 72% 45%);
+  --accent-teal-light: hsl(162 70% 55%);
+  --accent-teal-dark: hsl(162 75% 35%);
 
   /* Refined secondary palette */
   --secondary: hsl(210 40% 97%);
@@ -38,7 +43,7 @@
   /* Elegant borders and inputs */
   --border: hsl(214 25% 88%);
   --input: hsl(214 25% 93%);
-  --ring: hsl(162 70% 48%);
+  --ring: hsl(262 80% 60%);
 
   /* Vibrant chart colors */
   --chart-1: hsl(162 72% 45%);
@@ -47,15 +52,15 @@
   --chart-4: hsl(263 90% 61%);
   --chart-5: hsl(340 75% 55%);
 
-  /* Refined sidebar */
+  /* Refined sidebar with ElevenLabs purple */
   --sidebar: hsl(0 0% 100%);
   --sidebar-foreground: hsl(222 47% 11%);
-  --sidebar-primary: hsl(162 72% 45%);
+  --sidebar-primary: hsl(262 83% 58%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
   --sidebar-accent: hsl(210 40% 97%);
   --sidebar-accent-foreground: hsl(222 47% 11%);
   --sidebar-border: hsl(214 25% 90%);
-  --sidebar-ring: hsl(162 70% 48%);
+  --sidebar-ring: hsl(262 80% 60%);
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -69,39 +74,44 @@
   --radius-lg: 1.25rem;
   --radius-xl: 1.5rem;
 
-  /* Premium shadows with color tints */
-  --shadow-2xs: 0px 1px 2px 0px rgba(20, 184, 166, 0.04);
-  --shadow-xs: 0px 1px 3px 0px rgba(20, 184, 166, 0.06), 0px 1px 2px -1px rgba(0, 0, 0, 0.06);
-  --shadow-sm: 0px 2px 4px -1px rgba(20, 184, 166, 0.08), 0px 4px 6px -1px rgba(0, 0, 0, 0.08);
-  --shadow: 0px 4px 8px -2px rgba(20, 184, 166, 0.1), 0px 10px 20px -3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0px 8px 16px -4px rgba(20, 184, 166, 0.12), 0px 16px 32px -8px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0px 12px 24px -6px rgba(20, 184, 166, 0.14), 0px 24px 48px -12px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0px 20px 40px -10px rgba(20, 184, 166, 0.16), 0px 32px 64px -16px rgba(0, 0, 0, 0.14);
-  --shadow-2xl: 0px 32px 64px -16px rgba(20, 184, 166, 0.18), 0px 48px 96px -24px rgba(0, 0, 0, 0.16);
+  /* Premium shadows with ElevenLabs purple tints */
+  --shadow-2xs: 0px 1px 2px 0px rgba(139, 92, 246, 0.04);
+  --shadow-xs: 0px 1px 3px 0px rgba(139, 92, 246, 0.06), 0px 1px 2px -1px rgba(0, 0, 0, 0.06);
+  --shadow-sm: 0px 2px 4px -1px rgba(139, 92, 246, 0.08), 0px 4px 6px -1px rgba(0, 0, 0, 0.08);
+  --shadow: 0px 4px 8px -2px rgba(139, 92, 246, 0.1), 0px 10px 20px -3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0px 8px 16px -4px rgba(139, 92, 246, 0.12), 0px 16px 32px -8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0px 12px 24px -6px rgba(139, 92, 246, 0.14), 0px 24px 48px -12px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0px 20px 40px -10px rgba(139, 92, 246, 0.16), 0px 32px 64px -16px rgba(0, 0, 0, 0.14);
+  --shadow-2xl: 0px 32px 64px -16px rgba(139, 92, 246, 0.18), 0px 48px 96px -24px rgba(0, 0, 0, 0.16);
 
   /* Glassmorphism variables */
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(255, 255, 255, 0.3);
-  --glass-shadow: 0 8px 32px 0 rgba(20, 184, 166, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(139, 92, 246, 0.1);
 
   --tracking-normal: -0.01em;
   --spacing: 0.25rem;
 }
 
 .dark {
-  /* Deep elegant dark palette */
-  --background: hsl(222 47% 7%);
-  --foreground: hsl(213 31% 93%);
-  --card: hsl(222 47% 10%);
-  --card-foreground: hsl(213 31% 93%);
-  --popover: hsl(222 47% 10%);
-  --popover-foreground: hsl(213 31% 93%);
+  /* Deep elegant dark palette with ElevenLabs purple */
+  --background: hsl(250 28% 8%);
+  --foreground: hsl(250 8% 94%);
+  --card: hsl(250 28% 11%);
+  --card-foreground: hsl(250 8% 94%);
+  --popover: hsl(250 28% 11%);
+  --popover-foreground: hsl(250 8% 94%);
 
-  /* Vibrant dark mode primary */
-  --primary: hsl(263 90% 61%);
-  --primary-light: hsl(263 85% 70%);
-  --primary-dark: hsl(263 95% 52%);
+  /* ElevenLabs purple - vibrant in dark mode */
+  --primary: hsl(262 83% 65%);
+  --primary-light: hsl(262 80% 75%);
+  --primary-dark: hsl(262 90% 55%);
   --primary-foreground: hsl(0 0% 100%);
+
+  /* Complementary teal accent */
+  --accent-teal: hsl(162 72% 55%);
+  --accent-teal-light: hsl(162 70% 65%);
+  --accent-teal-dark: hsl(162 75% 45%);
 
   /* Dark secondary palette */
   --secondary: hsl(222 47% 14%);
