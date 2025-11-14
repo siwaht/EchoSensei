@@ -7,6 +7,7 @@ import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import connectPg from "connect-pg-simple";
+import { config } from "./config";
 
 declare global {
   namespace Express {
@@ -101,12 +102,13 @@ export function setupAuth(app: Express) {
     }
 
     const hashedPassword = await hashPassword(password);
+    const isAdmin = config.security.adminEmails.includes(email.toLowerCase());
     const user = await storage.createUser({
       email,
       firstName,
       lastName,
       password: hashedPassword,
-      isAdmin: email === "cc@siwaht.com",
+      isAdmin,
     });
 
     req.login(user, (err) => {

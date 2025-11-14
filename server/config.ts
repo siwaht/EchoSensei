@@ -27,6 +27,7 @@ interface Config {
     sessionSecret: string;
     encryptionKey: string;
     trustProxy: boolean;
+    adminEmails: string[];
   };
   
   // External Services
@@ -150,10 +151,21 @@ function loadConfig(): Config {
   };
 
   // Security configuration
+  const adminEmails = process.env.ADMIN_EMAILS
+    ? process.env.ADMIN_EMAILS.split(',').map(email => email.trim().toLowerCase())
+    : isDevelopment
+      ? ['admin@example.com']
+      : [];
+
+  if (isDevelopment && adminEmails.length === 1 && adminEmails[0] === 'admin@example.com') {
+    console.warn('[CONFIG] ⚠️  Using default admin email in development. Set ADMIN_EMAILS env var.');
+  }
+
   const security = {
     sessionSecret,
     encryptionKey,
     trustProxy: process.env.TRUST_PROXY === 'true' || isProduction,
+    adminEmails,
   };
 
   // External integrations (optional, can be configured later)
